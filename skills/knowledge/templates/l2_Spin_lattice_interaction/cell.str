@@ -1,0 +1,14 @@
+NumberOfAtoms   3
+number_of_species   2
+LatticeConstant       1 Ang
+%block LatticeVectors
+4 0 0
+-2 3.4641016151377544 0
+0 0 20
+%endblock LatticeVectors
+AtomicCoordinatesFormat  NotScaledCartesianAng
+%block AtomicCoordinatesAndAtomicSpecies
+0 0 0  1 Ni 1
+2   1.1547005383792517   1.632993161855452  2 I 2
+0   2.3094010767585034  18.367006838144547  2 I 3
+%endblock AtomicCoordinatesAndAtomicSpecies

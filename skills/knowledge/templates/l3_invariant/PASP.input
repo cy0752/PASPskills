@@ -1,0 +1,78 @@
+Model Invariant
+
+Invariant.type 2
+
+%include unit_cell.str
+%include cell.str
+
+%block SuperCell
+3 0 0
+0 3 0
+0 0 1
+%endblock SuperCell
+
+%block Z_values
+26 31 52
+%endblock Z_values
+
+Invariant.power 4
+Invariant.strain_power 0
+Invariant.pure_strain_power 0
+
+fig.maxk 4
+
+%block fig.mdist
+1 8 6 6
+%endblock fig.mdist
+
+local_mode.nstr_random 10
+local_mode.cal_para_method 1
+local_mode.read_interaction F
+
+%block Spin_values
+2 0 0
+%endblock Spin_values
+
+%block local_mode.mode_definition
+2
+6
+1 spin
+1
+0.000000000000 0.000000000000 3.687494598930 1.0 0.0 0.0
+
+1 spin
+1
+0.000000000000 0.000000000000 3.687494598930 0.0 1.0 0.0
+
+1 spin
+1
+0.000000000000 0.000000000000 3.687494598930 0.0 0.0 1.0
+
+1 spin
+1
+1.975471248997 1.140538861567 2.500000000000 1.0 0.0 0.0
+
+1 spin
+1
+1.975471248997 1.140538861567 2.500000000000 0.0 1.0 0.0
+
+1 spin
+1
+1.975471248997 1.140538861567 2.500000000000 0.0 0.0 1.0
+%endblock local_mode.mode_definition
+
+Invariant.SOC T
+%block local_mode.special_SOC
+6
+1 1 2
+1 2 2
+2 1 2
+2 1 4
+2 2 2
+2 2 4
+%endblock local_mode.special_SOC
+
+local_mode.general_model T
+local_mode.full_atomic F
+Invariant.debug F
+Invariant.cal_para T

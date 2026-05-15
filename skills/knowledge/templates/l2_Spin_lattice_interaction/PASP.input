@@ -1,0 +1,33 @@
+%include MC.input
+%include cell.str
+%include unit_cell.str
+
+Model Spin_lattice_interaction
+
+# 在 cell.str 的基础上扩胞
+%block SuperCell
+20 0  0
+10 20 0
+0  0  1
+%endblock SuperCell
+
+# 元素原子序数，顺序与 cell.str 中的定义相同（Ni, I）
+%block Z_values
+28 53
+%endblock Z_values
+
+# 参与相互作用的元素编号（编号定义与 cell.str 中相同）
+%block isaAB
+1 1  # 考虑第1号元素（Ni）的原子之间的 pair
+%endblock isaAB
+
+# 按照 cell.str 中的定义顺序给出原子自旋量子数的二倍
+%block Spin_values
+2 0
+%endblock Spin_values
+
+# 截断距离（单位为 Bohr），最远考虑到多长距离的 pair
+%block fig.mdist
+1 20  # 单体距离为1（始终写1，无实际意义），2体距离为 20 bohr
+%endblock fig.mdist
+

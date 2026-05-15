@@ -1,0 +1,29 @@
+1  I_Read_Settings: 1
+0  I_CONVERT_TO_ONE_ORDER: 0
+30 0 30 1  N_UPBOUND_TOTAL,N_UPBOUND_X,N_UPBOUND_THETA,COMBINE_TYPE
+1  I_GIVE_PREDICT: Usually 1.
+0  I_ONLY_PREDICT: Usually 0. Use 1 when finally giving reports(with I_AUTOINIT=5).
+0  I_CHECK_SELFPREDICT: Try 0 and 1. Usually 0 is better.
+0.500E+00  MAX_Nncheck_BY_Nn: Usually 0.5.
+0  I_SET_TERM_VALUE: Usually 0.
+1  I_HAVE_KEEP_TERM: Usually 0. When 1, use Fitting_Set_Term_Keep.txt
+0  I_HAVE_SKIP_TERM: Usually 0.
+0  I_CHANGE_WEIGHT: Usually 0.
+0  I_CHECK_SAMEDATA: Usually 0.
+1  I_CHECK_DATA: Usually 1.
+0.100E-07  CHECK_DATA_ACCURACY
+0  I_RANDOM_CHANGE_DATA: Use 0 first.
+1  I_AUTOINIT: 1 means start from constant term.
+1  SEARCH_TYPE: 1 is the example default.
+1  BetterType
+1  BetterType_subs1
+1  BetterType_check_del
+1  BetterType_check_add
+1  BetterType_check_subs1
+0  I_TRY_SUBSTITUTE2
+1  BetterType_subs2
+1  BetterType_check_subs2a
+1  BetterType_check_subs2b
+0  I_SET_TERM_DEPENDENT
+0  SHOW_STDOUT
+0.50000E+02  BETA_WEIGHT

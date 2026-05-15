@@ -1,0 +1,28 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# macOS Finder / volume metadata
+.DocumentRevisions-V100
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# macOS network share metadata
+.fseventsd
+.apdisk
+
+# macOS archive extraction leftovers
+__MACOSX/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Crash dumps
+core.*

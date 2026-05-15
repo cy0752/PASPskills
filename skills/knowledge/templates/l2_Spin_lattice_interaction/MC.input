@@ -1,0 +1,26 @@
+# 外磁场，单位为特斯拉
+%block ExternalMagneticField
+0.0 0.0 0.0
+%endblock ExternalMagneticField
+
+MC                  T  # 打开 MC 模拟
+Parallel_Tempering  T  # 使用并行退火 MC 方法
+spin_lat.general_J  T  # 使用矩阵形式的 J 和 SIA
+spin_lat.LJmatSym   T  # 根据对称性化简输入的 J 和 SIA 矩阵
+Read_init_spin      F  # 从 spin3.in 文件中读取初始自旋构型，F 则随机生成
+
+# 温度设置（Hartree 单位，0.0000031669 Hartree = 1 K）
+PT.M          40             # 不同温度的并行副本个数
+PT.low_temp   0.0000031669   # 最低温度，1 K
+PT.high_temp  0.0019         # 最高温度，600 K
+PT.Tmesh      1              # 温度分布方式。1：1/T 均匀，2：T 均匀
+
+# 蒙特卡洛模拟步数设置
+PT.nblk_T  400  # 交换步总数
+nbeg_blk   200  # 在多少交换步后进行统计量的计算
+nblk       100  # 两次交换步之间的蒙特卡洛步数
+
+# 共轭梯度优化设置
+spin_lat.relax_str  T  # 开启共轭梯度优化
+opt.NSW     10000    # 共轭梯度优化的最大步数
+opt.EDIFFG  1.0E-8  # 共轭梯度优化的收敛条件

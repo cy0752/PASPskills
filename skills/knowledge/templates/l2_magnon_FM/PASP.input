@@ -1,0 +1,38 @@
+Model magnon
+
+%include unit_cell.str
+%include cell.str
+
+spin_lat.general_J  T    # 使用矩阵形式的二次相互作用形式
+Read_init_spin      T    # 从 spin3.in 文件中读取初始构型
+
+number_of_qpoints   100  # q 点数量
+
+# q 点线段设置
+%block qpoints.magnon
+0.5    0     0  # 线段起点
+0      0     0  # 线段终点
+%endblock qpoints.magnon
+
+%block Z_values
+28 53
+%endblock Z_values
+
+%block isaAB
+1 1 
+%endblock isaAB
+
+%block Spin_values
+2 0
+%endblock Spin_values
+
+fig.maxk 2
+%block fig.mdist
+1 20
+%endblock fig.mdist
+
+%block SuperCell
+1 0 0
+0 1 0
+0 0 1
+%endblock SuperCell

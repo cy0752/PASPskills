@@ -1,0 +1,58 @@
+# L2 find_J_path_sym 最小可运行骨架。
+# 写入前请先查 reference：
+#   workflows/l2_find_J_path_sym.md     主 workflow（每字段的 reference 入口）
+#   topics/PASP.input.md                 读取规则、block 语法、%include 顺序
+#   params/Model.md                      合法 Model 值
+#   params/Z_values.md                   元素顺序
+#   params/Spin_values.md                数量必须等于 number_of_species
+#   params/magnetic_or_ligand.md         0/1/2 含义
+#   params/SuperCell.md                  基于 cell.str 扩胞
+#   params/fig.maxk.md                   体数
+#   params/fig.mdist.md                  截断距离（单位 Bohr）
+
+Model find_J_path_sym
+
+%include cell.str
+%include unit_cell.str
+
+# 如果 cell.str 已经是分析所需的大超胞，这里通常保持单位阵即可。
+# 否则在此处通过 SuperCell 在 cell.str 基础上扩胞。
+%block SuperCell
+1 0 0
+0 1 0
+0 0 1
+%endblock SuperCell
+
+# 元素原子序数。顺序必须与 cell.str 中元素首次出现顺序一致。
+# 数量必须等于 cell.str 中的 number_of_species。
+%block Z_values
+28 53
+%endblock Z_values
+
+# 指定要分析哪两类元素之间的相互作用。
+# 编号是 Z_values 中的顺序号（从 1 开始），不是原子序数。
+%block isaAB
+1 1
+%endblock isaAB
+
+# 自旋尺度。每个元素一项；个数必须等于 number_of_species。
+# 磁性元素常按二倍自旋或归一化磁矩填写；非磁性元素必须显式写 0。
+%block Spin_values
+2 0
+%endblock Spin_values
+
+# 原子角色。1: 磁性原子；2: 配位原子；其他写 0。
+# 个数必须等于 number_of_species。
+%block magnetic_or_ligand
+1 2
+%endblock magnetic_or_ligand
+
+# 考虑到几体相互作用：2 = 二体；fig.maxk 越大模型项数增长越快。
+fig.maxk 2
+
+# 截断距离。单位 Bohr（1 Bohr ≈ 0.529 Å）。
+# 第 1 位固定为 1（单体维度无意义但占位），后续每位是对应体数的截断。
+# 上限不能超过 cell.str 在该方向上的最大原子距离，否则报错。
+%block fig.mdist
+1 30
+%endblock fig.mdist

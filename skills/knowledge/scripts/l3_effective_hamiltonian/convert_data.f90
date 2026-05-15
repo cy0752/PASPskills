@@ -1,0 +1,146 @@
+
+
+PROGRAM CONVERT_DATA
+INTEGER*8 :: Nn,Nd,I,J,NUM,N_START
+REAL*8,ALLOCATABLE :: Read_q(:,:)
+REAL*8 :: DIVIDE_RATIO
+CHARACTER*512 :: FNAME
+LOGICAL :: E_DIVIDE=1
+LOGICAL :: SYMBOL_DIVIDE=0 !!!!!SOMETIMES 1(Model Fitting),SOMETIMES 0 (Model Invariant)
+
+OPEN(8,FILE="convert_info.txt",STATUS="OLD",SHARE="DENYRW",ACTION="READ")
+READ(8,*)Nn1
+READ(8,*)Nn2
+READ(8,*)DIVIDE_RATIO
+CLOSE(8)
+
+OPEN(8,FILE="ene_symbol/1.ene_symbol",STATUS="OLD",SHARE="DENYRW",ACTION="READ")
+READ(8,*)Nd
+CLOSE(8)
+!Nd=422
+!Nn1=100
+!N_START1=0
+!Nn2=50
+!N_START2=100
+
+!Nn1=120
+N_START1=0
+!Nn2=30
+N_START2=Nn1
+!Nn1=100
+!N_START1=50
+!Nn2=50
+!N_START2=0
+
+!Nn1=5800
+!N_START1=0
+!Nn2=200
+!N_START2=5800
+
+!!!!!!!!!!!
+Nn=Nn1
+N_START=N_START1
+ALLOCATE(Read_q(Nn,Nd+1))
+DO I=1,Nn
+	WRITE(FNAME,'(A,I0,A)')"ene_symbol/",I+N_START,".ene_symbol"
+!	WRITE(FNAME,'(A,I0,A)')"ene_symbol\",I+N_START,".ene_symbol"
+	OPEN(7,FILE=FNAME,STATUS="OLD",SHARE="DENYRW",ACTION="READ")
+	READ(7,*)NUM
+	DO J=1,Nd
+		READ(7,*)NUM,Read_q(I,J)
+	END DO
+	CLOSE(7)
+END DO
+
+!WRITE(FNAME,'(A,I0,A,I0,A)')"Energy_",1+N_START,"-",Nn+N_START,".dat"
+
+
+WRITE(FNAME,'(A)')"Energy.dat"
+OPEN(7,FILE=FNAME,STATUS="OLD",SHARE="DENYRW",ACTION="READ")
+!READ(7,*)DIVIDE_RATIO		!first line: NUMBER OF PRIMITIVE CELLS
+READ(7,*)
+
+	DO I=1,N_START
+		READ(7,*)NUM,NUM
+	END DO
+
+DO I=1,Nn
+	READ(7,*)NUM,Read_q(I,Nd+1)
+	IF(E_DIVIDE) Read_q(I,Nd+1)=Read_q(I,Nd+1)/DIVIDE_RATIO	!sometimes not needed
+END DO
+CLOSE(7)
+
+IF(SYMBOL_DIVIDE)THEN 
+	DO I=1,Nn
+		DO J=1,Nd
+			Read_q(I,J)=Read_q(I,J)/DIVIDE_RATIO
+		END DO
+	END DO
+END IF
+
+WRITE(FNAME,'(A)')"Fitting_Dataset.txt"
+!WRITE(FNAME,'(A)')"Fitting_Data_for_prediction.txt"
+OPEN(8,FILE=FNAME)
+DO I=1,Nn
+	DO J=1,Nd+1
+		WRITE(8,'(D,\)')Read_q(I,J)
+	END DO
+	WRITE(8,*)
+END DO
+CLOSE(8)
+
+
+DEALLOCATE(Read_q)
+!!!!!!!!!!!!!!!!!!!!!!
+
+Nn=Nn2
+N_START=N_START2
+ALLOCATE(Read_q(Nn,Nd+1))
+DO I=1,Nn
+	WRITE(FNAME,'(A,I0,A)')"ene_symbol/",I+N_START,".ene_symbol"
+!	WRITE(FNAME,'(A,I0,A)')"ene_symbol\",I+N_START,".ene_symbol"
+	OPEN(7,FILE=FNAME,STATUS="OLD",SHARE="DENYRW",ACTION="READ")
+	READ(7,*)NUM
+	DO J=1,Nd
+		READ(7,*)NUM,Read_q(I,J)
+	END DO
+	CLOSE(7)
+END DO
+
+!WRITE(FNAME,'(A,I0,A,I0,A)')"Energy_",1+N_START,"-",Nn+N_START,".dat"
+
+
+WRITE(FNAME,'(A)')"Energy.dat"
+OPEN(7,FILE=FNAME,STATUS="OLD",SHARE="DENYRW",ACTION="READ")
+READ(7,*)		!first line: Any(Title)
+!READ(7,*)DIVIDE_RATIO		!first line: NUMBER OF PRIMITIVE CELLS
+
+	DO I=1,N_START
+		READ(7,*)NUM,NUM
+	END DO
+
+DO I=1,Nn
+	READ(7,*)NUM,Read_q(I,Nd+1)
+	IF(E_DIVIDE) Read_q(I,Nd+1)=Read_q(I,Nd+1)/DIVIDE_RATIO	!sometimes not needed
+END DO
+CLOSE(7)
+
+IF(SYMBOL_DIVIDE)THEN 
+	DO I=1,Nn
+		DO J=1,Nd
+			Read_q(I,J)=Read_q(I,J)/DIVIDE_RATIO
+		END DO
+	END DO
+END IF
+
+!WRITE(FNAME,'(A)')"Fitting_Dataset.txt"
+WRITE(FNAME,'(A)')"Fitting_Data_for_prediction.txt"
+OPEN(8,FILE=FNAME)
+DO I=1,Nn
+	DO J=1,Nd+1
+		WRITE(8,'(D,\)')Read_q(I,J)
+	END DO
+	WRITE(8,*)
+END DO
+CLOSE(8)
+END

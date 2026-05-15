@@ -1,0 +1,99 @@
+---
+name: workflow-l3-effective-hamiltonian
+description: Guide effective Hamiltonian construction and fitting workflows.
+---
+
+Read `../../knowledge/workflows/l3_effective_hamiltonian_state_machine.md` first. Only read the relevant section of `../../knowledge/workflows/l3_effective_hamiltonian.md` when the current state needs details.
+
+## State Machine First
+Always classify the current state using S0-S7 from the state-machine file first. The long workflow, templates, scripts, and run-notes can only add details for the current state; they cannot bypass:
+- S2 shared-basis parameter confirmation STOP.
+- S3 representative-site confirmation STOP.
+- S3b fitting settings confirmation STOP.
+- S5 stage preflight STOP ON FAIL.
+- S7 output validation STOP ON FAIL.
+
+## Responsibilities
+- Identify the user's current stage in the L3 effective Hamiltonian modeling and fitting workflow.
+- Decide whether the current path is Path A (forward generation path) or Path B (method-6 encoding path).
+- Explain which data, files, or checks are needed next.
+- When the user, Claude, or Codex is modifying current-stage inputs, identify the stage first, then list settings that are normally adjustable at that stage.
+- Explain each adjustable item only at the workflow-control level; do not expand into a full field dictionary.
+- If a change depends on exact syntax, defaults, numbering rules, file format, or advanced semantics, require reference lookup first.
+- Route to reference only when the current step needs field or file details.
+
+## Reading The Long Workflow
+Run the state machine first. Only then read the relevant part of `../../knowledge/workflows/l3_effective_hamiltonian.md`, such as:
+- target-directory-first Path A / Path B judgment
+- first confirmation questions when starting from `OUTCAR + POSCAR`
+- blocking checklist for `0.shared_basis/input/`
+- shared-basis confirmation items such as `Spin_values`, `fig.maxk`, `fig.mdist`, and `Invariant.*`
+- `cell.str` / `unit_cell.str` route vs `READ_POSCAR` / `READ_POSCAR_UC` route
+- relationship between `cell.str` and `%block SuperCell`
+- Path B / method 6 handoff: `distortion.pos`, `distortion.MAGMOM`, `local_mode_PM.dat`, `distortion.ene_symbol`
+- transition from method-6 batch runs to `3.get_fitting_data`: `status.tsv`, `ene_symbol/<id>.ene_symbol`, numbering start, and `convert_info.txt`
+- `4.fit` keep/skip settings, lambda scan, dataset handoff, and fitting confirmation before submission
+- L3 run directories, stage `input/`, `runs/<run-id>/`, README-style directory contracts, and run-notes boundaries
+
+## Path A / Path B Naming Rules
+- Path A means PASP-forward sample generation from a confirmed shared basis, typically with `local_mode.cal_para_method = 1`, PASP-generated `ene_symbol`, and later external DFT energies paired back to those generated samples.
+- Path B means encoding already-existing final structures / magnetic states through method 6, typically with `local_mode.cal_para_method = 6`, per-sample `distortion.pos`, conditional `distortion.MAGMOM`, and a reusable same-basis `local_mode_PM.dat`.
+- If the target directory starts from a flat or external set of completed NCL-DFT results such as many `OUTCAR` / `OSZICAR` / `log` files, with no current-directory `0.generaterandomspin/`, `1.vaspncl/`, `ene_symbol/`, `vasp_MAGMOM/`, `3.get_fitting_data/`, or `4.fit/` chain, classify it as a Path B starting point, not Path A. Readiness may still be blocked until shared-basis inputs and `local_mode_PM.dat` exist, but do not rename the path to Path A because those prerequisites are missing.
+- Do not call a complete end-to-end L3 workflow "Path A" merely because it begins early at S0/S1. Path labels describe the sample / feature-generation branch, not how many stages remain.
+- Do not inspect server submission tooling, `subpasp*.sh`, `inspire`, or PASP executable paths before resolving S0 path classification. Submission readiness is later than path classification and cannot determine Path A vs Path B.
+
+## Meta Questions About Prior Routing
+- If the user asks why a previous answer classified the path as A/B, says the prior classification was wrong, or asks for a routing post-mortem, answer only the classification error and the corrected rule. Do not automatically proceed to S1, launch subagents, inspect files, or ask to continue the workflow unless the user explicitly requests execution after the explanation.
+- In such post-mortem answers, state the corrected path, the evidence that should have been used, the mistaken inference to avoid, and the next step only as an optional suggestion.
+
+## Include When Useful
+- current stage
+- current path (Path A / Path B)
+- settings adjustable at the current stage
+- what each setting controls
+- which items require reference before editing
+- what to check after editing
+
+## Runtime Hard Rules
+- When the user gives a target directory, path judgment must be grounded in that directory's own files and layout. Do not use sibling directories, other examples, or historical samples to override the target directory.
+- User authorization to use subagents only permits read-only fact collection. It does not confirm `Spin_values`, `fig.maxk`, `fig.mdist`, `Invariant.*`, SOC strategy, representative sites, or external task submission.
+- If Path A / Path B, the structure input route, or shared-basis prerequisites are not confirmed and the choice changes downstream file flow, state one tentative interpretation and immediately ask a short confirmation question. Do not first spend a long time checking, scripting, or generating formal inputs.
+- If the user only provides `POSCAR`, you may draft a clearly marked unconfirmed shared-basis `PASP.input` skeleton. Do not package it as confirmed formal input.
+- Before preparing a formal L3 shared-basis input, ask for and receive user confirmation for: magnetic elements, body order (`fig.maxk`), cutoff radius for each body order (`fig.mdist`, Bohr), `Invariant.power`, whether strain / phonon are included, whether SOC is included, the SOC retention strategy, and for Path A the sample generation plan (`local_mode.cal_para_method = 1` and `local_mode.nstr_random` or an equivalent sample-count choice). Do not use smoke-test values, template values, `OUTCAR` moments, or agent guesses as formal modeling parameters.
+- For a first Path A run with `local_mode.cal_para_method = 1`, do not insert a separate preliminary run whose only purpose is to obtain `local_mode_PM.dat`. Ask for the desired number of random configurations up front and prepare the single preflighted Path A run to generate samples / `ene_symbol` while naturally producing `local_mode_PM.dat` as a reusable output.
+- If SOC is included but the SOC retention strategy is not yet explicit, ask the user before doing structure analysis, scripting, or formal input generation. The required strategy includes which body orders to retain, the maximum SOC order for each retained body order / interaction type, and whether to retain all enumerated types or only selected types. Structure analysis may help map an already confirmed strategy to PASP indices, but it must not decide the strategy for the user.
+- If `Invariant.SOC T` is used for L3 shared-basis / interaction-basis generation, the first run must already include a reference-confirmed `%block local_mode.special_SOC`. Do not run once without `local_mode.special_SOC` and add it later for method-6, fitting, MC, or MD.
+- In `%block local_mode.special_SOC`, the second column is the PASP-enumerated interaction-type / atom-pair / atom-cluster index within the given body order. It is not an element id, species id, magnetic-element index, or `Z_values` order. Never reject rows such as `1 3 2`, `1 4 2`, or `1 5 2` merely because the structure has only two magnetic elements.
+- For body order `1`, the second column is still the PASP-enumerated one-body interaction-type index; it is not an element id and not a representative-site index from `local_mode.mode_definition`. If the user or a verified case says "keep the first 5 one-body second-order SOC terms", interpret that as `1 1 2` through `1 5 2`; do not ask whether it means two elements or five representative sites.
+- Do not switch `Invariant.SOC T` to `Invariant.SOC F` for a preliminary run just to enumerate `local_mode.special_SOC` indices. In an L3 SOC shared-basis task, unknown SOC interaction-type indices are a blocking input issue; use user-provided indices, existing same-basis SOC outputs, verified examples, or other checkable sources, otherwise stop before formal generation.
+- Phrases such as "continue", "implement the plan", "follow the plan", or "you decide" do not confirm shared-basis parameters. Unless the user has given all values explicitly or accepted a fully enumerated setting table, list the missing settings and wait; do not write formal input while asking.
+- Before writing, overwriting, promoting, or deriving a formal L3 `PASP.input`, verify every explicit field, block, `%include`, and dependent file format in that input against `../../knowledge/reference/` or a user-provided authoritative source. Keep a short field inventory with the reference used for each item. This is required for all fields, not only high-risk fields. If any item has no reference coverage, the input may only be a draft / candidate and must not enter formal `<stage>/input/`, `runs/<run-id>/`, or submission preparation.
+- Before writing `%block local_mode.mode_definition`, use `../../knowledge/reference/topics/symmetry_representative_sites.md` to identify symmetry-inequivalent representative sites for participating spin elements. Write x/y/z spin modes for each representative site. Do not directly enumerate all Gd/Mn magnetic atoms in `cell.str`, `POSCAR`, or a half cell.
+- If representative-site analysis is not complete, only output confirmation questions, a structure/symmetry analysis plan, or draft notes. Do not generate a `local_mode.mode_definition` that looks runnable.
+- Before promoting any L3 candidate input package to formal `<stage>/input/`, overwriting input, deriving `<stage>/runs/<run-id>/`, creating or editing submission scripts, preparing external task configuration, or submitting a job, run a read-only subagent stage preflight using `../pasp-verifier/skill.md` with `mode: input-preflight`. For L3, this is a hard dependency when subagent use has been authorized: the main agent must not replace it with local-only checking. If no read-only subagent is available despite authorization, the stage is blocked until the user explicitly waives this L3 hard gate. Preflight only returns pass / fail / blocked and evidence paths. It does not edit files or decide parameters.
+- The read-only subagent preflight must check both layers: (1) every explicit field, block, `%include`, dependent file format, and numbering rule in the candidate inputs matches `../../knowledge/reference/` or a user-provided authoritative source; (2) cross-file consistency is correct, including `PASP.input` includes, `cell.str` / `unit_cell.str` / `POSCAR_UC` axis and primitive/supercell relation, whether PASP `%block SuperCell` is absent or correctly used to expand `cell.str` rather than to map `unit_cell.str` to `cell.str`, Path A sample count / `local_mode.nstr_random` confirmation when `local_mode.cal_para_method = 1`, `Z_values` / species ids / `Spin_values`, `local_mode.mode_definition` coordinates and mode count, `local_mode.special_SOC` strategy and indices, and upstream-output provenance for later stages.
+- Formal shared-basis `PASP.input`, formal `<stage>/input/`, `<stage>/runs/<run-id>/`, submission scripts, submission commands, or external task configuration may only be generated after all of these exist: `USER_CONFIRMED_L3_SHARED_BASIS_PARAMS=true`, `REPRESENTATIVE_SITES_CONFIRMED=true`, `READ_ONLY_SUBAGENT_PREFLIGHT_DONE=true`, and `STAGE_PREFLIGHT_PASS=true`. `NO_SUBAGENT_PREFLIGHT_AVAILABLE=true` is not sufficient for L3 formal promotion, run derivation, or submission after the user has authorized subagents; it may only justify draft / candidate notes or a blocked report. If any required marker is missing, only ask for missing items or write draft / candidate files; do not proceed.
+- Before creating formal `4.fit/input/`, deriving `4.fit/runs/<run-id>/`, preparing submission, or submitting a fitting run, ask for and receive fitting-strategy confirmation. Record `USER_CONFIRMED_L3_FIT_SETTINGS=true`. The confirmation must cover dataset source/range, train/test/prediction split, lambda scan, `I_CHECK_DATA`, prediction data use, and keep/skip strategy. If the user does not specify a split, default to 90/10 over the available consecutive samples: `Ntrain=floor(0.9*N)`, `Ntest=N-Ntrain` (for 800 samples, use 720/80). A 0-row test/prediction set is still a user-confirmed fitting choice; do not decide it from templates, empty files, or silence. Disabling keep/skip (`I_HAVE_KEEP_TERM=0`, `I_HAVE_SKIP_TERM=0`) is also a user-confirmed fitting choice.
+- When summarizing `convert_info.txt`, describe line 3 as the primitive-cell multiplicity / energy normalization divisor for each DFT supercell, not as the primitive atom count. For a 32-atom `unit_cell.str` and 64-atom DFT `cell.str` / POSCAR, line 3 should be `2`, not `32`.
+- If `Fitting_Set_Term_Keep.txt` or `Fitting_Set_Term_Skip.txt` exists but the corresponding `I_HAVE_*` flag is 0, describe the file as inactive template residue or inactive context, not as a confirmed active setting.
+- After any L3 stage run completes and before outputs flow downstream, run output validation. If subagents are allowed or already authorized, prefer `pasp-verifier` `mode: output-validation` to check outputs, logs, failed samples, and handoff files; otherwise the main agent must run the same checklist locally and state that no subagent was used.
+- Directory inventory, VASP `results/` inventory, or script checks are not PASP input preflight. Preflight must name candidate input files and target stage, then check the relevant stage checklist. "A subagent inventoried the directory" cannot replace input-file review.
+- Runtime probes, external task creation, submission scripts, and submission preparation all happen after stage preflight pass. They are not substitutes for input preflight.
+- For method-6 batch scripts, do not apply generic Bash strict mode by default. Avoid global `set -u`, `set -euo pipefail`, or defensive shell frameworks unless the user explicitly asks for them and the environment scripts are known to support them. PASP/HPC environment setup often reads unset variables such as `LD_LIBRARY_PATH`; strict mode can stop before the sample loop and leave no useful per-sample evidence. Prefer a simple `for` loop with explicit required-file checks, `log.out`, `batch.log`, and `status.tsv`.
+- `0.shared_basis/input/` may only contain a formal input package that passed shared-basis readiness. If parameters or representative sites are not confirmed, do not put `PASP.input`, `subpasp*.sh`, or a README saying "Submit this directory" there. Drafts must go under `notes/`, `drafts/`, or explicitly named `*.draft` files.
+- `runs/<run-id>/` must be derived only from a preflighted formal `<stage>/input/`. Do not create a run directory "just to build the skeleton" when shared-basis parameters, representative sites, or preflight are missing.
+- Keep README / PROGRESS files current as stage gates, not as optional cleanup. The workflow root, each formal `<stage>/input/`, each `<stage>/runs/<run-id>/`, and batch sample-pool directories such as `path_b_inputs/` need concise documentation of `Status`, `File Roles`, `Upstream` / `Downstream`, `Gate Evidence`, and `Blocked / TODO`. Do not label a directory submit-ready, formal-input, validated-output, or handoff-ready unless the required gates have passed and the README / PROGRESS records that evidence.
+- After generation, self-check `%block local_mode.mode_definition`: the mode count must equal "number of symmetry-inequivalent representative sites x 3", and the line after the mode count must be the first mode definition with no blank line. If the mode count equals all participating magnetic atoms in `cell.str` / `POSCAR` x 3, that is not automatically wrong; however, there must be evidence that the structure is the primitive structure for mode definition and that all participating magnetic sites are inequivalent. Without this evidence, treat representative-site analysis as incomplete and stop formal input generation.
+- Before promoting a candidate shared-basis input package to formal `0.shared_basis/input/` or submission, run an independent read-only subagent shared-basis preflight through `pasp-verifier` `mode: input-preflight`. If subagent use has been authorized, this is mandatory and cannot be replaced by main-agent-only checking unless the user explicitly waives the L3 hard gate. Preflight does not decide physical parameters; it only checks confirmation records, reference-backed file formats, and cross-file input consistency.
+- Before creating, overwriting, or converting `cell.str`, `unit_cell.str`, or `POSCAR_UC`, check reference first: `topics/structure_from_poscar.md`, `files/cell.str.md`, `files/unit_cell.str.md`. Do not infer `unit_cell.str` from `cell.str`, and do not copy a supercell `POSCAR` or `cell.str` directly into `unit_cell.str`.
+- Before generating `POSCAR_UC`, `unit_cell.str`, a primitive cell, or axis reordering, use `pasp-verifier` `mode: structure-analysis` when subagent use has been authorized. The main agent must review the result before writing candidate files, and candidate files still require the mandatory read-only subagent stage preflight before any formal promotion, run derivation, or submission.
+- If automatic primitive reduction gives `POSCAR_UC` / `unit_cell.str` with axes inconsistent with current `POSCAR`, `cellabc`, or expected `SuperCell`, do not discard it solely because the axes differ. First attempt a rebase / mapping: report the primitive transform `T`, the supercell integer matrix `M`, determinant / volume ratio, species counts, and atom-mapping tolerance. Reorder lattice vectors and all atomic coordinates to the current workflow axes according to reference only when the mapping is unique. Do not invent an axis-preserving split such as "split along x/y/z" unless the mapping or the user confirms it; otherwise stop.
+- If an L3 workflow answer needs actual lookup in `skills/knowledge/reference/`, it is still a reference verification task. If the runtime requires explicit user authorization for subagents, ask before delegating this lookup through `pasp-verifier` `mode: reference-check`.
+- `../../knowledge/workflows/l3_effective_hamiltonian_run_notes.md` contains historical run observations only. Do not present its values as current workspace results unless the corresponding files exist in the user's target workspace.
+
+## Route To Reference When
+- The user asks for itemized explanations of `fig.maxk`, `Invariant.power`, or `local_mode.mode_definition`.
+- The user asks for fields or formats of `Fitting_Settings.txt`, `Fitting_Set_Lambda.txt`, `Fitting_Set_Term_Keep.txt`, or `Fitting_Set_Term_Skip.txt`.
+- The user asks module-definition questions about `effective_hamiltonian`.
+- The user asks for exact definitions of `Invariant.strain_power` or `Invariant.pure_strain_power`.
+- The user asks for exact formats of `Fitting_Dataset.txt` or `Fitting_Data_for_prediction.txt`.

@@ -40,6 +40,10 @@
 
 如果只有超胞 `POSCAR`、原胞信息缺失 → 不接受跳过原胞；按 `topics/structure_from_poscar.md` 推导 primitive 后再继续。
 
+`find_J_path_sym` 对 `cell.str` 的原子顺序有额外硬约束：`%block AtomicCoordinatesAndAtomicSpecies` 必须按第四列 `species_id` 分组并保持非递减顺序，即所有 species 1 原子连续写完，再写 species 2，依次类推。不要在把 `unit_cell.str` 或 POSCAR 扩成 supercell-style `cell.str` 时按 tile / unit-cell copy 输出 `Ni I I Ni I I ...` 这类交错顺序；应先生成全部坐标，再按 species id 分组输出，同时保留每个原子的正确坐标、species id、元素符号，以及有效唯一的 atom index / 映射说明。这里的检查对象是第四列读入的全局 `isa`，不是第六列 atom index。
+
+对多 species 的 `Model find_J_path_sym`，不要依赖 PASP 用非单位 `%block SuperCell` 从 primitive / 交错排序的 `cell.str` 自动扩胞，除非已经证明扩胞后的全局 `isa` 仍非递减。源码中的 `coor.F` 会按 cell copy 复制 `isa`，因此 primitive 顺序如 `1,2,2` 会扩成 `1,2,2,1,2,2...`，随后在 `find_J_path_sym` 入口触发 species-order stop。稳妥路线是直接把完整目标分析超胞写成 `cell.str`，按第四列 species id 分组，并在 `cell.str` 已经是目标超胞时让 `%block SuperCell` 保持单位阵。
+
 ### Pre-flight 3：subagent 授权与 L2 input-preflight 硬门禁
 
 如果当前任务包含以下任一项，且当前 runtime 支持子 agent，按 `pasp-orchestrator` 的授权规则向用户征求授权：
@@ -160,12 +164,14 @@ PASP **不**附带 POSCAR → cell.str 的官方转写脚本；这是用户侧�
 ### 修改后要检查什么
 
 - `cell.str` 的 `number_of_species` = `Z_values` 项数 = `Spin_values` 项数 = `magnetic_or_ligand` 项数
+- `cell.str` 的 `%block AtomicCoordinatesAndAtomicSpecies` 按 species id 分组且第四列非递减；任何 `1,2,2,1,2,2...` 或 `Ni I I Ni I I...` 这类 interleaved supercell 输出必须在运行前重排，否则 `find_J_path_sym` 会停止并报 `find_J_path_sym: species are not ordered!`
 - `cell.str` 中元素**首次出现顺序** = `Z_values` 顺序（前后不一致会让 `isaAB` 选错对象）
 - `isaAB` 两个值都在 `[1, number_of_species]` 内，且对应到用户想分析的元素
 - 非磁性元素在 `Spin_values` 中显式写 `0`（不是省略）
 - `magnetic_or_ligand` 中磁性原子写 `1`，配位原子写 `2`，其他写 `0`
 - `fig.mdist` 第一位为 `1`（占位，无物理含义），第二位起为各体数的截断（**单位 Bohr**，1 Bohr ≈ 0.529 Å）
 - `fig.mdist` 第二位（二体截断）应小于 `cell.str` 在最短方向上的最大原子间距，否则 PASP 会报错或给出不可信结果
+- 对多 species 的 `find_J_path_sym`，如果 `cell.str` 仍是 primitive 或按 unit-cell copy 排列的结构，不要用非单位 `%block SuperCell` 让 PASP 自动扩成目标分析超胞，除非已证明扩胞后的 `isa` 全局非递减。优先直接写完整目标超胞版 `cell.str`，按第四列 species id 分组；此时 `%block SuperCell` 通常保持单位阵。
 - 如果 `cell.str` 已经是大超胞，`%block SuperCell` 通常应保持单位阵；不要在已扩胞的 `cell.str` 之上再用非单位阵 SuperCell 重复扩胞
 
 ### 服务器实跑后应补录的信息
@@ -188,6 +194,10 @@ PASP **不**附带 POSCAR → cell.str 的官方转写脚本；这是用户侧�
 在把 Stage 1 候选输入包提升为正式 `input/`、覆盖既有正式 input、派生 `runs/<run-id>/`、创建或编辑 `run.sh` / 外部任务配置、或提交 PASP 前，必须先运行 `pasp-verifier` `mode: input-preflight` 的 read-only subagent 检查。
 
 给 verifier 的边界必须命名本 workflow 和目标 stage、候选 `cell.str` / `unit_cell.str` / `PASP.input`、用户对 `isaAB` / 标量或矩阵 J / 结构路线的确认、以及 Stage 1 reference-before-write 清单。verifier 只返回 pass / fail / blocked 与证据路径；它不能选择 `Spin_values`、`fig.mdist`、Sc POTCAR 策略，不能修改文件，不能创建 run 目录或提交任务。
+
+Stage 2 preflight 必须逐行读取候选 `cell.str` 的 `%block AtomicCoordinatesAndAtomicSpecies`，确认第四列 species id 按非递减顺序排列并按 species 分组。若看到 tile-by-tile 或 unit-cell-copy 顺序导致 species 交错，例如 `1,2,2,1,2,2...`，结论必须是 fail / blocked，要求先重排为 species 1 全部原子、species 2 全部原子……后再运行 PASP。
+
+如果候选 `PASP.input` 对多 species `find_J_path_sym` 使用非单位 `%block SuperCell`，preflight 还必须判断 `cell.str` 是否已经是完整目标分析超胞。若它仍是 primitive / unit-cell-copy 顺序，且无法证明 PASP 自动扩胞后的全局 `isa` 仍非递减，结论必须是 blocked：先生成完整目标超胞 `cell.str`、按 species id 分组，并把 `%block SuperCell` 改回单位阵或等价的不再扩胞设置。
 
 只有同时满足以下记录，才允许正式 input / run / submission 动作：
 
@@ -228,6 +238,8 @@ PASP **不**附带 POSCAR → cell.str 的官方转写脚本；这是用户侧�
 Stage 1 的完整输入包；**特别**依赖：
 
 - `cell.str` 的尺寸足够大，能容纳 `fig.mdist` 中给定的最大截断距离
+- `cell.str` 的原子坐标块已按 species id 分组且非递减；PASP 源码 `Latticemodel/src/J_path_sym.f90` 会在 `find_J_path_sym` 开始时检查该条件，失败时停止并报 `find_J_path_sym: species are not ordered!`
+- 多 species 输入没有依赖 PASP 从 primitive / interleaved `cell.str` 通过非单位 `%block SuperCell` 自动扩胞，除非已证明扩胞后的全局 `isa` 仍非递减；安全输入是完整目标超胞版 `cell.str` + species 分组 + identity `SuperCell`
 - `Z_values` 顺序与 `cell.str` 元素首次出现顺序一致
 - `Spin_values` / `magnetic_or_ligand` 项数等于 `number_of_species`
 
@@ -449,6 +461,12 @@ PASP 会在当前目录写大量 `pair_POS.NNN` / `atat.NNN_Y`，覆盖或夹杂
 
 `Spin_values` 必须有 `number_of_species` 项；漏掉一项会让 PASP 把后续 block 行当数值读，触发 Fortran list-directed I/O 错误。
 预防：每个非磁性元素显式写 `0`。
+
+### 坑 8：扩超胞时按 unit-cell copy 交错输出 `cell.str`
+
+症状：PASP 启动后立即停止并报 `find_J_path_sym: species are not ordered!`。
+原因：`find_J_path_sym` 要求 `cell.str` 的 `%block AtomicCoordinatesAndAtomicSpecies` 第四列 species id 非递减；如果从 `unit_cell.str` 扩成超胞时逐个 tile 输出 `Ni I I Ni I I ...`，species 顺序会从 2 回到 1，触发源码检查。同样，对多 species 输入，PASP 的非单位 `%block SuperCell` 自动扩胞也会在 `coor.F` 中按 cell copy 复制 `isa`，primitive 顺序 `1,2,2` 会变成 `1,2,2,1,2,2...`。
+预防：扩胞时先保留所有原子坐标和 species 信息，再按 species id 分组写出完整目标超胞版 `cell.str`：所有 species 1 原子、所有 species 2 原子、依次类推。第六列 atom index 虽不被 PASP 读取，但应保持有效唯一并与输出顺序或映射说明一致；当 `cell.str` 已经是目标超胞时，`%block SuperCell` 保持单位阵或等价不扩胞设置。
 
 ---
 

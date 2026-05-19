@@ -12,7 +12,7 @@
 - 整体入口与路由架构已经搭好
 - reference 已经有基础框架
 - Lecture 2 / Lecture 3 最接近“可直接使用”的标准，已经具备较完整的 workflow 文档、模板与脚本模板
-- Lecture 4–8 已经具备基础 workflow / subskill 覆盖，其中 L4 也已有 state machine 与 run-notes，但模板、脚本、调参护栏和 preflight 标准化还不如 L2 / L3 完整
+- Lecture 4–8 已经具备基础 workflow / subskill 覆盖，其中 L4 也已有 state machine 与 run-notes；后续重点是继续把 L4–L8 的模板、脚本、调参护栏和 preflight 标准化补到接近 L2 / L3 的完整度
 
 因此现在最需要的不是继续零散补文件，而是先明确：
 
@@ -149,52 +149,18 @@ workflow 可以告诉你“该看哪项”，但不应取代 reference 成为精
 ```text
 skills/
 ├── README.md
-├── DEVELOPMENT_GUIDE.md
 ├── SKILL.md
 ├── subskills/
 │   ├── pasp-orchestrator/
 │   ├── pasp-reference/
 │   ├── pasp-verifier/
-│   ├── workflow-l2-magnetic-effective-hamiltonian/
-│   ├── workflow-l3-effective-hamiltonian/
-│   ├── workflow-l4-monte-carlo/
-│   ├── workflow-l5-dynamics/
-│   ├── workflow-l6-ga-search/
-│   ├── workflow-l7-tight-binding/
-│   └── workflow-l8-spin-induced-polarization/
+│   └── workflow-*/
 └── knowledge/
     ├── workflows/
-    │   ├── l2_find_J_path_sym.md
-    │   ├── l2_find_J_path_sym_run_notes.md
-    │   ├── l2_overview.md
-    │   ├── l2_spin_lattice_interaction.md
-    │   ├── l2_spin_lattice_interaction_state_machine.md
-    │   ├── l2_spin_lattice_interaction_run_notes.md
-    │   ├── l2_magnon.md
-    │   ├── l2_magnon_state_machine.md
-    │   ├── l2_magnon_run_notes.md
-    │   ├── l3_effective_hamiltonian.md
-    │   ├── l3_effective_hamiltonian_state_machine.md
-    │   ├── l3_effective_hamiltonian_run_notes.md
-    │   ├── l4_monte_carlo.md
-    │   ├── l4_monte_carlo_state_machine.md
-    │   ├── l4_monte_carlo_run_notes.md
-    │   ├── l5_dynamics.md
-    │   ├── l6_ga_search.md
-    │   ├── l7_tight_binding.md
-    │   └── l8_spin_induced_polarization.md
     ├── templates/
-    │   ├── l2_find_J_path_sym/
-    │   ├── l2_Spin_lattice_interaction/
-    │   ├── l2_magnon_FM/
-    │   ├── l2_magnon_spiral/
-    │   ├── l3_invariant/
-    │   └── l3_fit/
     ├── scripts/
     └── reference/
 ```
-
-这棵树描述的是 canonical runtime skills package。安装脚本生成的 `.codex/`、`.claude/` 文件位于目标项目目录下，是平台入口 / wrapper，不是 `skills/knowledge/` 的替代知识源。
 
 ### 3.1 顶层入口 `SKILL.md`
 职责：
@@ -639,10 +605,8 @@ PASP workflow 往往包含较长的 reference 查询、用户目录盘点、日�
 平台安装层必须和这份契约分开：
 - Codex agent 注册文件是 `.codex/agents/pasp-verifier.toml`，使用 TOML 格式和 `sandbox_mode = "read-only"`。
 - Claude agent 注册文件是 `.claude/agents/pasp-verifier.md`，使用 frontmatter，例如 `tools: Read, Glob, Grep`。
-- Codex 项目级 skills 放在 `<target>/.codex/skills/`；`pasp-dev` 是指向 `<target>/skills/` 的入口 symlink，`pasp-verifier/SKILL.md` 是 thin wrapper。
-- Claude 项目级入口 skill 放在 `<target>/.claude/skills/pasp-dev`，也是指向 `<target>/skills/` 的入口 symlink。
-- `$HOME/.claude/skills/pasp-dev` 只属于 legacy user-scope state；安装脚本只检查、警告或在 `--force` 时移除它，不把它作为当前生成目标。
-- 这些 Codex / Claude 文件是平台入口 wrapper，不是 PASP runtime 知识源。
+- Codex 项目级 skills 放在 `.codex/skills/`，Claude 项目级 skill 入口放在 `.claude/skills/`；它们都是平台入口 wrapper，不是 PASP runtime 知识源。
+- `$HOME/.claude/skills/pasp-dev` 只是旧版 Claude 用户级入口。当前安装脚本只检查、警告或在 `--force` 时移除它，不把它作为新安装目标。
 
 不要手工维护多份 verifier 规则。新增 mode、修改输出格式或改变禁止事项时，先改 `skills/subskills/pasp-verifier/skill.md`，再更新 `scripts/install-pasp-skills.sh` 生成的 Codex / Claude wrapper，让 wrapper 继续引用 canonical 契约。默认使用安装脚本部署，不建议单独复制某一个 `.codex` 或 `.claude` 文件。安装脚本必须支持从源仓库直接运行，也支持把脚本单独复制到目标目录后运行；后者不能依赖脚本相对路径反推源仓库，必要时应通过 `--source` 或 `PASP_SKILLS_SOURCE` 指定源 PASPskills 仓库。
 
@@ -736,7 +700,7 @@ subagent 只汇报事实和局部判断，不输出最终用户答复。主 agen
 
 ## 12. 当前建议优先延续的标准
 
-Lecture 2 / Lecture 3 目前是最完整的可复用标准；Lecture 4–8 已有基础 workflow / subskill 覆盖，但仍需要按同一标准继续补齐模板、脚本、调参护栏、state machine、run-notes 和 preflight 细节。后续几个 workflow 建议尽量延续：
+Lecture 2 / Lecture 3 目前是最完整的可复用标准；Lecture 4–8 已有基础 workflow / subskill 覆盖，L4 已有 state machine 与 run-notes，但整体仍需要按同一标准继续补齐模板、脚本、调参护栏、preflight 细节，并为 L5–L8 评估是否需要补充 state machine / run-notes。后续几个 workflow 建议尽量延续：
 
 - workflow 文档不是只讲概念，而是要能指导实际执行
 - examples 中有复用价值的模板和脚本，应提炼到 `skills/knowledge/`

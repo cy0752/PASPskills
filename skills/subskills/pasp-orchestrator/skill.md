@@ -79,7 +79,7 @@ If the chosen workflow still has plausible internal paths, structure-input route
 - Do not skip this just because the request first went through workflow routing.
 
 ## Workflow Routing
-### 1. Magnetic effective Hamiltonian and linear spin-wave (L2)
+### 1. Spin-model workflows and linear spin-wave (L2)
 Route here when the user mentions:
 - inequivalent magnetic atom pairs
 - exchange path
@@ -93,7 +93,7 @@ Route here when the user mentions:
 - `magnon`, spin-wave energy along q-path
 - `spin_exchange.dat`, `spin3.in`
 
-Next file to read and follow: `../workflow-l2-magnetic-effective-hamiltonian/skill.md`
+Next file to read and follow: `../workflow-l2-spin-models/skill.md`
 
 ### 2. Effective Hamiltonian construction and fitting
 Route here when the user mentions:

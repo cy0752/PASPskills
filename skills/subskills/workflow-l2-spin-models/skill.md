@@ -1,9 +1,9 @@
 ---
-name: workflow-l2-magnetic-effective-hamiltonian
-description: Route between three independent magnetic-effective-Hamiltonian PASP Models — find_J_path_sym (inequivalent magnetic pair search + four-state DFT input handoff), Spin_lattice_interaction (PTMC + CG ground-state search), and magnon (linear spin-wave dispersion) — and guide each through its workflow doc.
+name: workflow-l2-spin-models
+description: Route between three independent L2 PASP spin-model workflows — find_J_path_sym (inequivalent magnetic pair search + four-state DFT input handoff), Spin_lattice_interaction (PTMC + CG ground-state search), and magnon (linear spin-wave dispersion) — and guide each through its workflow doc.
 ---
 
-This subskill covers three independent PASP `Model` values that share a common structural input layer (`cell.str`, `unit_cell.str`) and a common downstream data contract (`spin_exchange.dat` for the latter two), but otherwise have completely different stage chains, STOP gates, and outputs.
+This subskill covers three independent L2 spin-model PASP `Model` values that share a common structural input layer (`cell.str`, `unit_cell.str`) and a common downstream data contract (`spin_exchange.dat` for the latter two), but otherwise have completely different stage chains, STOP gates, and outputs.
 
 Do not collapse the three Models into one workflow. Each has its own workflow doc; this subskill only routes intent and enforces cross-Model contracts.
 
@@ -62,6 +62,8 @@ These apply only when the user's task has been routed to `find_J_path_sym`.
 - Before writing any field of `PASP.input`, `cell.str`, or `unit_cell.str`, consult the corresponding reference card. The reference index for this workflow is in `../../knowledge/workflows/l2_find_J_path_sym.md` § "Reference index for this workflow."
 - `Z_values`, `Spin_values`, and `magnetic_or_ligand` must each have exactly `number_of_species` entries. Non-magnetic species **must** explicitly take `0` in `Spin_values`; do not omit them.
 - `cell.str` element first-occurrence order must match `Z_values` order. If the user's `cell.str` is auto-generated from POSCAR or pymatgen, verify this after generation.
+- `find_J_path_sym` requires `cell.str` `%block AtomicCoordinatesAndAtomicSpecies` to be grouped by fourth-column `species_id` in nondecreasing order. The checked value is the fourth-column species id loaded into `isa`, not the optional sixth-column atom index. When expanding a primitive / unit-cell structure into a supercell-style `cell.str`, do not emit tile-by-tile interleaved atoms such as `Ni I I Ni I I ...`; group all species 1 atoms first, then species 2, and so on, while preserving correct coordinates, species ids, symbols, and valid atom indices / mapping.
+- For multi-species `find_J_path_sym`, do not rely on PASP non-identity `%block SuperCell` auto-expansion from a primitive or interleaved `cell.str` unless the expanded global `isa` order is proven nondecreasing. `coor.F` expands species by cell copy, so a primitive order like `1,2,2` can become `1,2,2,1,2,2...` and fail the `find_J_path_sym` entry check. The safe route is a complete target-supercell `cell.str`, grouped by fourth-column species id, with identity `SuperCell` when that file already is the intended analysis supercell.
 - The `find_J_path_sym` stage does not need its own state-machine file. Its mandatory gates are captured directly in Stage 2 of the workflow doc: read-only verifier input-preflight before run / submission actions, then the supercell convergence check after outputs exist.
 - `find_J_path_sym` does **not** consume `spin_exchange.dat` and does **not** write `spin3.in`. If the user mentions either file in connection with `find_J_path_sym`, they may actually be asking about the next Model (`Spin_lattice_interaction` or `magnon`); ask for clarification.
 - Output filenames (`J.POS`, `pair_POS.NNN`, `atat.NNN_Y`) and the `#@upup` / `#@updn` / `#@dnup` / `#@dndn` / `#@DM_*` log markers are confirmed against PASP source `Latticemodel/src/J_path_sym.f90` lines 194-350. Treat the contract as static unless a runtime observation contradicts it; in that case, record the discrepancy in `l2_find_J_path_sym_run_notes.md`.

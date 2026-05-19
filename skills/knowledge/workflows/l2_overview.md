@@ -1,4 +1,4 @@
-# L2 Overview: Magnetic Effective Hamiltonian
+# L2 Overview: Spin Models
 
 Lecture 2 contains three independent PASP `Model` values. They are related, but they are not one executable workflow.
 

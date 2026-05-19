@@ -130,6 +130,8 @@ Model find_J_path_sym
 #### 备注
 PASP 习惯上把 `cell.str` 提供的结构称为“晶胞”，经 `SuperCell` 得到的称为“超胞”。
 
+对多 species `Model find_J_path_sym`，不要把 primitive / interleaved `cell.str` 留给非单位 `SuperCell` 自动扩胞，除非已证明扩胞后的全局 `isa` 仍非递减。安全做法是把完整目标分析超胞直接写成 `cell.str`，按第四列 species id 分组；如果该 `cell.str` 已经是目标超胞，`SuperCell` 保持单位阵或等价不扩胞设置。
+
 ### 3.3 `%block Z_values`
 
 #### 含义
@@ -141,6 +143,8 @@ PASP 习惯上把 `cell.str` 提供的结构称为“晶胞”，经 `SuperCell`
 
 #### 注意
 元素顺序应与 `cell.str` 中原子坐标里各元素首次出现顺序一致，这样元素编号才能正确匹配。
+
+对 `Model find_J_path_sym`，还要确认 `cell.str` 的 `%block AtomicCoordinatesAndAtomicSpecies` 已按第四列 species id 分组且非递减；仅保证首次出现顺序正确不够。如果从原胞扩超胞时写成 `Ni I I Ni I I ...` 这类交错顺序，PASP 会停止并报 `find_J_path_sym: species are not ordered!`。
 
 #### 示例
 以 BiFeO3 为例：
@@ -278,6 +282,7 @@ MD.B_z 0.0d0
 - 也可以不单独写 `cell.str`，而把这些内容直接写进 `PASP.input`
 - 也支持用 POSCAR 代替，依赖 `READ_POSCAR T`
 - 如果当前只有 VASP `POSCAR`，先判断它是原胞还是超胞；结构准备方法见 `topics/structure_from_poscar.md`
+- `Model find_J_path_sym` 要求该结构中的原子坐标行按 species id 分组；生成或重排 `cell.str` 后，input preflight 应检查第四列是否非递减，并确认没有用非单位 `SuperCell` 从 primitive / interleaved `cell.str` 自动扩胞出会破坏全局 `isa` 顺序的多 species 结构。
 
 ### 4.2 `unit_cell.str`
 

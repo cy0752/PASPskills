@@ -2,6 +2,7 @@
 # 写入前请先查 reference：
 #   workflows/l2_find_J_path_sym.md     主 workflow（每字段的 reference 入口）
 #   topics/PASP.input.md                 读取规则、block 语法、%include 顺序
+#   files/cell.str.md                    find_J_path_sym 要求原子按 species id 分组
 #   params/Model.md                      合法 Model 值
 #   params/Z_values.md                   元素顺序
 #   params/Spin_values.md                数量必须等于 number_of_species
@@ -24,6 +25,7 @@ Model find_J_path_sym
 %endblock SuperCell
 
 # 元素原子序数。顺序必须与 cell.str 中元素首次出现顺序一致。
+# 对 find_J_path_sym，cell.str 原子坐标块还必须按 species id 分组且非递减。
 # 数量必须等于 cell.str 中的 number_of_species。
 %block Z_values
 28 53

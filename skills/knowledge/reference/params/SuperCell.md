@@ -27,11 +27,13 @@
 - 如果 `cell.str` 与 `unit_cell.str` 内容相同，只能说明当前提供的晶胞和原胞相同；这不等于用户的目标 DFT / 样本生成超胞就是 1×1×1
 - 在 L3 Path A 中，`SuperCell` 是目标样本 / DFT 结构规模的建模确认项。不要因为用户只提供了 `cell.str` 和 `unit_cell.str`，或两者相同，就自动省略 `SuperCell`
 - 对交换路径分析来说，超胞过小会导致较远近邻识别错误
+- 对多 species `Model find_J_path_sym`，不要依赖非单位 `SuperCell` 从 primitive / interleaved `cell.str` 自动扩胞，除非已证明扩胞后的全局 `isa` 仍非递减。PASP 会按 cell copy 复制 species id；primitive 顺序如 `1,2,2` 会扩成 `1,2,2,1,2,2...`，再被 `find_J_path_sym` 的 species-order 检查拒绝。安全路线是把完整目标分析超胞直接写入 `cell.str`，按第四列 species id 分组，并在该 `cell.str` 已是目标超胞时保持 identity `SuperCell`。
 
 ## 常见误区
 - 误以为 `SuperCell` 是基于 `unit_cell.str` 扩胞；实际是基于 `cell.str`
 - `cell.str` 已经扩过胞，但又在 `SuperCell` 中重复放大，导致体系规模失控
 - 在 L3 Path A 中把“输入文件未显式给出扩胞矩阵”误判为“用户不需要扩胞”；正确做法是确认目标 DFT 超胞矩阵、目标原子数或目标 POSCAR 规模
+- 在多 species `find_J_path_sym` 中把非单位 `SuperCell` 当成安全的 primitive 扩胞工具，却没有验证扩胞后的第四列 `isa` 全局仍按 species 分组
 
 ## 相关条目
 - `topics/PASP.input.md`

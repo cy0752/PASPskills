@@ -28,6 +28,8 @@
 - 用户必须替换为：
   - 真实的 `LatticeConstant`、`%block LatticeVectors`、`%block AtomicCoordinatesAndAtomicSpecies` 完整内容
   - 元素出现顺序需与 `PASP.input` 中 `Z_values` / `Spin_values` / `magnetic_or_ligand` 一致
+  - `AtomicCoordinatesAndAtomicSpecies` 必须按 species id 分组：全部 species 1、全部 species 2……；从原胞扩超胞时不要写成 `Ni I I Ni I I ...` 这类 tile-by-tile interleaved 顺序
+  - 对多 species `find_J_path_sym`，不要依赖非单位 `%block SuperCell` 从 primitive / interleaved `cell.str` 自动扩胞；安全模板用法是把完整目标分析超胞直接写进 `cell.str` 并按 species id 分组，此时 `SuperCell` 保持单位阵
 - 可参考 `pasp_examples/Lecture-2/find_J_path_sym/inputs/cell.str` 与 `cell.str_NiI2_5x5` / `cell.str_NiI2_6x6` 的实际格式
 - 详细字段定义见 `files/cell.str.md`
 
@@ -68,6 +70,8 @@
 ## 不要做的事
 
 - 不要把 `cell.str` / `unit_cell.str` 占位文件直接拿去跑
+- 不要把从 `unit_cell.str` 扩出的 supercell 原子按 tile 顺序交错写入 `cell.str`；`find_J_path_sym` 会要求 species id 非递减并在交错时停止
+- 不要在多 species `find_J_path_sym` 中把 primitive / interleaved `cell.str` 留给非单位 `%block SuperCell` 自动扩胞，除非已证明扩胞后的全局 `isa` 仍非递减
 - 不要在改 `Z_values` 元素时只改 `Z_values` 不改 `Spin_values` / `magnetic_or_ligand`
 - 不要把示例的 `fig.mdist 1 30` 直接套用到任意尺寸的 `cell.str`；30 Bohr ≈ 15.87 Å，过小或过大都需要按当前 `cell.str` 尺寸调整
 - 不要在 stage `input/` 中直接跑 PASP；按 workflow 文档的约定，在 `runs/<run-id>/` 中跑

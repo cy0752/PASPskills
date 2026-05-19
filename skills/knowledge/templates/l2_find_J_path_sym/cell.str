@@ -1,3 +1,4 @@
 # 最小参考骨架：请替换为你的实际分析超胞
 # 注意元素出现顺序应与 PASP.input 中的 Z_values / Spin_values / magnetic_or_ligand 保持一致
+# find_J_path_sym 要求 AtomicCoordinatesAndAtomicSpecies 按 species id 分组；扩超胞时不要输出 Ni I I Ni I I 这类交错顺序
 # 这里不提供具体晶体内容，只保留占位结构，避免误导直接拿去算

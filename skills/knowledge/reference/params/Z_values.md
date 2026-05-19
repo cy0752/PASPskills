@@ -20,6 +20,7 @@
 
 ## 注意事项
 - 顺序应与 `cell.str` 中各元素首次出现顺序一致
+- 对 `Model find_J_path_sym`，这条还不够：`cell.str` 的 `%block AtomicCoordinatesAndAtomicSpecies` 必须按 species id 分组且非递减。若原子行交错，先重排 `cell.str`，再确认 `Z_values` 顺序。
 - 元素顺序一旦错位，后续 `isaAB`、`Spin_values` 等都会跟着错位
 - 在 TB 模块中，这里通常不是填原子序数，而是填该元素所考虑轨道的电子数
 

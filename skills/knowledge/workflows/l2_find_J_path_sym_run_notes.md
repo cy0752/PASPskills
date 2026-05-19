@@ -97,6 +97,7 @@
 > 提炼出的稳定结论应当回写到主文档 `l2_find_J_path_sym.md`，本文件只保留这些结论的"运行证据"。
 
 - 2026-05-10 NiI2 5x5 run confirms the stable output filename pattern `J.POS`, `pair_POS.NNN`, and `atat.NNN_Y`.
+- A 2026-05 user report on PASP Compile Sat Sep 28 19:47:07 CST 2024 confirmed that `find_J_path_sym` stops with `find_J_path_sym: species are not ordered!` when a generated supercell-style `cell.str` interleaves species by unit-cell copy order (`Ni I I Ni I I ...`). Regrouping `%block AtomicCoordinatesAndAtomicSpecies` by species id allowed PASP to run normally. The stable contract has been curated into the main workflow and `cell.str` reference guidance.
 
 ---
 

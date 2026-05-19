@@ -24,7 +24,7 @@ skills/
 │   │   └── skill.md
 │   ├── pasp-verifier/
 │   │   └── skill.md
-│   ├── workflow-l2-magnetic-effective-hamiltonian/
+│   ├── workflow-l2-spin-models/
 │   │   └── skill.md
 │   ├── workflow-l3-effective-hamiltonian/
 │   │   └── skill.md
@@ -61,9 +61,35 @@ skills/
     │   └── l8_spin_induced_polarization.md
     ├── templates/
     │   ├── l2_find_J_path_sym/
+    │   │   ├── README.md
+    │   │   ├── PASP.input
+    │   │   ├── cell.str
+    │   │   └── unit_cell.str
     │   ├── l2_Spin_lattice_interaction/
+    │   │   ├── README.md
+    │   │   ├── PASP.input
+    │   │   ├── MC.input
+    │   │   ├── cell.str
+    │   │   ├── unit_cell.str
+    │   │   ├── spin_exchange.dat
+    │   │   ├── seed.in
+    │   │   └── run.sh
     │   ├── l2_magnon_FM/
+    │   │   ├── README.md
+    │   │   ├── PASP.input
+    │   │   ├── cell.str
+    │   │   ├── unit_cell.str
+    │   │   ├── spin_exchange.dat
+    │   │   ├── spin3.in
+    │   │   └── run.sh
     │   ├── l2_magnon_spiral/
+    │   │   ├── README.md
+    │   │   ├── PASP.input
+    │   │   ├── cell.str
+    │   │   ├── unit_cell.str
+    │   │   ├── spin_exchange.dat
+    │   │   ├── spin3.in
+    │   │   └── run.sh
     │   ├── l3_invariant/
     │   └── l3_fit/
     ├── scripts/
@@ -179,9 +205,9 @@ reference 知识库。
 
 ---
 
-## 3. 当前已支持的 7 个 workflow family
+## 3. 当前已支持的 7 个 workflow
 
-当前已接入的用户入口按 7 个 workflow family 组织；其中 L2 family 内部包含 `find_J_path_sym`、`Spin_lattice_interaction` 和 `magnon` 三条已整理的子流程：
+当前已接入的 workflow 如下：
 
 1. **分析交换路径并构建磁相互作用模型**
 2. **构建并拟合有效哈密顿量**
@@ -194,7 +220,7 @@ reference 知识库。
 对应的 workflow 知识文件位于：
 - `knowledge/workflows/l2_find_J_path_sym.md`：L2 三个 Model 中 `find_J_path_sym` 子流程
 - `knowledge/workflows/l2_find_J_path_sym_run_notes.md`：L2 find_J 历史实跑观察
-- `knowledge/workflows/l2_overview.md`：L2 三个磁有效哈密顿量 Model 的关系总览
+- `knowledge/workflows/l2_overview.md`：L2 三个 spin-model 子流程的关系总览
 - `knowledge/workflows/l2_spin_lattice_interaction.md`：L2 `Spin_lattice_interaction` PTMC / CG IO 骨架
 - `knowledge/workflows/l2_spin_lattice_interaction_state_machine.md`：L2 `Spin_lattice_interaction` STOP gate
 - `knowledge/workflows/l2_spin_lattice_interaction_run_notes.md`：L2 `Spin_lattice_interaction` 历史实跑观察
@@ -363,8 +389,6 @@ cd /path/to/target-project
 - `/path/to/target-project/.claude/agents/pasp-verifier.md`：read-only Claude verifier subagent 配置
 - `/path/to/target-project/.claude/skills/pasp-dev`：Claude 项目级入口 skill，软链接到工作目录的 `skills/`
 
-旧版安装可能留下 `$HOME/.claude/skills/pasp-dev`。当前安装脚本只把它作为 legacy user-scope entry 检查、警告，或在 `--force` 时移除；它不是新的 Claude 安装目标。
-
 如果目标目录已有旧版本，使用：
 
 ```bash
@@ -393,6 +417,8 @@ cd /path/to/target-project
 - `.claude/agents/pasp-verifier.md` 是 Claude 平台包装层。
 
 平台入口 / 包装层只负责暴露或导向 `skills/subskills/pasp-verifier/skill.md`，不要手工把 verifier 规则复制成多份长期维护。
+
+旧版安装可能留下 `$HOME/.claude/skills/pasp-dev` 这类 Claude 用户级入口；当前安装脚本只把它作为 legacy user-scope entry 检查、警告，或在 `--force` 时移除。新的 Claude 入口安装到目标项目的 `.claude/skills/pasp-dev`。
 
 ### 注意事项
 1. **保留目录层级不变**

@@ -77,6 +77,8 @@ Check:
 - high-risk settings have user confirmation or authoritative source evidence;
 - every explicit PASP input object has reference coverage or user-provided authoritative source coverage;
 - cross-file consistency, including structure basis, species ids, `Z_values`, `Spin_values`, `local_mode.mode_definition`, SOC strategy, sample numbering, upstream provenance, and stage-specific handoff files when relevant;
+- for `Model find_J_path_sym`, `cell.str` `%block AtomicCoordinatesAndAtomicSpecies` fourth-column `species_id` is grouped in nondecreasing order, so interleaved unit-cell-copy / tile-by-tile atom order is caught before PASP can stop with `find_J_path_sym: species are not ordered!`; the optional sixth-column atom index is not a substitute for this fourth-column `isa` order check;
+- for multi-species `Model find_J_path_sym`, any non-identity `%block SuperCell` is not being used to auto-expand a primitive or interleaved `cell.str` unless the caller provides evidence that the expanded global `isa` order remains nondecreasing; otherwise report blocked and require a complete target-supercell `cell.str` grouped by fourth-column species id, with identity `SuperCell` when `cell.str` is already the intended analysis supercell;
 - README, script names, directory names, or notes do not describe drafts / candidates as submit-ready formal inputs.
 
 Return only pass / fail / blocked with evidence paths and the minimum correction needed. Do not suggest physical parameter values.

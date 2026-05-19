@@ -141,7 +141,7 @@ skills/
 │   ├── pasp-orchestrator/
 │   ├── pasp-reference/
 │   ├── pasp-verifier/
-│   ├── workflow-l2-exchange-model/
+│   ├── workflow-l2-spin-models/
 │   ├── workflow-l3-effective-hamiltonian/
 │   ├── workflow-l4-monte-carlo/
 │   ├── workflow-l5-dynamics/
@@ -167,7 +167,7 @@ scripts/
 
 .claude/
 ├── agents/
-└── commands/
+└── skills/
 
 .agents/skills/
 └── Trellis / Codex 开发辅助 skills
@@ -252,7 +252,7 @@ Conclusion: pass | fail | blocked | not-applicable
 
 | 层级 | Workflow | 入口文件 | 知识文件 |
 |---|---|---|---|
-| L2 | 交换路径与磁相互作用模型 | `workflow-l2-exchange-model/skill.md` | `l2_exchange_model.md` |
+| L2 | 交换路径与磁相互作用模型 | `workflow-l2-spin-models/skill.md` | `l2_overview.md`, `l2_find_J_path_sym.md`, `l2_spin_lattice_interaction.md`, `l2_magnon.md` |
 | L3 | 有效哈密顿量构建与拟合 | `workflow-l3-effective-hamiltonian/skill.md` | `l3_effective_hamiltonian.md` |
 | L4 | Monte Carlo 模拟 | `workflow-l4-monte-carlo/skill.md` | `l4_monte_carlo.md` |
 | L5 | Dynamics 模拟 | `workflow-l5-dynamics/skill.md` | `l5_dynamics.md` |
@@ -366,6 +366,9 @@ Reference 的价值在于：当 agent 需要写入或解释某个具体字段时
 
 ```text
 skills/knowledge/templates/l2_find_J_path_sym/
+skills/knowledge/templates/l2_Spin_lattice_interaction/
+skills/knowledge/templates/l2_magnon_FM/
+skills/knowledge/templates/l2_magnon_spiral/
 skills/knowledge/templates/l3_invariant/
 skills/knowledge/templates/l3_fit/
 ```
@@ -416,7 +419,7 @@ scripts/install-pasp-skills.sh
 <target>/.codex/skills/pasp-verifier/    Codex verifier skill wrapper
 <target>/.codex/agents/pasp-verifier.toml Codex read-only subagent config
 <target>/.claude/agents/pasp-verifier.md Claude read-only subagent config
-~/.claude/skills/pasp-dev                Claude user skill symlink
+<target>/.claude/skills/pasp-dev         Claude project skill symlink
 ```
 
 默认行为：
@@ -425,12 +428,12 @@ scripts/install-pasp-skills.sh
 - `--copy` 可安装独立副本；
 - `--source` 或 `PASP_SKILLS_SOURCE` 可指定源仓库；
 - `--force` 用于覆盖旧安装；
-- `CLAUDE_SKILLS_DIR` 可用于测试时把 Claude skill 链接写到临时目录。
+- `CLAUDE_SKILLS_DIR` 只用于定位旧版 Claude 用户级入口，便于测试或清理 legacy user-scope entry。
 
 当前设计取舍：
 
 - Codex 通过目标项目下 `.codex/skills/pasp-dev` 识别；
-- Claude 通过用户级 `~/.claude/skills/pasp-dev` 识别；
+- Claude 通过目标项目下 `.claude/skills/pasp-dev` 识别；
 - Codex / Claude 的 verifier subagent 都指向同一个 canonical contract：`skills/subskills/pasp-verifier/skill.md`；
 - 避免在平台 wrapper 中复制完整 verifier 规则。
 
@@ -643,7 +646,7 @@ L2-L8 共 7 个 workflow，L3 最完整。
 ### 页 9：平台接入
 
 - Codex：`.codex/skills/pasp-dev`
-- Claude：`~/.claude/skills/pasp-dev`
+- Claude：`.claude/skills/pasp-dev`
 - Subagent：`.codex/agents` / `.claude/agents`
 
 ### 页 10：当前完成情况

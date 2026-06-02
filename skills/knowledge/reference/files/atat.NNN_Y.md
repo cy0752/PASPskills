@@ -2,9 +2,9 @@
 
 ## 文件作用
 
-`Model find_J_path_sym` 输出的 POSCAR 族，用于四态法 DFT 计算。
+`Model find_J_path_sym` 输出的 POSCAR 族，属于四态法 DFT 的 optional / advanced handoff。普通用户默认应使用 `J.POS` 作为 POSCAR，并从 `log.out` 追加对应状态的 `MAGMOM` / `M_CONSTR`；只有用户确认 Sc placeholder 与 POTCAR 策略时，才把 `atat.NNN_Y` 当作 VASP POSCAR。
 
-每个不等价 pair 产生 4 个文件，对应四态法的 4 种自旋固定组态（↑↑ / ↑↓ / ↓↑ / ↓↓）。文件命名约定：
+当 PASP 对某个不等价 pair 写出 advanced Sc-placeholder POSCAR 时，会为该 pair 产生 4 个文件，对应四态法的 4 种自旋固定组态（↑↑ / ↑↓ / ↓↑ / ↓↓）。并非每个 pair 都一定有 `atat.NNN_Y`；普通 DFT handoff 不能用 `npair × 4` 反推文件数量。文件命名约定：
 
 ```text
 atat.<NNN>_<Y>
@@ -20,14 +20,15 @@ atat.<NNN>_<Y>
 ## 何时产出
 
 - 仅由 `Model find_J_path_sym` 产出
-- 每个不等价 pair 产生恰好 4 个文件
-- 总数 = 不等价 pair 数 × 4
+- 仅对 PASP 内部判定需要写出 Sc-placeholder advanced POSCAR 的 pair 产生文件；当前源码审计中该路径对应 `SE_xc=3` 或 `SE_xc=4` 的 pair
+- 对每个被写出的 pair，产生 4 个文件（Y=1..4）
+- 总数 = 被写出 advanced POSCAR 的 pair 数 × 4，不一定等于不等价 pair 总数 × 4
 
 ---
 
 ## 何时使用
 
-- 作为四态法 DFT 计算的实际 VASP 输入 POSCAR
+- 可作为四态法 DFT 计算的 advanced VASP POSCAR，但不是普通默认路径
 - 与 `log.out` 中的 `MAGMOM` / `M_CONSTR` 行配套使用：每对 `atat.NNN_Y` 都有一行带 `#@upup` / `#@updn` / `#@dnup` / `#@dndn` 注释的初始磁矩或非共线约束行；`#@DM_*` 系列对应矩阵形式 J（含 SOC）的 M_CONSTR
 - 4 个状态的 DFT 总能量按四态线性组合（见 `topics/four_state_method.md`），即可得到该 pair 的交换参数
 
@@ -78,6 +79,7 @@ Direct                      # 第 7 行
 
 ## 注意事项
 
+- 普通 handoff 不需要读取或复制这些文件作为 POSCAR；用 `J.POS` + `log.out` 磁约束即可组织四个状态
 - 这 4 个文件的**几何结构完全相同**：所有原子的笛卡尔坐标都没动，只是给 pair 中两个原子换了元素标签并把它们移到对应元素的末尾。不要因为 `Y` 不同就以为它们是 4 种结构畸变
 - VASP 端 `POTCAR` 的拼接顺序**必须**严格按照 `atat.NNN_Y` 第 1 行元素符号顺序：`POTCAR_<元素1> + POTCAR_<元素2> + ... + POTCAR_Sc`。如果 4 个状态用同一个 POTCAR 顺序，需要在 `Y=1` 的 POTCAR 末尾也补一段（例如复制磁性元素 POTCAR 改名为 Sc）以保持顺序对齐——更稳妥的做法是为每个 `Y` 分别准备 POTCAR
 - Sc 的 POTCAR 来源是 DFT 端的责任。常见做法：把磁性元素的 POTCAR 复制一份用作 Sc，确保 4 个状态的 pair 原子使用相同价电子数与赝势设置；不要随便用真实 Sc 赝势，否则 pair 原子的物理性质会被 Sc 真实赝势污染
@@ -92,7 +94,7 @@ Direct                      # 第 7 行
 
 | 文件 | 关系 |
 |---|---|
-| `J.POS` | 结构基准；`atat.NNN_Y` 在它基础上替换部分元素标签 |
+| `J.POS` | 默认 POSCAR / 结构基准；`atat.NNN_Y` 只在 advanced 路线中在它基础上替换部分元素标签 |
 | `pair_POS.NNN` | 同一 pair 的可视化版本（VESTA 用）；不参与 DFT |
 | `log.out` 的 `#@upup` / `#@updn` / `#@dnup` / `#@dndn` 行 | 对应 `atat.NNN_1` / `_2` / `_3` / `_4` 的初始 `MAGMOM` |
 | `log.out` 的 `#@DM_up_up` / `#@DM_up_dn` / `#@DM_dn_up` / `#@DM_dn_dn` 行 | 矩阵形式 J 用的 `M_CONSTR` 行 |

@@ -66,9 +66,9 @@ J_ij,ab = ( E_ij,ab,↑↑ + E_ij,ab,↓↓ − E_ij,ab,↑↓ − E_ij,ab,↓�
 
 | 文件 / 输出 | 数量 | 内容 |
 |---|---|---|
-| `J.POS` | 1 | 一份与输入 cell 相同的 POSCAR，作为四态计算的结构基准 |
+| `J.POS` | 1 | 一份与输入 cell 相同的 POSCAR；普通 handoff 默认把它作为四态 DFT 的 POSCAR |
 | `pair_POS.NNN` | 每 pair 1 个 | 用于可视化：把 pair 中两个原子分别打成 `Z+25` 和 `Z+35` 的元素标记，便于在 VESTA 中直接看出哪两个是 pair 原子。**不直接给 VASP 用** |
-| `atat.NNN_Y` | 每 pair 4 个（Y=1..4） | 实际用于四态 DFT 计算的 4 个 POSCAR；命名规则见 `files/atat.NNN_Y.md` |
+| `atat.NNN_Y` | 仅对 PASP 内部写出 advanced Sc-placeholder POSCAR 的 pair 产生；每个被写出的 pair 有 4 个（Y=1..4） | 可选 advanced POSCAR 族，含 Sc placeholder；普通用户默认不要把它当作 POSCAR，也不要用 `npair × 4` 反推数量，命名规则见 `files/atat.NNN_Y.md` |
 | log.out 中的 MAGMOM 行 | 每 pair 4 行 | 共线或矩阵形式标量 J 的初始磁矩；带 `#@upup` / `#@updn` / `#@dnup` / `#@dndn` 注释 |
 | log.out 中的 M_CONSTR 行 | 每 pair 4 行 | 矩阵形式 J 用的非共线约束；带 `#@DM_up_up` / `#@DM_up_dn` / `#@DM_dn_up` / `#@DM_dn_dn` 注释 |
 
@@ -87,15 +87,16 @@ J_ij,ab = ( E_ij,ab,↑↑ + E_ij,ab,↓↓ − E_ij,ab,↑↓ − E_ij,ab,↓�
 
 ---
 
-## DFT 端用户必须自备的内容
+## DFT 端用户必须自备 / 确认的内容
 
 PASP `find_J_path_sym` **不**生成完整的 VASP 输入。下列由用户负责：
 
 | 文件 | 备注 |
 |---|---|
-| `INCAR` | 必须 `LSORBIT = .TRUE.` 与非共线磁矩 (`LNONCOLLINEAR = .TRUE.`)，并把 PASP log 中的 `MAGMOM` / `M_CONSTR` 行复制进来 |
-| `KPOINTS` | 用户根据收敛性自行决定 |
-| `POTCAR` | 关键：所有 `atat.NNN_Y` 中出现的元素都必须有对应 `POTCAR`。占位 Sc 通常用与磁性元素相同的赝势（即把磁性元素的 `POTCAR` 复制一份命名给 Sc 使用），或自备真实 Sc 赝势——具体取决于实验设计；在 PASP 端，Sc 仅作元素标记用，POTCAR 选择是 DFT 端的责任 |
+| `POSCAR` | 默认复制 `J.POS`；只有用户明确选择 advanced Sc-placeholder 路线时才使用 `atat.NNN_Y` |
+| `INCAR` | 必须由用户提供或逐项确认基础 DFT 设置；agent 只能把 PASP log 中对应状态的 `MAGMOM` / `M_CONSTR` 行追加进去，不能发明生产 INCAR 参数 |
+| `KPOINTS` | 用户根据收敛性自行决定并确认 |
+| `POTCAR` | 默认 `J.POS` 路线按 `J.POS` 元素行准备；advanced `atat.NNN_Y` 路线中所有出现的元素都必须有对应 `POTCAR`，包括占位 Sc。Sc 的赝势选择是 DFT 端责任，必须由用户确认 |
 
 ---
 

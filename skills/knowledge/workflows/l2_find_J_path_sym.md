@@ -224,7 +224,7 @@ Stage 2 preflight 必须逐行读取候选 `cell.str` 的 `%block AtomicCoordina
 | `PASP.used_info` | 1 | 实际生效的输入参数；用于核对 `Z_values` 等是否被默认值覆盖 |
 | `J.POS` | 1 | 与输入 cell 对应的 POSCAR；详见 `files/J.POS.md` |
 | `pair_POS.NNN` | 每个不等价 pair 1 份 | 把 pair 中两个原子打成 `Z+25` 和 `Z+35` 的可视化 POSCAR；不直接给 VASP 用 |
-| `atat.NNN_Y` | 仅对 PASP 内部判定为 `SE_xc=3` 或 `SE_xc=4` 的 pair 写 4 份（Y=1..4）；`SE_xc=1` 或 `SE_xc=2` 的 pair 不写 atat。npair 与 atat 数量的关系 **不是** 简单的 4:1（NiI₂ 5×5 实测 npair=31，但只 7 对 pair 写 atat = 28 个文件） | 四态法 DFT 实际用的 POSCAR；详见 `files/atat.NNN_Y.md` |
+| `atat.NNN_Y` | 仅对 PASP 内部判定为 `SE_xc=3` 或 `SE_xc=4` 的 pair 写 4 份（Y=1..4）；`SE_xc=1` 或 `SE_xc=2` 的 pair 不写 atat。npair 与 atat 数量的关系 **不是** 简单的 4:1（NiI₂ 5×5 实测 npair=31，但只 7 对 pair 写 atat = 28 个文件） | 可选 / advanced 的占位元素 POSCAR 族，含 Sc placeholder 与 POTCAR 风险；普通用户默认不要把它当作 VASP POSCAR |
 | `seed_used.in` | 1 | 实际使用的随机种子；`find_J_path_sym` 内基本无随机性影响，仅记录 |
 
 ### 待运行验证的依赖
@@ -245,7 +245,8 @@ Stage 1 的完整输入包；**特别**依赖：
 
 ### 下游去向
 
-- `J.POS` + `atat.NNN_Y` + `log.out` 中的 MAGMOM/M_CONSTR 块 → Stage 3 的四态 DFT 输入交接
+- 默认 handoff：`J.POS` 作为四态 DFT 的结构 POSCAR，`log.out` 中的 `MAGMOM` / `M_CONSTR` 块作为四个磁态约束 → Stage 3 的 DFT 输入交接
+- 可选 advanced handoff：只有用户明确接受 Sc placeholder / POTCAR 处理策略时，才考虑 `atat.NNN_Y` POSCAR 族
 - `log.out` 中近邻距离表 → 用户进行物理判断（哪些是有效近邻、哪些是超胞效应假象）
 
 ### 本阶段使用的脚本
@@ -286,14 +287,14 @@ Stage 1 的完整输入包；**特别**依赖：
 | `cell.str` 尺寸或 `%block SuperCell` 矩阵 | `params/SuperCell.md` + `files/cell.str.md` |
 | `fig.mdist` | `params/fig.mdist.md` |
 | 解读 `log.out` 中 MAGMOM / M_CONSTR 注释行的语义 | `topics/four_state_method.md` + `files/atat.NNN_Y.md` |
-| 出现意外的输出文件名 | 直接确认 PASP 版本；必要时回 `Latticemodel/src/J_path_sym.f90` 查实现 |
+| 出现意外的输出文件名 | 直接确认当前 run 的 PASP 版本和实际文件清单；先按当前目录事实标记为待运行验证差异并记录到 run notes。只有在开发 / 修订 skills 时才通过 `pasp-verifier` `mode: source-audit` 做源码审计，runtime agent 不要求用户或自己读取 PASP source |
 
 ### 修改后要检查什么
 
 - `log.out` 的 pair 列表数量与材料对称性的预期是否一致（例如 D3d 群 NiI₂ 在前 5 近邻范围内有约 5 个不等价 pair）
 - 各近邻 pair 的 `pair_dist` 是否与简单结构计算（晶格参数 × 几何系数）一致
-- `J.POS` 的原子总数 = `cell.str` 的 `NumberOfAtoms` × `det(SuperCell)`
-- 每个 pair 的 4 份 `atat.NNN_Y`：Y=1 内容应与 `J.POS` 完全一致；Y=2 / Y=3 应有 1 个 Sc 占位；Y=4 应有 2 个 Sc 占位
+- `J.POS` 的原子总数 = `cell.str` 的 `NumberOfAtoms` × `det(SuperCell)`；默认 DFT handoff 使用它作为 POSCAR
+- 如果用户明确走 advanced `atat.NNN_Y` 路线，再检查每个 pair 的 4 份 `atat.NNN_Y`：Y=1 内容应与 `J.POS` 完全一致；Y=2 / Y=3 应有 1 个 Sc 占位；Y=4 应有 2 个 Sc 占位
 - `pair_POS.NNN` 中 pair 原子的元素标记是否符合 `Z+25` / `Z+35` 规则（仅做合理性检查；该文件不直接进 VASP）
 - 如果同一 pair 在两种不同 supercell 下给出明显不同的近邻分组 → 还没有收敛，需要更大 supercell
 
@@ -310,7 +311,7 @@ Stage 1 的完整输入包；**特别**依赖：
 
 ## Stage 3：四态 DFT 输入交接
 
-把 Stage 2 输出的 `J.POS` / `atat.NNN_Y` / `log.out` MAGMOM 块，组织成完整 VASP 输入包，交付给用户的 DFT 流水线。
+把 Stage 2 输出的 `J.POS` 与 `log.out` 中的 MAGMOM / M_CONSTR 块，组织成完整 VASP 输入包，交付给用户的 DFT 流水线。默认不要把 `atat.NNN_Y` 当作普通用户的 POSCAR；它是含 Sc placeholder 的 advanced / internal 路线，只有用户确认 Sc 与 POTCAR 策略时才使用。
 
 > 这一阶段的产出**不是** PASP 输入，而是一份"DFT 计算清单 + 每对 pair 每状态的 VASP 输入目录蓝图"。具体的 VASP 计算是用户和 DFT 系统的事情。
 
@@ -319,12 +320,12 @@ Stage 1 的完整输入包；**特别**依赖：
 | 来源 | 文件 | 角色 |
 |---|---|---|
 | Stage 2 | `J.POS` | 结构基准 |
-| Stage 2 | `atat.NNN_Y`（NNN = pair index, Y = 1..4） | 每 pair 4 个 POSCAR |
+| Stage 2 | `atat.NNN_Y`（NNN = pair index, Y = 1..4） | 可选 advanced POSCAR 族；含 Sc placeholder，默认不作为普通 handoff |
 | Stage 2 | `log.out` 中 `#@upup` / `#@updn` / `#@dnup` / `#@dndn` 行 | 每 pair 4 行 MAGMOM（共线情形） |
 | Stage 2 | `log.out` 中 `#@DM_up_up` / `#@DM_up_dn` / `#@DM_dn_up` / `#@DM_dn_dn` 行 | 每 pair 4 行 M_CONSTR（矩阵 J / SOC 情形） |
-| 用户 | `INCAR` 模板 | 不包含 MAGMOM / M_CONSTR；这两项由 PASP 输出注入 |
-| 用户 | `KPOINTS` | 用户根据收敛性决定 |
-| 用户 | `POTCAR` | **关键**：必须包含 `atat.NNN_Y` 第 1 行所有元素的赝势，包括占位 Sc |
+| 用户 | `INCAR` 模板 | 用户提供或逐项确认的基础 INCAR；PASP 输出只负责注入 MAGMOM / M_CONSTR |
+| 用户 | `KPOINTS` | 用户根据收敛性决定；agent 不能替用户发明生产 k-mesh |
+| 用户 | `POTCAR` | 用户提供或确认；默认 `J.POS` 路线不需要 Sc，占位 Sc 只属于 advanced `atat.NNN_Y` 路线 |
 
 ### 当前阶段已知输出
 
@@ -333,8 +334,8 @@ Stage 1 的完整输入包；**特别**依赖：
 ```text
 runs/<dft-run-id>/
 ├── pair_001/
-│   ├── upup/         (POSCAR=atat.001_1, INCAR with #@upup MAGMOM, KPOINTS, POTCAR)
-│   ├── updn/         (POSCAR=atat.001_2, INCAR with #@updn MAGMOM, ...)
+│   ├── upup/         (POSCAR=J.POS, INCAR with #@upup MAGMOM or #@DM_up_up M_CONSTR, confirmed KPOINTS/POTCAR)
+│   ├── updn/         (POSCAR=J.POS, INCAR with #@updn MAGMOM or #@DM_up_dn M_CONSTR, ...)
 │   ├── dnup/
 │   └── dndn/
 ├── pair_002/
@@ -348,7 +349,7 @@ runs/<dft-run-id>/
 
 - 用户体系是否真的需要矩阵 J / SOC（决定 4 次 vs 36 次 per pair）
 - VASP 编译版本对 `LSORBIT = T` 的支持
-- POTCAR 中 Sc 是否使用磁性元素的赝势拷贝；不同体系可能需要不同处理
+- 若用户选择 advanced `atat.NNN_Y` 路线，POTCAR 中 Sc 是否使用磁性元素的赝势拷贝；不同体系可能需要不同处理
 
 ### 上游依赖
 
@@ -367,7 +368,8 @@ PASP **不**附带这部分脚本。用户侧的工作量包括：
 | 工作 | 工具 |
 |---|---|
 | 把 `log.out` 中带 `#@` 注释的 MAGMOM / M_CONSTR 行抽取出来并按 pair / Y 分发 | 用户 grep 或 awk 脚本 |
-| 把 4 个 atat.NNN_Y 与对应 INCAR 拼成 4 个 VASP 工作目录 | 用户写的 organizer 脚本 |
+| 默认：把 `J.POS` 复制为 4 个状态的 POSCAR，并把对应 `MAGMOM` / `M_CONSTR` 行追加到用户确认的 INCAR | 用户 grep / awk / organizer 脚本 |
+| 可选 advanced：把 4 个 `atat.NNN_Y` 与对应 INCAR 拼成 4 个 VASP 工作目录 | 仅在用户确认 Sc placeholder / POTCAR 策略后使用 |
 | 4 状态能量 → J 拟合 | 用户写的 J 拟合脚本（线性组合公式见 `topics/four_state_method.md`） |
 | 把若干 pair 的 J 汇总为 `spin_exchange.dat` | Stage 4（即 `Spin_lattice_interaction` 工作流的输入准备） |
 
@@ -376,13 +378,13 @@ PASP **不**附带这部分脚本。用户侧的工作量包括：
 ### 当前阶段可调整项
 
 - 是否做矩阵 J（含 SOC）：决定使用 MAGMOM 还是 M_CONSTR、4 次还是 36 次计算
-- POTCAR 中 Sc 的来源（拷贝磁性元素 POTCAR vs 真实 Sc POTCAR）
-- 4 个状态使用的 KPOINTS 与收敛参数（应保持一致以便差分）
+- 是否使用默认 `J.POS` handoff，还是用户明确选择 advanced `atat.NNN_Y` / Sc placeholder handoff
+- 4 个状态使用的 KPOINTS 与收敛参数（应由用户确认，并在四态间保持一致以便差分）
 
 ### 这些项控制什么
 
 - 标量 vs 矩阵 J：决定是否能描述各向异性、DM、Kitaev；决定计算量
-- Sc POTCAR 选择：直接影响 pair 原子的电子结构；用磁性元素拷贝可以保证 pair 原子物理一致，用真实 Sc 会引入电子数 / 价态错误
+- advanced `atat.NNN_Y` 路线的 Sc POTCAR 选择：直接影响 pair 原子的电子结构；用磁性元素拷贝可以保证 pair 原子物理一致，用真实 Sc 会引入电子数 / 价态错误。默认 `J.POS` 路线避免这个 placeholder 风险
 - KPOINTS 一致性：4 个状态间的能量必须可线性组合；不同 KPOINTS 会引入数值噪声
 
 ### 任务目标 → 推荐调整方向
@@ -398,7 +400,7 @@ PASP **不**附带这部分脚本。用户侧的工作量包括：
 
 | 写哪里 | 先查 |
 |---|---|
-| INCAR 中 MAGMOM / M_CONSTR 行 | `topics/four_state_method.md` |
+| INCAR 中 MAGMOM / M_CONSTR 行 | `topics/four_state_method.md`；只能追加到用户确认的基础 INCAR |
 | 处理 atat.NNN_Y 文件结构 | `files/atat.NNN_Y.md` |
 | 验证 J.POS 与 atat.NNN_Y 的关系 | `files/J.POS.md` |
 | 拼装 POTCAR 顺序 | `files/atat.NNN_Y.md` "注意事项" 段 + VASP 官方文档 |
@@ -407,11 +409,10 @@ PASP **不**附带这部分脚本。用户侧的工作量包括：
 
 ### 修改后要检查什么
 
-- POTCAR 元素顺序与 `atat.NNN_Y` 第 1 行**严格一致**（包括占位 Sc 的位置）
-- INCAR 中 MAGMOM / M_CONSTR 的原子总数 = `atat.NNN_Y` 中所有元素的原子计数之和
-- 所有 4 个状态的 KPOINTS、ENCUT、ISMEAR、SIGMA、IBRION、NSW 等均一致
-- 矩阵 J 情形：`LSORBIT = T`、`LNONCOLLINEAR = T`、ICHARG / LORBIT 等 SOC 兼容设置
-- 4 个状态都用了相同 `J.POS` 衍生的晶格（不要混用不同 supercell 的结果做线性组合）
+- 默认 `J.POS` 路线：4 个状态都使用同一份 `J.POS` 结构，只有 INCAR 中追加的 `MAGMOM` / `M_CONSTR` 行随状态变化
+- 基础 `INCAR`、`KPOINTS`、`POTCAR` 已由用户提供或确认；所有 4 个状态的 KPOINTS、ENCUT、ISMEAR、SIGMA、IBRION、NSW 等均一致
+- 矩阵 J 情形：NCL / SOC 相关 INCAR 设置必须由用户确认，agent 只追加 PASP 生成的 `M_CONSTR`
+- advanced `atat.NNN_Y` 路线：POTCAR 元素顺序与 `atat.NNN_Y` 第 1 行严格一致（包括占位 Sc 的位置），且 INCAR 中 MAGMOM / M_CONSTR 的原子总数 = `atat.NNN_Y` 中所有元素的原子计数之和
 - 用 `topics/four_state_method.md` 的线性组合公式核对：`J = (E_↑↑ + E_↓↓ - E_↑↓ - E_↓↑) / (4 S²)` 数值是否合理（先看符号；铁磁基态下 J 应为负）
 
 ### 服务器实跑后应补录的信息
@@ -445,12 +446,12 @@ PASP **不**附带这部分脚本。用户侧的工作量包括：
 ### 坑 4：把 Sc 真实赝势用作占位
 
 PASP 用 Sc 只是元素标记；如果 POTCAR 用了真实 Sc，pair 原子的化学环境会被严重污染。
-预防：默认把磁性元素的 POTCAR 复制一份命名为 Sc 用；除非有充分理由用真实 Sc。
+预防：普通 handoff 默认使用 `J.POS` + `log.out` 的 `MAGMOM` / `M_CONSTR`，避免引入 Sc placeholder；只有用户明确选择 advanced `atat.NNN_Y` 路线时，才讨论 Sc POTCAR，并要求用户确认是复制磁性元素 POTCAR、真实 Sc POTCAR 还是其他策略。
 
 ### 坑 5：把 `pair_POS.NNN` 误传给 VASP
 
 `pair_POS.NNN` 是可视化文件，元素被打上 `Z+25` / `Z+35`，VASP 读了会找不到对应 POTCAR。
-预防：VASP 端只用 `atat.NNN_Y`；`pair_POS.NNN` 只用 VESTA 看。
+预防：VASP 端默认用 `J.POS` 作为结构 POSCAR，并从 `log.out` 追加对应状态的 `MAGMOM` / `M_CONSTR`；`pair_POS.NNN` 只用 VESTA 看。`atat.NNN_Y` 只在用户确认 advanced Sc-placeholder 路线时使用。
 
 ### 坑 6：在 stage `input/` 中跑导致输出污染
 

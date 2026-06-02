@@ -20,7 +20,8 @@
 
 ## 何时使用
 
-- 作为四态法 DFT 计算的**结构基准**：所有 `atat.NNN_Y` POSCAR 的晶格、原子总数、原子顺序与 `J.POS` 完全一致；只有 pair 中两个原子的元素标签会因 `Y` 不同而切换为 Sc（Z=21）
+- 作为四态法 DFT 计算的默认结构 POSCAR：普通 handoff 使用同一份 `J.POS` 配合 `log.out` 中每个 pair / 状态的 `MAGMOM` 或 `M_CONSTR` 行；所有状态的几何结构保持一致
+- 作为 advanced `atat.NNN_Y` 路线的结构基准：`atat.NNN_Y` 的晶格、原子总数和几何坐标来自 `J.POS`，但其中部分 pair 原子会改成 Sc placeholder 并改变元素分组
 - 当 `atat.NNN_Y` 文件因为占位 Sc 让 VASP 端文件管理变复杂时，可以以 `J.POS` 为参考确认正确的原子总数和坐标顺序
 - 当用户后续要把不同 `i, j` pair 的四态结果汇总回 PASP 时，可以用 `J.POS` 验证 `Spin_values` / `Z_values` / `cell.str` 的一致性
 
@@ -52,8 +53,9 @@ Direct                      # 第 7 行：坐标格式（PASP 总是写 Direct =
 - `J.POS` 的晶格 = `cell.str × SuperCell`，不等于 `cell.str` 本身。如果 `%block SuperCell` 不是单位阵，`J.POS` 会比 `cell.str` 更大；`pair_POS.NNN` 与 `atat.NNN_Y` 的晶格也会跟着是这个扩胞后的尺寸
 - `Z_values` 中的元素顺序如果与 `cell.str` 中元素首次出现顺序不一致，会被 PASP 内部统一；最终 `J.POS` 中元素的顺序以这个统一后的顺序为准
 - 如果上一次运行残留了旧的 `J.POS`，新运行会**覆盖**它；多次运行不会自动归档
-- POTCAR 的元素顺序必须与 `J.POS`（以及由它衍生的 `atat.NNN_Y`）的第 1 行一致；不一致会导致 VASP 报错或赝势错配
-- 不要直接把 `J.POS` 当作 VASP 的最终 POSCAR 用：实际四态计算用的是 `atat.NNN_Y`，这些文件比 `J.POS` 多了占位 Sc
+- 默认 `J.POS` 路线中，POTCAR 的元素顺序必须与 `J.POS` 第 1 行一致；不一致会导致 VASP 报错或赝势错配
+- 不要把 `J.POS` 当成完整 VASP 输入：它只提供 POSCAR，`INCAR` / `KPOINTS` / `POTCAR` 必须由用户提供或确认，`MAGMOM` / `M_CONSTR` 从 `log.out` 对应状态追加
+- `atat.NNN_Y` 是可选 advanced 路线，不是普通 handoff 的默认 POSCAR；选择它时必须额外处理 Sc placeholder 和 POTCAR 风险
 
 ---
 

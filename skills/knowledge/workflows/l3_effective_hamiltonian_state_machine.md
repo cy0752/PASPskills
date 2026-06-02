@@ -84,7 +84,7 @@
 - `%block fig.mdist` 每个体数的 Bohr 截断。
 - `Invariant.power`、`Invariant.strain_power`、`Invariant.pure_strain_power`。
 - 是否只做纯自旋，还是包含 strain / phonon / 其他自由度。
-- 是否考虑 SOC；若考虑，SOC / DMI / 各向异性保留策略。
+- 是否考虑 SOC；若考虑，是否使用默认完整 SOC 枚举，或是否需要显式限制 / 优先保留某些 SOC / DMI / 各向异性项。只有后一种情况才需要确认 `local_mode.special_SOC` 策略。
 - `local_mode.mode_definition` 的代表点位来源。
 - `POSCAR` / `cell.str` 是否为用于定义模式的原胞/primitive，或是否需要 `POSCAR_UC` / `unit_cell.str`。
 - Path A 样本生成和后续 DFT 使用的目标超胞：确认 `cell.str` 本身是否已经是目标 DFT 超胞；若不是，确认 `%block SuperCell` 矩阵、目标原子数或目标 POSCAR 规模。不能因为 `cell.str = unit_cell.str` 或用户只提供了这两个文件就默认不扩胞。
@@ -269,6 +269,7 @@ S6 才允许：
 通过后记录：
 - `STAGE_OUTPUT_VALIDATION_PASS=true`
 - 目标 run、关键输出文件、日志路径和下游 handoff 文件。
+- 若下游目标是 L5 dynamics，还必须记录 `L3_TO_L5_HANDOFF_READY=true` 或明确 blocked / TODO，并在 README / PROGRESS 中列出：L3 run id、`local_mode_PM.dat`、拟交给 L5 的 fitted-parameter file（例如 runtime-validated `J_best.dat` 或等价选择记录）、结构 route、`SuperCell`、`Z_values`、`Spin_values`、mode definition、mass definition 来源、fitting dataset / settings provenance、same-basis 检查结论，以及 L3 不提供的 first-stage `amp_local_mode.in`、`Zeff.dat`、production dynamics settings 和 run-environment gaps。
 
 fail 或 blocked 时，不得把结果交给下游 MC / MD / fitting / analysis；只能输出阻断原因、证据路径和需要重跑或人工确认的项。
 
@@ -280,7 +281,7 @@ S7 完成后必须更新 run README / PROGRESS：记录 output validation 结论
 - reference / 用户来源必须校验“候选值本身”的定义是否正确，不能只检查候选 `PASP.input` 与 `shared_basis_confirmed.md`、README 或 agent 自己写的确认表是否一致。若确认表中的字段值没有可复查 reference 或用户原始指令支撑，该字段仍为 unverified，preflight 必须 fail / blocked。
 - 对 `Z_values` 必须明确检查其含义是当前非 TB 任务中的元素数值标签（通常为原子序数），而不是 `species_id`、元素顺序号或 `local_mode.mode_definition` 中的类型编号；同时检查顺序是否与 `cell.str` / 结构文件中的元素首次出现顺序一致。
 - 是否存在用户回答或逐项设置表，证明 `Spin_values`、`fig.maxk`、`fig.mdist`、`Invariant.*`、SOC / DMI / 各向异性策略不是 agent 自己代填。
-- 如果用户已要求考虑 SOC、DMI 或各向异性，preflight 必须确认 `Invariant.SOC` 与 `local_mode.special_SOC` 策略已经被显式处理。若用户尚未明确 SOC 保留策略，必须先问用户：保留哪些几体、每个几体 / interaction type 的 SOC 最高阶数、保留全部枚举类型还是只保留特定类型；不得先用结构分析、脚本或 agent 判断替用户决定策略。若 `Invariant.SOC T`，第一次生成 shared-basis / interaction basis 的运行必须已经包含 reference-confirmed 的 `%block local_mode.special_SOC`；不得先用缺少 `local_mode.special_SOC` 的 SOC 输入运行，再在 method-6、拟合、MC 或 MD 阶段补加。若缺少已确认策略对应的相互作用类型编号，必须在首跑前 blocked，并先通过用户确认、已有同基底 SOC 输出、已有 interaction-type 清单、已验证案例或允许的预分析获得编号；预分析只能把用户已确认的策略映射到 PASP 编号，不能替用户选择保留哪些 SOC 项。不得把 `Invariant.SOC T` 改成 `Invariant.SOC F` 做 preliminary run 来枚举后续 SOC 首跑所需编号。`local_mode.special_SOC` 的首行只应等于后续实际读取的显式设置行数；不要为了“其余不要”自动枚举所有未保留类型并写 `0`，除非用户或已有案例明确要求完整枚举。`local_mode.special_SOC` 第二列是 PASP 枚举出的当前几体 interaction type / 原子对 / 原子簇编号，不是元素编号、species id、磁性元素序号或 `Z_values` 顺序号；即使第一列为 `1`，第二列也不是元素编号或 `local_mode.mode_definition` 代表点位编号。若用户或已验证案例说“保留前 5 个单体二阶项”，应解释为 `1 1 2` 到 `1 5 2`，不要再追问它是两个元素还是五个代表点位。不得因为体系只有 2 个磁性元素就判定 `1 3 2`、`1 4 2`、`1 5 2` 等行多余或对应非磁性元素。
+- 如果用户已要求考虑 SOC、DMI 或各向异性，preflight 必须确认 `Invariant.SOC` 设置已经由用户确认；`local_mode.special_SOC` 只在用户明确要求限制 / 优先保留特定 SOC 项、按 interaction type 截断 SOC 阶数，或另一个已确认工作流条件要求显式限制时才需要处理。若用户接受默认完整 SOC 枚举，不得因为缺少 `%block local_mode.special_SOC` 而 blocked。若用户要求显式 SOC 保留策略但尚未明确，必须先问用户：保留哪些几体、每个几体 / interaction type 的 SOC 最高阶数、保留全部枚举类型还是只保留特定类型；不得先用结构分析、脚本或 agent 判断替用户决定策略。若缺少已确认限制策略对应的相互作用类型编号，必须在写入该限制 block 前 blocked，并先通过用户确认、已有同基底 SOC 输出、已有 interaction-type 清单、已验证案例或允许的预分析获得编号；预分析只能把用户已确认的策略映射到 PASP 编号，不能替用户选择保留哪些 SOC 项。不得把 `Invariant.SOC T` 改成 `Invariant.SOC F` 做 preliminary run 来枚举后续限制 block 所需编号。`local_mode.special_SOC` 的首行只应等于后续实际读取的显式设置行数；不要为了“其余不要”自动枚举所有未保留类型并写 `0`，除非用户或已有案例明确要求完整枚举。`local_mode.special_SOC` 第二列是 PASP 枚举出的当前几体 interaction type / 原子对 / 原子簇编号，不是元素编号、species id、磁性元素序号或 `Z_values` 顺序号；即使第一列为 `1`，第二列也不是元素编号或 `local_mode.mode_definition` 代表点位编号。若用户或已验证案例说“保留前 5 个单体二阶项”，应解释为 `1 1 2` 到 `1 5 2`，不要再追问它是两个元素还是五个代表点位。不得因为体系只有 2 个磁性元素就判定 `1 3 2`、`1 4 2`、`1 5 2` 等行多余或对应非磁性元素。
 - `Spin_values` 的数值个数是否等于 `number_of_species` / `Z_values` 元素数；非磁性元素也必须有显式 `0`。
 - `local_mode.mode_definition` 是否基于用户提供或对称性分析得到的不等价代表点位。
 - 单原子 spin mode 的第一行是否全部为 `1 spin`，species id 是否写在下一行；不得把 species id 写到 `spin` 前面。
@@ -289,6 +290,7 @@ S7 完成后必须更新 run README / PROGRESS：记录 output validation 结论
 - `cell.str`、`unit_cell.str`、`POSCAR_UC` 是否处在同一轴向约定；若 PASP `%block SuperCell` 出现，确认它是否确实表示在 `cell.str` 基础上继续扩胞。
 - 对 Path A shared-basis，是否存在用户确认的目标 DFT / 样本超胞设置；若候选输入省略 `%block SuperCell`，preflight 必须确认用户明确接受 1×1×1 作为目标样本 / DFT 规模，而不是由 agent 从文件存在性自动推断。
 - 对 Path A `local_mode.cal_para_method = 1`，是否存在用户确认的 `local_mode.nstr_random` / 样本数；若候选输入只为了生成 `local_mode_PM.dat` 而没有生成样本计划，preflight 必须 blocked，并返回 S2 询问样本数。
+- 对 `Model Invariant` shared-basis / interaction-basis 运行，preflight 必须记录计划使用的进程数。默认应为单进程；若使用 MPI，必须有当前 PASP build 和当前工作流分支的 MPI-safe 证据，否则结论为 blocked 或至少明确警告。若候选输入包含 `%block local_mode.special_SOC`，MPI 视为不安全，除非已经有该 special-SOC 路径的显式验证证据。
 - 输入文件之间的相关性是否正确：`PASP.input` 中的 `%include` 是否真实存在并指向同一套结构基准；`cell.str` / `unit_cell.str` / `POSCAR_UC` 是否满足同一 primitive-supercell 映射；PASP `%block SuperCell` 是否没有被误用为 `unit_cell.str -> cell.str` 的关系矩阵；`local_mode.mode_definition` 坐标是否与当前结构坐标系一致；`Z_values`、species id、`Spin_values`、SOC 设置和上游产物来源是否属于同一数据链。类似 `unit_cell.str` 轴向或坐标顺序错误必须 fail / blocked，不能靠提交试跑发现。
 - 对 `unit_cell.str` / `cell.str` 的映射检查，可使用 `skills/knowledge/scripts/l3_effective_hamiltonian/rebase_unit_cell.py --relation ...` 做只读验证。这里的 `--relation` 只表示 unit-cell 到 `cell.str` 的验证关系，不是 PASP `%block SuperCell`。若需要重排轴向，该脚本必须在已有用户确认、read-only structure subagent 结论或其他可核查映射来源后使用，并且必须同步处理基矢和原子坐标；不能只旋转 cell 而不旋转后续坐标。
 - README、提交脚本、目录名是否把仍有待确认项的候选输入包装成可提交正式输入。
@@ -334,7 +336,8 @@ subagent 不能：
 2. 高风险参数是否有用户确认或明确来源；必须核对来源是否证明候选值本身正确，不能只核对候选输入与 agent 自写确认表一致。
 3. local_mode / 代表点位 / 编号 / 结构轴向 / 上游产物链路是否自洽。
 4. README、脚本、目录名是否把草稿包装成可提交正式输入。
-5. 对 `Z_values`，确认它不是 species_id / 元素顺序号；对 SOC 请求，确认 `Invariant.SOC` 与 `local_mode.special_SOC` 是 pass、fail 还是 blocked。
+5. 对 `Z_values`，确认它不是 species_id / 元素顺序号；对 SOC 请求，确认 `Invariant.SOC` 是否已确认、`local_mode.special_SOC` 是否未请求 / 已请求并通过 / blocked。
+6. 对 `Model Invariant` shared-basis / interaction-basis 运行，确认计划进程数；若要 MPI，说明 MPI-safe 证据，且包含 `local_mode.special_SOC` 时默认 blocked。
 
 只输出 pass / fail / blocked、证据路径、阻断原因和最小修正建议。
 ```

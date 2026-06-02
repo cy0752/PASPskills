@@ -56,7 +56,12 @@ skills/
     │   ├── l4_monte_carlo_state_machine.md
     │   ├── l4_monte_carlo_run_notes.md
     │   ├── l5_dynamics.md
+    │   ├── l5_dynamics_state_machine.md
+    │   ├── l5_dynamics_user_checklist.md
+    │   ├── l5_dynamics_run_notes.md
     │   ├── l6_ga_search.md
+    │   ├── l6_ga_search_state_machine.md
+    │   ├── l6_ga_search_run_notes.md
     │   ├── l7_tight_binding.md
     │   └── l8_spin_induced_polarization.md
     ├── templates/
@@ -91,6 +96,10 @@ skills/
     │   │   ├── spin3.in
     │   │   └── run.sh
     │   ├── l3_invariant/
+    │   │   ├── README.md
+    │   │   ├── PASP.input
+    │   │   ├── cell.str
+    │   │   └── unit_cell.str
     │   └── l3_fit/
     ├── scripts/
     │   └── l3_effective_hamiltonian/
@@ -234,7 +243,12 @@ reference 知识库。
 - `knowledge/workflows/l4_monte_carlo_state_machine.md`：L4 MC / PTMC / CG 运行门禁与 STOP 状态机，必须先于长 workflow 使用
 - `knowledge/workflows/l4_monte_carlo_run_notes.md`：L4 Lecture-4 examples 历史观察、输出家族和 reference gap 线索，不是当前目录事实
 - `knowledge/workflows/l5_dynamics.md`
+- `knowledge/workflows/l5_dynamics_state_machine.md`：L5 dynamics / generic new-material / Cr2O3 SLD / BaTiO3 electric hysteresis 运行门禁与 STOP 状态机，必须先于长 workflow 使用
+- `knowledge/workflows/l5_dynamics_user_checklist.md`：L5 dynamics 用户侧快速 checklist，覆盖 generic new-material、Cr2O3 和 BaTiO3 分支，不替代状态机和 reference-before-write 规则
+- `knowledge/workflows/l5_dynamics_run_notes.md`：L5 Lecture-5 Cr2O3 / BaTiO3 examples 历史观察、输出家族和 reference gap 线索，不是当前目录事实
 - `knowledge/workflows/l6_ga_search.md`
+- `knowledge/workflows/l6_ga_search_state_machine.md`：L6 GA / random-spacegroup / perturbation / magnetic / restart / constrained search 运行门禁与 STOP 状态机，必须先于长 workflow 使用
+- `knowledge/workflows/l6_ga_search_run_notes.md`：L6 Lecture-6 examples、historical output 和 source-audit 观察，不是当前目录事实
 - `knowledge/workflows/l7_tight_binding.md`
 - `knowledge/workflows/l8_spin_induced_polarization.md`
 

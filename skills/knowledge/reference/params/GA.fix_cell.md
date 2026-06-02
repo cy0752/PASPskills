@@ -4,7 +4,7 @@
 用于设置是否固定晶胞。
 
 ## 默认值
-T
+F
 
 ## 取值
 T/F
@@ -13,6 +13,7 @@ T/F
 - 当使用 `3.1.8 全局结构搜索常用设置项` 相关功能并需要设置 `GA.fix_cell` 时。
 
 ## 注意事项
+- Source audit found the runtime default is `.FALSE.`. When `GA.fixlattice = T`, PASP forces `GA.fix_cell = T`; otherwise do not assume the cell is fixed unless the current input or user-confirmed setting says so.
 - 修改前应确认当前 workflow 阶段确实需要该设置，不要用参数调整掩盖结构或文件依赖错误。
 - 若涉及精确行格式或复杂示例，应回到来源章节核对。
 

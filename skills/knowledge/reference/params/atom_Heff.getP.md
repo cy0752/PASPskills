@@ -16,6 +16,7 @@ Lecture-4 说明在 MC 模拟中计算体系极化强度时可设置 `atom_Heff.
 ## 何时使用
 - 使用 `Model atomic_effective_H`。
 - 当前 L4 MC / PTMC 目标需要极化相关输出或极化趋势分析。
+- 当前 L5 BaTiO3 electric-field MD / hysteresis branch 需要 `P_abs.dat` 或 polarization-vs-field 分析。
 - 输入包中有与当前 `unit_cell.str` / mode definition 对应的 `Zeff.dat`。
 
 ## 相关文件与输出
@@ -26,6 +27,7 @@ Lecture-4 说明在 MC 模拟中计算体系极化强度时可设置 `atom_Heff.
 - `atom_Heff.getP T` 时，preflight 必须检查 `Zeff.dat` 存在并与当前结构、unit cell 和 mode basis 对应。
 - `P_abs.dat` 文件出现本身不足以证明极化设置正确；output validation 还应检查 `PASP.used_info` 中 `atom_Heff.getP` 的实际值和 `Zeff.dat` provenance。
 - 不需要极化目标时，不要因为 Lecture-4 MC-1 example 使用了该字段就默认开启。
+- L5 BaTiO3 branch 中，active electric field may also turn on BEC/polarization support in source behavior. Preflight should still check explicit input intent and `Zeff.dat` provenance rather than relying on file existence.
 
 ## 本地来源
 - 官网第 3 章参数抽取中未找到该字段；本卡片为 Lecture-4 + 源码审计补充。

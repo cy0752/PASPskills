@@ -68,12 +68,16 @@ workflow 可以先判断当前阶段和可调整项，但不能凭 workflow intu
 - `unit_cell.str 和 cell.str 区别` → `files/unit_cell.str.md` + `files/cell.str.md`
 - `POSCAR_UC 怎么来` → `topics/structure_from_poscar.md` + `files/unit_cell.str.md`
 - `J_best.dat 是做什么的` → `files/J_best.dat.md`
+- `field.dat 和 P_abs.dat 怎么验证` → `files/field.dat.md` + `files/P_abs.dat.md`
+- `mode_def.input 是什么` → `files/mode_def.input.md`；block 语法再查 `params/local_mode.mode_definition.md`
+- `mode_mass.input 怎么检查` → `files/mode_mass.input.md`；mass block 语义再查 `params/atom_Heff.MASS_local_mode.md`
 
 ### 2.3 如果用户问“某个字段是什么意思”
 优先查：`params/`
 
 例如：
 - `Model 是什么` → `params/Model.md`
+- `MD.E_type 是什么` → `params/MD.E_type.md`
 - `local_mode.mode_definition 怎么写` → `params/local_mode.mode_definition.md`
 - 不确定卡片文件名时，先查 `params/INDEX.md`
 

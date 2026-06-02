@@ -24,5 +24,11 @@ __MACOSX/
 __pycache__/
 *.pyc
 
+# Local agent/workflow metadata
+.trellis/
+.codex/
+.agents/
+.claude/
+
 # Crash dumps
 core.*

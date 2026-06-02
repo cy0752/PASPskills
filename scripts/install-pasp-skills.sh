@@ -31,7 +31,7 @@ force=0
 copy=0
 target="."
 source_hint="${PASP_SKILLS_SOURCE:-}"
-default_source_root="/inspire/qb-ilm/project/cq-scientific-cooperation-zone/ky26048/paspskills/PASPskills"
+default_source_root="./"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in

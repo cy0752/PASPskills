@@ -18,6 +18,9 @@
 - `MD.damping`：Newton 方程阻尼；非零时做 NVT，零时做 NVE
 - `MD.temperature`：NVT 目标温度
 - `MD.B_x`、`MD.B_y`、`MD.B_z`：MD 中使用的外磁场分量
+- `MD.E_type`、`MD.E_x/y/z`、`MD.E_omega`、`MD.E_phi`：`atomic_effective_H` MD 中的 time-dependent electric-field controls；exact waveform / unit details should be checked in the parameter cards before writing
+- `atom_Heff.getP`：开启 Born-effective-charge polarization path；active polarization / electric-field workflows must check `Zeff.dat` provenance
+- `local_mode.MD_mode_range`：MD local-mode amplitude bounds；row/component scope must match the current mode basis
 
 ## 注意事项
 - 该文件中的设置也可直接写入 `PASP.input`
@@ -25,6 +28,8 @@
 - MD 与 MC 不能同时开启
 - `MD.Delta_t` 过小会导致计算时间过长，过大则会导致动力学失真，尤其 NVE 下总能量难以守恒
 - 文档指出 `LLG.method 2` 目前最常用；`method 1` 不支持 NVT，`method 3` 不支持并行
+- BaTiO3 electric hysteresis is an L5 single-stage electric-field MD branch. Do not use its field settings as Cr2O3 SLD defaults, and do not treat Cr2O3 `SLD.mode 1/2/3` handoff rules as BaTiO3 hysteresis validation.
+- Electric-field component units are a current reference gap in the local cards. Require user-confirmed units / authoritative source before writing production values.
 
 ## 最小示例
 ```text

@@ -303,7 +303,7 @@ preflight 的职责是检查事实和自洽性，不替用户决定物理设置�
 
 preflight 必查项：
 - 是否有完整的 `PASP.input` 字段清单；每一个显式 keyword、block、`%include`、依赖文件格式和编号规则是否都有 reference 路径或用户给定权威来源。缺任何一项都不能把输入包装成正式可运行输入。
-- 输入文件之间是否自洽：`PASP.input` 的 `%include` 文件是否存在且来自同一结构基准；`cell.str`、`unit_cell.str`、`POSCAR_UC` 是否满足同一 primitive-supercell 映射和轴向约定；PASP `%block SuperCell` 若出现，是否确实表示在 `cell.str` 基础上继续扩胞，而不是误写成 `unit_cell.str -> cell.str` 的关系矩阵；`local_mode.mode_definition` 坐标、mode 数、species id 是否与当前结构、`Z_values`、`Spin_values` 一致；`local_mode.special_SOC` 策略和编号是否来自用户确认或同基底来源；后续阶段输入是否与上游输出属于同一数据链。像 `unit_cell.str` 坐标轴顺序写错这类跨文件不一致必须在 preflight 阶段 fail / blocked。
+- 输入文件之间是否自洽：`PASP.input` 的 `%include` 文件是否存在且来自同一结构基准；`cell.str`、`unit_cell.str`、`POSCAR_UC` 是否满足同一 primitive-supercell 映射和轴向约定；PASP `%block SuperCell` 若出现，是否确实表示在 `cell.str` 基础上继续扩胞，而不是误写成 `unit_cell.str -> cell.str` 的关系矩阵；`local_mode.mode_definition` 坐标、mode 数、species id 是否与当前结构、`Z_values`、`Spin_values` 一致；若存在或用户请求 `local_mode.special_SOC`，其限制策略和编号是否来自用户确认或同基底来源；后续阶段输入是否与上游输出属于同一数据链。像 `unit_cell.str` 坐标轴顺序写错这类跨文件不一致必须在 preflight 阶段 fail / blocked。
 - 对 `cell.str` / `unit_cell.str` 的 primitive-supercell 映射验证，可使用 `skills/knowledge/scripts/l3_effective_hamiltonian/rebase_unit_cell.py` 的 `--relation` 参数。该 relation 只用于验证 `unit_cell.str` 与 `cell.str` 的关系，不等同于 PASP `%block SuperCell`。如果需要旋转或重排轴向，必须同步变换 lattice 和 atomic coordinates；如果候选文件已经出现“lattice 是目标轴向但 atom 坐标仍是旧轴序”的错误，只能在映射已确认后用该脚本的 atom-coordinate-only 修复模式生成候选文件，再重新 preflight。
 - 是否存在用户回答或逐项设置表，证明 `Spin_values`、`fig.maxk`、`fig.mdist`、`Invariant.*`、SOC / DMI / 各向异性策略不是 agent 自己代填。
 - 对 Path A，是否存在用户回答或逐项设置表确认目标 DFT / 样本超胞。若候选输入省略 `%block SuperCell`，必须确认用户明确接受 1×1×1，而不是 agent 从 `cell.str = unit_cell.str` 自动推断。
@@ -601,18 +601,18 @@ workflow 文档应明确告诉 agent：
 - `%block fig.mdist`
 - `%block Spin_values`
 - `%block local_mode.mode_definition`
-- 需要 SOC 时必须在第一次 shared-basis / interaction-basis 运行中同时写入：`Invariant.SOC` 与 `%block local_mode.special_SOC`
+- 需要 SOC 时确认 `Invariant.SOC`；`%block local_mode.special_SOC` 是可选的显式 SOC 项限制 / 优先级输入，不是 `Invariant.SOC T` 的必备伴随 block
 
 其中需要特别区分：
 - 以上列表主要描述“共享基底”的核心物理定义；
-- 如果 `Invariant.SOC T`，`local_mode.special_SOC` 是 shared-basis 首跑的一部分，不是后续 method-6、拟合、MC 或 MD 阶段才补的可选项；
+- 如果用户只要求启用默认完整 SOC 枚举，`Invariant.SOC T` 可以不带 `local_mode.special_SOC`；如果用户要求限制特定 SOC interaction type、为不同体数设置最高 SOC 阶数，或另一个已确认工作流条件要求限制 SOC 项，则 `local_mode.special_SOC` 应在同一 shared-basis 定义中确认并写入，不能等到 method-6、拟合、MC 或 MD 阶段临时改变共享基底；
 - `local_mode.cal_para_method`、`local_mode.nstr_random`、`local_mode.read_interaction` 更适合视为后续路径阶段的运行控制项，而不是共享基底本身的核心定义；
 - 也就是说，路径 A / 路径 B 可以切换，但只要共享基底不变，`local_mode.mode_definition`、体数、截断、展开阶数和 SOC 相关定义就不应变化。
 
 这里的重点不是一次把所有高级设置都补全，而是先得到一套能稳定定义共享基底的输入。后续无论进入路径 A 还是路径 B，都应复用这一套物理定义，而不是为每个样本单独改一份 `PASP.input`。
 
 正式写入 shared-basis `PASP.input` 前，必须先把两类信息分开确认：
-- 建模参数：参与磁性元素、`fig.maxk` 保留到几体、`fig.mdist` 中每个体数的 Bohr 截断半径、`Invariant.power`、`Invariant.strain_power`、`Invariant.pure_strain_power`、是否包含 strain / phonon、是否考虑 SOC 以及 SOC 保留策略。若启用 SOC，SOC 保留策略必须由用户或明确来源先确认，至少包括保留哪些几体、每个几体 / interaction type 的 SOC 最高阶数、保留全部枚举类型还是只保留特定类型；结构分析和脚本只能把已确认策略映射到 PASP 编号，不能替用户决定保留哪些 SOC 项。
+- 建模参数：参与磁性元素、`fig.maxk` 保留到几体、`fig.mdist` 中每个体数的 Bohr 截断半径、`Invariant.power`、`Invariant.strain_power`、`Invariant.pure_strain_power`、是否包含 strain / phonon、是否考虑 SOC，以及是否需要显式限制 SOC 项。若用户要求限制 / 优先保留 SOC 项，该策略必须由用户或明确来源先确认，至少包括保留哪些几体、每个几体 / interaction type 的 SOC 最高阶数、保留全部枚举类型还是只保留特定类型；结构分析和脚本只能把已确认策略映射到 PASP 编号，不能替用户决定保留哪些 SOC 项。
 - 自旋代表点位：对参与自旋建模的元素，先按 `skills/knowledge/reference/topics/symmetry_representative_sites.md` 做对称不等价代表点位分析，可使用 PASP `Model find_J_path_sym` 或等价对称分析工具；得到代表位点坐标、元素编号、multiplicity 和 tolerance 后，再为每个代表点位写 x/y/z 三个 spin mode。
 
 如果这两类信息还没有确认，agent 可以生成问题清单、代表点位分析报告或明确标注“待确认 / 不可提交”的草稿，但不能把 smoke-test 参数、plan 假设值或遍历所有磁性原子的 mode block 写成正式 `0.shared_basis/input/PASP.input`。如果用户只说“implement the plan”或“按你说的做”，而没有逐项确认这些设置，这一步仍然停在提问阶段。
@@ -707,7 +707,7 @@ workflow 文档应明确告诉 agent：
 - `fig.maxk`：保留到几体相互作用
 - `fig.mdist`：每个体数对应的截断半径，单位 Bohr
 - `Invariant.*power`：展开阶数与 strain 相关项范围
-- SOC 相关设置：是否纳入各向异性 / SOC 相关不变量，以及保留到什么范围
+- SOC 相关设置：是否纳入各向异性 / SOC 相关不变量；若用户选择显式限制，则还包括 `local_mode.special_SOC` 的保留范围和 interaction type 编号
 
 #### 任务目标 -> 推荐调整方向
 - 如果目标是**先验证输入能跑通**：优先保持 `SuperCell` 和样本规模保守，先别把 `local_mode.mode_definition` 写得过于复杂
@@ -721,7 +721,7 @@ workflow 文档应明确告诉 agent：
 - 你要改 `local_mode.mode_definition` 但不确定 block 语法时
 - 你准备写 `local_mode.mode_definition` 前，必须先查 `topics/symmetry_representative_sites.md` 和 `params/local_mode.mode_definition.md`，并先完成不等价代表点位分析
 - 你准备写 `fig.maxk`、`fig.mdist`、`Invariant.*`、SOC 相关项时，必须先查对应 reference，并确认它们不是模板默认值或 smoke-test 假设
-- 若 `Invariant.SOC T`，在第一次生成 shared-basis / interaction-basis 的 `PASP.input` 中必须同时写入 reference-confirmed 的 `%block local_mode.special_SOC`；如果暂时不知道要保留的相互作用类型编号，应 blocked 并先确认编号，不能先跑后补
+- 若 `Invariant.SOC T` 但用户没有要求显式限制 SOC 项，不要强行添加 `%block local_mode.special_SOC`；若用户要求限制 / 优先保留特定 SOC 项，则在写入 `%block local_mode.special_SOC` 前必须确认 interaction type 编号和最高阶数，不能先跑一个 restricted-basis 任务后再补改该 block
 - 你不确定 `read_interaction`、SOC 相关项或高级 local mode 选项的精确含义时
 - 你打算通过乱改 `Z_values`、`Spin_values` 去补救结构定义错误时
 - 你准备创建、覆盖或转换 `cell.str`、`unit_cell.str`、`POSCAR_UC` 时；结构文件格式、primitive reduction、轴向约定和 POSCAR 替代路线都必须先查 reference
@@ -736,6 +736,7 @@ workflow 文档应明确告诉 agent：
 - 若 `PASP.input` 省略 `%block SuperCell`，是否有用户确认 1×1×1 就是目标 Path A 样本 / DFT 规模
 - 若 Path A 使用 `local_mode.cal_para_method = 1`，是否有用户确认的 `local_mode.nstr_random` / 样本数
 - 当前设置是否仍适合作为所有样本共用的共享基底
+- 计划运行进程数是否已记录：`Model Invariant` shared-basis / interaction-basis 默认单进程；若要 MPI，必须有当前 build 和当前分支的 MPI-safe 证据。若输入包含 `local_mode.special_SOC`，除非该 special-SOC MPI 路径已验证，否则不要准备 MPI 提交。
 
 #### 服务器实跑后应补录的信息
 - 实际生成样本前 PASP 是否还要求未记录的中间文件
@@ -1052,6 +1053,7 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
   - 输入：`vasp_MAGMOM/` 与基础 `INCAR`
   - 输出：`INCAR_all/INCAR_*` 或等价结果
   - 假设：样本编号与目录命名一致
+  - 边界：它只能把 PASP 生成的 `MAGMOM` / `M_CONSTR` 类约束追加到用户提供或用户确认过的基础 `INCAR`；不能替用户发明生产用 `ENCUT`、电子步收敛、smearing、SOC/NCL、KPOINTS 或 POTCAR 策略
   - 历史实跑中暴露出的脚本修正记录见 `./l3_effective_hamiltonian_run_notes.md`
 - `skills/knowledge/scripts/l3_effective_hamiltonian/get_ene.sh`
   - 作用：从样本目录中的 `OUTCAR` 提取总能并生成 `Energy.dat`
@@ -1076,12 +1078,14 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - `Energy.dat` 的生成范围与编号规则
 - `convert_info.txt` 中训练/测试集数量与每个 DFT 超胞包含的原胞个数 / 能量归一化除数
 - VASP `KPOINTS` 网格
+- 用户确认的 VASP `INCAR` / `KPOINTS` / `POTCAR` 基础设置
 
 #### 这些项控制什么
 - 样本目录与编号规则控制特征和能量能否一一匹配
 - `Energy.dat` 控制拟合目标值表
 - `convert_info.txt` 控制后续数据转换与切分的元信息
 - `KPOINTS` 控制当前 VASP 总能的采样精度；对 NCL/SOC 静态总能比较尤其敏感
+- `INCAR` / `KPOINTS` / `POTCAR` 是 DFT 端科学设置，必须来自用户、既有项目输入或用户明确接受的设置表；PASP workflow 只提供样本结构和磁约束 handoff，不负责替用户选择生产 DFT 参数
 
 这里要补一个通用护栏：
 - `convert_info.txt` 的前两行是训练/测试或预测切分；如果用户没有指定，默认按 90/10 拆分当前可用连续样本：`Ntrain=floor(0.9*N)`，`Ntest=N-Ntrain`
@@ -1104,6 +1108,7 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - 你不确定 `convert_info.txt` 每一行含义时
 - 你不确定某个外部数据文件格式时
 - 你准备把当前 `KPOINTS` 用作正式能量比较，而不是 workflow 验证起步值时
+- 你准备生成或修改 VASP NCL / SOC 输入包时，必须先确认基础 `INCAR`、`KPOINTS` 和 `POTCAR` 来源；只能追加 PASP 生成的 `MAGMOM` / `M_CONSTR`，不能自动补齐生产 DFT 参数
 
 但要注意：
 - “查 reference” 不等于把 `convert_info.txt` 第三行重新当成自由参数提问
@@ -1114,6 +1119,7 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - `Energy.dat` 编号是否和样本目录、`ene_symbol` 一一对应
 - `createINCAR.sh`、`get_ene.sh` 是否仍适配当前目录结构
 - 外部 DFT 数据是否来自一致的计算设置
+- 基础 VASP `INCAR` / `KPOINTS` / `POTCAR` 是否已有用户确认；脚本生成的 `INCAR_all/INCAR_*` 是否只是向确认过的 `INCAR` 追加 PASP 磁约束
 - 如果只保留了部分样本，确认当前 `Energy.dat` 的样本编号范围与后续数据集切分仍一致
 - 如果样本原本来自路径 A，再检查 VASP 最终逐原子磁矩方向是否仍与输入磁态逐原子近似平行；若不平行，应先切到路径 B 再谈能量配对
 
@@ -1399,6 +1405,31 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 #### 下游去向
 - 如果结果可用，可以进入后续 MC / MD 等 workflow
 - 如果结果不可用，应记录应回溯的具体阶段和文件链路
+
+#### L3 -> L5 dynamics handoff package
+当下游目标是 L5 `Model atomic_effective_H` dynamics 时，L3 的输出不能只用“拟合完成”来描述。只有在 S7 output validation pass 后，才能把当前结果记录成 L5 可消费的 handoff evidence。
+
+这个 handoff 是 provenance package，不是自动生成的完整 L5 `input/`。最低应在 run README / PROGRESS 中记录：
+- L3 stage / run id、formal input 来源、S7 output-validation 证据路径。
+- `local_mode_PM.dat` 的来源：必须来自当前材料、当前 shared-basis 下成功的 Invariant / shared-basis run，不能来自 sibling example、旧 run 或未说明缓存。
+- 拟合参数文件来源：L5 / reference 侧消费的是 `J_best.dat` 这类 fitted interaction values；L3 应记录本次拟合实际验证并选择给 L5 的结果文件路径。如果当前 L3 run 还没有 runtime-validated `J_best.dat` 或等价选择记录，应把这一项标为 blocked / TODO，而不是假定模板已经给出。
+- 结构与基底：`cell.str`、`unit_cell.str` 或等价结构 route、`SuperCell`、有效 `Z_values` / `Spin_values`、mode definition，以及当前 L5 route 需要的 mass definition 来源。
+- 拟合 provenance：`Fitting_Dataset.txt`、`Fitting_Data_for_prediction.txt`、`Fitting_Settings.txt`、`Fitting_Set_Lambda.txt`、keep / skip 设置和数据链来源。这些通常是审计证据，不是 L5 运行时直接读取的核心文件。
+- 已知 gaps：缺失的 mode mass、未确认的 first-stage `amp_local_mode.in`、条件性的 `Zeff.dat`、生产 dynamics 设置、运行环境和任何仍需用户确认的科学判断。
+
+L3 -> L5 handoff 前必须做 same-basis 检查：
+- `local_mode_PM.dat`、拟合参数文件、structure route、`SuperCell`、`Z_values`、`Spin_values`、mode definition、mass definition 和拟交给 L5 的 initial state 必须属于同一 current-material effective-H basis。
+- 改动任一结构、mode definition、cutoff / expansion / SOC 策略、species / spin order 或 fitted-parameter selection 后，不能盲目复用旧 `local_mode_PM.dat` / `J_best.dat` / `amp_local_mode.in`。
+- `mode_def.input`、`mode_mass.input` 只是常见 split include 文件名；是否硬必需取决于 L5 `PASP.input` include graph 或等价 inline block。写入或改动 exact block / file format 前必须查 reference。
+- L3 生成的 `*.amp_local_mode` 可能提供格式兼容的 initial-state candidate，但 L3 不替 L5 决定 first-stage dynamics initial condition；用户或上游 validation 仍必须说明它为什么适合当前 L5 branch。
+
+L3 不提供或不自动证明：
+- L5 production `MD.input` / `LLG.*` / damping / temperature / timestep / run length / output cadence。
+- polarization / electric-field branch 需要的 `Zeff.dat`，除非用户或其他上游计算单独提供并验证 provenance。
+- scheduler helper、MPI ranks、executable path、queue / image / walltime。
+- dynamics 的科学 acceptance threshold。
+
+因此，当 L5 是下游时，S7 pass 后的下一步是把以上 package 作为 L5 S1 provenance inventory 的输入；不能跳过 L5 S3 settings confirmation、S4 input preflight 或 submission authorization。
 
 #### 本阶段使用的脚本
 - 无固定通用脚本

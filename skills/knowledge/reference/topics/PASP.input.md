@@ -79,6 +79,33 @@ NumberOfAtoms 5
 
 手册示例通常使用 `T/F`。
 
+### 2.7 结构化 preflight 规则
+下面规则来自开发时对 PASP 配置解析/诊断逻辑的整理，用于 agent 在写入、提升 formal input、派生 run 目录或提交前做保守检查；它不是要求用户安装任何外部工具。
+
+`PASP.input` 及其 include 文件在 preflight 中应先按结构分成四类：
+- 注释/空行/原样行：空行、`#` 注释行，或无法安全解释为 PASP 设置的原始文本。
+- `%include <file>`：一行只应给出一个文件名；缺文件名、多文件名、目标不存在、目标为目录或非普通文件都应视为 preflight 错误。
+- 单行设置：`keyword value...`；只有 keyword 没有值时应标为错误，除非对应 reference 明确允许空值。
+- `%block <name>` 到 `%endblock <name>`：block 名必须存在，起止名称必须一致，不能缺结束行，也不能出现没有匹配起始行的 `%endblock`。
+
+保守 preflight 还应把未知 `%...` 指令标为错误。当前 reference 层只确认 `%include`、`%block`、`%endblock` 这三类 PASP.input 结构指令；其它 `%` 开头行不能凭记忆当作合法语法。
+
+### 2.8 include 图遍历规则
+当检查一个正式输入包时，以根 `PASP.input` 为入口遍历 include 图：
+- 根 `PASP.input` 与已到达 include 文件中的 `%include` 都应作为 include 图边继续遍历，直到没有新的 include 目标。
+- include 目标应能从输入包解析到具体普通文件；使用子目录或嵌套 include 时，要在 preflight 报告中明确解析到的路径。为了可移植性，推荐使用同目录相对文件名，例如 `%include cell.str`、`%include unit_cell.str`、`%include MC.input`。
+- 遍历时需要记录已访问文件，避免 include 循环导致重复解析。
+- 重复 include 只应把第一次到达的目标视为生效；后续解析到同一目标时应标为不可达/重复，而不是当成第二份有效输入。
+- 每个 include 文件仍必须按同一套单行设置、block、未知指令和缺值规则检查。
+
+### 2.9 重复设置与写入含义
+PASP 手册规则是“同一关键词多次出现时，第一次出现生效”。在含 include 的输入包中，preflight 应按根 `PASP.input` 的文本顺序做深度优先遍历：读到 `%include` 时先检查该 include 文件中的设置，再回到根文件继续向下读。因此：
+- 如果 `%include MC.input` 在 `fig.maxk 4` 之前，而 `MC.input` 内已有 `fig.maxk 8`，则 include 内的 `fig.maxk 8` 是生效项，根文件后面的 `fig.maxk 4` 是不可达重复项。
+- 如果根文件先写 `Spin_values`，后面 include 文件又写 `Spin_values`，则根文件的第一次声明生效，include 内同名项应视为重复。
+- block 名也按设置名参与“第一次生效”检查，例如两个 `%block Spin_values` 不能同时作为有效配置。
+- 修改已有设置时，应优先更新当前生效位置；若需要改变生效位置，应同时清理或明确停用旧重复项，避免 agent 改了一个不可达声明却误以为已改变运行输入。
+- 生成或提升 formal `PASP.input` 前，应列出每个显式 keyword、block、include 和依赖文件的 reference 覆盖；任何重复项、不可达项或未确认结构都应使输入保持 draft/candidate，而不是进入正式 `input/` 或 `runs/<run-id>/`。
+
 ---
 
 ## 3. 最常用设置项

@@ -14,7 +14,8 @@ T/F
 
 ## 注意事项
 - 修改前应确认当前 workflow 阶段确实需要该设置，不要用参数调整掩盖结构或文件依赖错误。
-- 在 `Model Invariant` / L3 共享基底中，如果设置 `Invariant.SOC T`，第一次生成相互作用基底的运行必须同时写入 reference-confirmed 的 `%block local_mode.special_SOC`。不能先缺省 `local_mode.special_SOC` 跑一次，再在后续 method-6、拟合、MC 或 MD 阶段补加 SOC 保留策略。
+- `Invariant.SOC T` 只表示考虑 SOC；它不会强制同时写 `%block local_mode.special_SOC`。`local_mode.special_SOC` 是可选的显式 SOC 项限制 / 优先级 block，只在用户要求 restricted / prioritized SOC basis、按 interaction type 限制最高 SOC 阶数，或另一个已确认 workflow 条件要求时才需要。
+- 在 `Model Invariant` / L3 共享基底中，如果用户要求显式 SOC 保留策略，应在生成相互作用基底的同一次运行中写入 reference-confirmed 的 `%block local_mode.special_SOC`，不要等到后续 method-6、拟合、MC 或 MD 阶段临时改变共享基底定义。若用户接受默认完整 SOC 枚举，`Invariant.SOC T` 可以不带该 block。
 - 若涉及精确行格式或复杂示例，应回到来源章节核对。
 
 ## 来源章节

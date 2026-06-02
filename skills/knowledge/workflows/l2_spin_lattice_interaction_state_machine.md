@@ -27,6 +27,7 @@ subagent 授权只允许只读事实采集；不确认 `spin_exchange.dat` 的�
 
 **STOP REQUIRED**
 - 用户必须确认 `spin_exchange.dat` 的物理来源：DFT 拟合、文献参数、还是手工构造。
+- 若 `spin_exchange.dat` 来自 `find_J_path_sym` / DFT handoff，必须确认第一段 lattice vectors 来自 `unit_cell.str` / `unit_cell_in_Ang`，J pair 坐标来自 nearest-image `pair_coord` 或等价上游输出；不得接受 agent 手工调整 pair 坐标作为修复。
 - 用户必须确认当前 `SuperCell` 能容纳目标磁周期；不能从 NiI2 模板直接借。
 - 如果用户只给了一个目标目录，事实边界就是该目录；不得从 sibling 例子借参数或输出补当前目录缺口。
 
@@ -35,7 +36,7 @@ subagent 授权只允许只读事实采集；不确认 `spin_exchange.dat` 的�
 ## S1. Candidate Input Package
 
 **Allowed**
-- 做只读 preflight：文件齐全性、`PT.M` 与 MPI ranks 的关系、`spin_exchange.dat` 结构、`SuperCell` 行列式、`Read_init_spin` 依赖。正式 / run / submission 动作前必须使用 `pasp-verifier` `mode: input-preflight`。
+- 做只读 preflight：文件齐全性、`PT.M` 与 planned MPI ranks 的整数倍关系、`spin_exchange.dat` 结构、`spin_exchange.dat` 第一段 unit-cell 基矢与 nearest-image pair-coordinate provenance、`SuperCell` 行列式、`Read_init_spin` 依赖。正式 / run / submission 动作前必须使用 `pasp-verifier` `mode: input-preflight`。
 - 生成 draft 输入建议。
 - 在 `drafts/`、notes 或候选文件中记录建议。
 
@@ -53,6 +54,8 @@ subagent 授权只允许只读事实采集；不确认 `spin_exchange.dat` 的�
 **PROMOTE TO FORMAL INPUT ONLY IF**
 - 硬输入文件齐全：`PASP.input`、`MC.input`、`cell.str`、`unit_cell.str`、`spin_exchange.dat`。
 - `spin_exchange.dat` 结构通过读取顺序检查。
+- `spin_exchange.dat` 第一段基矢来自 `unit_cell.str`，不是 `cell.str`；J pair 坐标有 nearest-image `pair_coord` / 等价上游 provenance，且没有手工改坐标。
+- `PT.M` 与 planned MPI ranks 已检查：`PT.M` 应为 rank 数的整数倍；若 rank 数未知，必须记录 blocked 或提交前复查，不得直接标为 submit-ready。
 - 所有拟修改的字段已查 reference，并有用户确认或明确上游来源。
 - `READ_ONLY_SUBAGENT_PREFLIGHT_DONE=true` 且 `STAGE_PREFLIGHT_PASS=true`。
 

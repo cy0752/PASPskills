@@ -73,19 +73,19 @@
 | 用户 / 上游 | `unit_cell.str` | 必需 | 最小原胞，用于内部坐标参考 |
 | 用户 | `PASP.input` | 必需 | 含 `Model Spin_lattice_interaction`、`%include MC.input`、`%block SuperCell`、`Z_values`、`isaAB`、`Spin_values`、`fig.maxk`、`fig.mdist` |
 | 用户 | `MC.input` | 必需（被 `%include` 引入） | PT 与 MC 步数 / 温度网格 / 共轭梯度参数；典型字段：`MC`、`Parallel_Tempering`、`spin_lat.general_J`、`spin_lat.LJmatSym`、`Read_init_spin`、`PT.M`、`PT.low_temp`、`PT.high_temp`、`PT.Tmesh`、`PT.nblk_T`、`nbeg_blk`、`nblk`、`spin_lat.relax_str`、`opt.NSW`、`opt.EDIFFG`、`ExternalMagneticField` |
-| **上游（find_J + DFT 拟合）** | `spin_exchange.dat` | **必需** | 文本格式（不是二进制，尽管编辑器或 Read 工具可能因长行误判）；由 `spin_lat_subs.f90:113 write_spin_exchange_file` 写出，由 `spin_lat.F90:1999–2012 read_exchange_para` 读取 |
+| **上游（find_J + DFT 拟合）** | `spin_exchange.dat` | **必需** | 文本格式（不是二进制，尽管编辑器或 Read 工具可能因长行误判）；第一段 3 行 lattice vector 必须来自 `unit_cell.str` / `unit_cell_in_Ang`，J pair 坐标应来自 `find_J_path_sym` 的 nearest-image `pair_coord` 或等价上游输出；由 `spin_lat_subs.f90:113 write_spin_exchange_file` 写出，由 `spin_lat.F90:1999–2012 read_exchange_para` 读取 |
 | 用户 | `seed.in` | 可选 | 固定随机种子；不写则 PASP 用默认 |
 | 环境 | `run.sh` 或等价提交脚本 | 必需（提交时） | 不属于 PASP 输入；按 HPC 环境写 |
 
 ### 当前阶段已知输出
 
-`PASP.input` + `MC.input` + `spin_exchange.dat` 全部齐备并通过基本一致性检查（npair、晶格向量、npair 行 J-matrix、4 个尾部相互作用计数）。
+`PASP.input` + `MC.input` + `spin_exchange.dat` 全部齐备并通过基本一致性检查（npair、unit-cell 晶格向量、nearest-image pair 坐标 provenance、npair 行 J-matrix、4 个尾部相互作用计数）。
 
 ### 待运行验证的依赖
 
 - `spin_exchange.dat` 的 npair 是否与用户对体系的物理理解一致
 - `SuperCell` det 与 unit_cell 原子数的乘积是否落在 PASP 内存预算内
-- PT 副本数 ≥ MPI rank 数（否则有空闲 rank）
+- `PT.M` 必须能被 planned MPI rank 数整除；若 `PT.M < rank_count` 或不能整除，会出现空闲 / 不匹配的 rank 分配风险。提交 rank 未知时，preflight 至少应标为 blocked 或要求提交前复查。
 
 ### 上游依赖
 
@@ -100,7 +100,7 @@
 
 | 何时 | 脚本 |
 |---|---|
-| `spin_exchange.dat` 文本格式校核 | 检查文件结构：1 行 `npair # units in eV and Ang` → 3 行晶格向量（仅 npair ≥ 1 时存在）→ npair 行 J-matrix（每行 `i J is1 is2 coord1(3) coord2(3)`）→ 1 行 dJ/du 计数 → 1 行 SIA 计数 → 1 行 DM 计数 → 1 行四阶计数；后 4 行计数若为 0 表示无该类项 |
+| `spin_exchange.dat` 文本格式校核 | 检查文件结构：1 行 `npair # units in eV and Ang` → 3 行 `unit_cell.str` / `unit_cell_in_Ang` 原胞晶格向量（仅 npair ≥ 1 时存在）→ npair 行 J-matrix（每行 `i J is1 is2 coord1(3) coord2(3)`，coord 应为 `find_J_path_sym` nearest-image `pair_coord` / 等价上游输出）→ 1 行 dJ/du 计数 → 1 行 SIA 计数 → 1 行 DM 计数 → 1 行四阶计数；后 4 行计数若为 0 表示无该类项 |
 | 隔离运行目录 | 推荐：`mkdir -p runs/<run-id>/` 并 `cp -r inputs/* runs/<run-id>/` |
 
 ### 任务目标 -> 推荐调整方向
@@ -113,8 +113,8 @@
 ### 修改后要检查什么
 
 - `PASP.input` 中的 `%include MC.input` 指向当前 run 目录内存在的文件。
-- `cell.str` / `unit_cell.str` / `SuperCell` 对应的原子数与后续 handoff 行数规则一致。
-- `spin_exchange.dat` 的 J 矩阵行数、4 个尾部计数块完整。
+- `cell.str` / `unit_cell.str` / `SuperCell` 对应的原子数与后续 handoff 行数规则一致；注意 `cell.str` / `SuperCell` 定义 MC 模拟胞扩展，不能替代 `spin_exchange.dat` 第一段的 `unit_cell` 基矢。
+- `spin_exchange.dat` 的 J 矩阵行数、4 个尾部计数块完整；第一段晶格向量来自 `unit_cell.str`，J pair 坐标来自 nearest-image `pair_coord` / 等价上游输出，不能由 agent 手工平移或调整。
 - 如果 `Read_init_spin T`，`spin3.in` 非空数据行数等于当前超胞全原子数。
 
 ---

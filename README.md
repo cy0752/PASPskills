@@ -9,6 +9,28 @@
 
 运行时知识集中在 `skills/` 目录内。安装后，Codex 和 Claude 的项目级入口会指向同一套 `skills/`，避免不同平台各自复制一份知识后发生漂移。
 
+## 获取 PASPskills
+
+安装前，先把本仓库放到本机任意稳定位置。常见方式有两种：
+
+```bash
+git clone https://github.com/cy0752/PASPskills.git PASPskills
+```
+
+或者在 GitHub 页面下载源码 zip，解压后使用其中包含 `scripts/install-pasp-skills.sh` 的目录：
+
+```bash
+unzip <downloaded-source>.zip
+```
+
+后续命令里的 `/path/to/PASPskills` 请替换成你本机的实际目录。
+
+## 安装前提
+
+- Unix-like shell 环境，且可以运行 `bash`。
+- 默认安装会创建软链接；如果目标项目所在文件系统不支持软链接，或你想让目标项目脱离源仓库路径独立使用，请加 `--copy`。
+- 只有通过 zip 下载源码时才需要 `unzip`。
+
 ## 快速安装
 
 在目标项目中运行安装脚本：
@@ -24,6 +46,12 @@
 ```
 
 默认安装方式是把本仓库的 `skills/` 软链接到目标项目的 `skills/`。这适合持续维护：更新本仓库后，目标项目会直接看到最新 skills 内容。
+
+如果你是从 zip 解压后安装，或之后可能移动/删除 `PASPskills/` 目录，建议使用复制安装：
+
+```bash
+/path/to/PASPskills/scripts/install-pasp-skills.sh --copy /path/to/target-project
+```
 
 ## 安装选项
 

@@ -200,25 +200,34 @@ params/
 
 ```text
 files/
-├── cell.str.md
-├── unit_cell.str.md
-├── seed.in.md
-├── spin_exchange.dat.md
-├── distortion.pos.md
-├── distortion.MAGMOM.md
-├── local_mode_PM.dat.md
-├── J_best.dat.md
+├── DM_derivative.dat.md
 ├── Fitting_Settings.txt.md
 ├── Fitting_Set_Lambda.txt.md
 ├── Fitting_Set_Term_Keep.txt.md
 ├── Fitting_Set_Term_Skip.txt.md
-├── spin3.in.md
-├── amp_local_mode.in.md
+├── J.POS.md
+├── J_best.dat.md
+├── P_abs.dat.md
+├── PASP.used_info.md
 ├── Zeff.dat.md
+├── amp_local_mode.in.md
+├── atat.NNN_Y.md
+├── cell.str.md
+├── distortion.MAGMOM.md
+├── distortion.pos.md
 ├── elastic.dat.md
+├── field.dat.md
+├── local_mode_PM.dat.md
+├── mode_def.input.md
+├── mode_mass.input.md
+├── seed.in.md
+├── spin3.in.md
+├── spin3_lowest.out.md
+├── spin_exchange.dat.md
 ├── spin_strain.dat.md
-├── DM_derivative.dat.md
-└── PASP.used_info.md
+├── spin_wave_E.dat.md
+├── spin_wave_H_wf.dat.md
+└── unit_cell.str.md
 ```
 
 ### 6.1 这个目录是干什么的
@@ -234,6 +243,7 @@ files/
 - `unit_cell.str 和 POSCAR_UC 的关系是什么？`
 - `spin_exchange.dat` 格式怎么理解？`
 - `PASP.used_info` 有什么用？`
+- `field.dat` / `P_abs.dat` 能不能用于 BaTiO3 hysteresis plotting？
 
 ### 6.3 为什么这些文件适合单独放
 因为这些文件很多都有自己独立的：

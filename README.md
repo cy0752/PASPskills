@@ -9,6 +9,20 @@
 
 运行时知识集中在 `skills/` 目录内。安装后，Codex 和 Claude 的项目级入口会指向同一套 `skills/`，避免不同平台各自复制一份知识后发生漂移。
 
+## 当前范围
+
+当前包主要包含：
+
+- `skills/`：PASP runtime skills、workflow 知识、reference 知识、模板和辅助脚本。
+- `scripts/install-pasp-skills.sh`：把 PASP skills 安装到目标项目，并创建 Codex / Claude 项目级入口。
+
+共享给普通使用者时，通常只需要提供 `skills/` 和 `scripts/`；开发期讲义、examples、源码检查记录和任务管理文件不是运行时依赖。
+
+当前已接入 7 类 workflow：交换路径与磁相互作用模型、有效哈密顿量、蒙特卡洛、动力学、GA 全局结构搜索、紧束缚模型、自旋诱导极化。部分 workflow 仍保留运行时门禁和已知限制，例如：
+
+- 紧束缚模型的一类 graph-allocation 路径在当前已验证 PASP / latt 版本中仍可能触发 `Error, graph already allocated.`，需等待源码侧修复后再重跑确认。
+- 自旋诱导极化的 spin-lattice ion / strain 分支若启用 `spin_lat.spin_int_stress T`，当前已验证 `read_spin_stress` 路径只支持 1 个 MPI task；多 task 运行会被 verifier 判为 blocked / failed，除非有源码已修复并验证的证据。
+
 ## 获取 PASPskills
 
 安装前，先把本仓库放到本机任意稳定位置。常见方式有两种：

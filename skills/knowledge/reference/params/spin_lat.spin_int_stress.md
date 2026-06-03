@@ -14,6 +14,8 @@ T/F
 
 ## 注意事项
 - 修改前应确认当前 workflow 阶段确实需要该设置，不要用参数调整掩盖结构或文件依赖错误。
+- 当前已验证 PASP 源码 / runtime 中，该设置为 `T` 时会走 `read_spin_stress` 路径；该路径在 MPI rank 数大于 1 时会停止并报 `read_spin_stress: MPI version not implemented yet`。因此 L8 spin-lattice ion/strain 分支若启用 `spin_lat.spin_int_stress T`，提交前必须确认 planned MPI ranks 为 1，除非用户提供当前源码已修复并验证 MPI 支持的证据。
+- 如果完成日志中出现 `read_spin_stress: MPI version not implemented yet`，即使平台调度状态显示成功，也应判定该 run 的 spin-stress 输出验证失败 / MPI-limited。
 - 若涉及精确行格式或复杂示例，应回到来源章节核对。
 
 ## 来源章节

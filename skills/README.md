@@ -63,7 +63,11 @@ skills/
     │   ├── l6_ga_search_state_machine.md
     │   ├── l6_ga_search_run_notes.md
     │   ├── l7_tight_binding.md
-    │   └── l8_spin_induced_polarization.md
+    │   ├── l7_tight_binding_state_machine.md
+    │   ├── l7_tight_binding_run_notes.md
+    │   ├── l8_spin_induced_polarization.md
+    │   ├── l8_spin_induced_polarization_state_machine.md
+    │   └── l8_spin_induced_polarization_run_notes.md
     ├── templates/
     │   ├── l2_find_J_path_sym/
     │   │   ├── README.md
@@ -201,9 +205,11 @@ workflow 知识文档。
 辅助数据处理脚本模板。
 
 这里放的是从 examples 提炼出来、但不直接依赖外部 examples 目录的脚本模板，例如：
-- `postprocess.sh`
-- `createINCAR.sh`
-- `get_ene.sh`
+- `l3_effective_hamiltonian/postprocess.sh`
+- `l3_effective_hamiltonian/createINCAR.sh`
+- `l3_effective_hamiltonian/get_ene.sh`
+- `l3_effective_hamiltonian/convert_data.py`
+- `l3_effective_hamiltonian/prepare_path_b_inputs.py`
 
 这些脚本主要用于衔接 PASP 与外部 DFT 数据整理流程，通常需要按用户自己的目录结构和集群环境修改。
 
@@ -227,34 +233,39 @@ reference 知识库。
 7. **自旋诱导极化**
 
 对应的 workflow 知识文件位于：
-- `knowledge/workflows/l2_find_J_path_sym.md`：L2 三个 Model 中 `find_J_path_sym` 子流程
-- `knowledge/workflows/l2_find_J_path_sym_run_notes.md`：L2 find_J 历史实跑观察
-- `knowledge/workflows/l2_overview.md`：L2 三个 spin-model 子流程的关系总览
-- `knowledge/workflows/l2_spin_lattice_interaction.md`：L2 `Spin_lattice_interaction` PTMC / CG IO 骨架
-- `knowledge/workflows/l2_spin_lattice_interaction_state_machine.md`：L2 `Spin_lattice_interaction` STOP gate
-- `knowledge/workflows/l2_spin_lattice_interaction_run_notes.md`：L2 `Spin_lattice_interaction` 历史实跑观察
-- `knowledge/workflows/l2_magnon.md`：L2 `magnon` IO 骨架
-- `knowledge/workflows/l2_magnon_state_machine.md`：L2 `magnon` STOP gate
-- `knowledge/workflows/l2_magnon_run_notes.md`：L2 `magnon` 历史实跑观察
+- `knowledge/workflows/l2_find_J_path_sym.md`：`find_J_path_sym` 子流程
+- `knowledge/workflows/l2_find_J_path_sym_run_notes.md`：find_J 历史实跑观察
+- `knowledge/workflows/l2_overview.md`：spin-model 子流程的关系总览
+- `knowledge/workflows/l2_spin_lattice_interaction.md`：`Spin_lattice_interaction` PTMC / CG IO 骨架
+- `knowledge/workflows/l2_spin_lattice_interaction_state_machine.md`：`Spin_lattice_interaction` STOP gate
+- `knowledge/workflows/l2_spin_lattice_interaction_run_notes.md`：`Spin_lattice_interaction` 历史实跑观察
+- `knowledge/workflows/l2_magnon.md`：`magnon` IO 骨架
+- `knowledge/workflows/l2_magnon_state_machine.md`：`magnon` STOP gate
+- `knowledge/workflows/l2_magnon_run_notes.md`：`magnon` 历史实跑观察
 - `knowledge/workflows/l3_effective_hamiltonian.md`
-- `knowledge/workflows/l3_effective_hamiltonian_state_machine.md`：L3 运行门禁与 STOP 状态机，必须先于长 workflow 使用
-- `knowledge/workflows/l3_effective_hamiltonian_run_notes.md`：L3 历史实跑观察，不是当前目录事实
+- `knowledge/workflows/l3_effective_hamiltonian_state_machine.md`：有效哈密顿量运行门禁与 STOP 状态机，必须先于长 workflow 使用
+- `knowledge/workflows/l3_effective_hamiltonian_run_notes.md`：有效哈密顿量历史实跑观察，不是当前目录事实
 - `knowledge/workflows/l4_monte_carlo.md`
-- `knowledge/workflows/l4_monte_carlo_state_machine.md`：L4 MC / PTMC / CG 运行门禁与 STOP 状态机，必须先于长 workflow 使用
-- `knowledge/workflows/l4_monte_carlo_run_notes.md`：L4 Lecture-4 examples 历史观察、输出家族和 reference gap 线索，不是当前目录事实
+- `knowledge/workflows/l4_monte_carlo_state_machine.md`：MC / PTMC / CG 运行门禁与 STOP 状态机，必须先于长 workflow 使用
+- `knowledge/workflows/l4_monte_carlo_run_notes.md`：蒙特卡洛 examples 历史观察、输出家族和 reference gap 线索，不是当前目录事实
 - `knowledge/workflows/l5_dynamics.md`
-- `knowledge/workflows/l5_dynamics_state_machine.md`：L5 dynamics / generic new-material / Cr2O3 SLD / BaTiO3 electric hysteresis 运行门禁与 STOP 状态机，必须先于长 workflow 使用
-- `knowledge/workflows/l5_dynamics_user_checklist.md`：L5 dynamics 用户侧快速 checklist，覆盖 generic new-material、Cr2O3 和 BaTiO3 分支，不替代状态机和 reference-before-write 规则
-- `knowledge/workflows/l5_dynamics_run_notes.md`：L5 Lecture-5 Cr2O3 / BaTiO3 examples 历史观察、输出家族和 reference gap 线索，不是当前目录事实
+- `knowledge/workflows/l5_dynamics_state_machine.md`：dynamics / generic new-material / Cr2O3 SLD / BaTiO3 electric hysteresis 运行门禁与 STOP 状态机，必须先于长 workflow 使用
+- `knowledge/workflows/l5_dynamics_user_checklist.md`：dynamics 用户侧快速 checklist，覆盖 generic new-material、Cr2O3 和 BaTiO3 分支，不替代状态机和 reference-before-write 规则
+- `knowledge/workflows/l5_dynamics_run_notes.md`：Cr2O3 / BaTiO3 dynamics examples 历史观察、输出家族和 reference gap 线索，不是当前目录事实
 - `knowledge/workflows/l6_ga_search.md`
-- `knowledge/workflows/l6_ga_search_state_machine.md`：L6 GA / random-spacegroup / perturbation / magnetic / restart / constrained search 运行门禁与 STOP 状态机，必须先于长 workflow 使用
-- `knowledge/workflows/l6_ga_search_run_notes.md`：L6 Lecture-6 examples、historical output 和 source-audit 观察，不是当前目录事实
+- `knowledge/workflows/l6_ga_search_state_machine.md`：GA / random-spacegroup / perturbation / magnetic / restart / constrained search 运行门禁与 STOP 状态机，必须先于长 workflow 使用
+- `knowledge/workflows/l6_ga_search_run_notes.md`：GA search examples、historical output 和 source-audit 观察，不是当前目录事实
 - `knowledge/workflows/l7_tight_binding.md`
+- `knowledge/workflows/l7_tight_binding_state_machine.md`：custom TB / SKTB / additional-H / GSDTB / CLS 运行门禁与 STOP 状态机，必须先于长 workflow 使用
+- `knowledge/workflows/l7_tight_binding_run_notes.md`：tight-binding examples、historical output 和 source-audit 观察，不是当前目录事实
 - `knowledge/workflows/l8_spin_induced_polarization.md`
+- `knowledge/workflows/l8_spin_induced_polarization_state_machine.md`：pure electronic KNB / gKNB 与 spin-lattice ion-strain contribution 运行门禁与 STOP 状态机，必须先于长 workflow 使用
+- `knowledge/workflows/l8_spin_induced_polarization_run_notes.md`：spin-induced polarization examples、historical output 和 source-audit 观察，不是当前目录事实
 
 说明：
-- `Lecture 1` 没有单独做成 workflow
-- `Lecture 1` 的内容被视为通用 `reference / onboarding` 层
+- 基础输入文件、通用概念和入门说明被视为 `reference / onboarding` 层，不单独做成 workflow
+- tight-binding 已有 workflow、state machine、run notes 和 verifier 门禁；当前一类 graph-allocation 问题仍记录为 PASP / latt 源码侧待修复限制，不能把失败 run 当作可交付结果
+- spin-induced polarization 已覆盖 pure electronic KNB / gKNB 和 spin-lattice ion / strain contribution；其中 `spin_lat.spin_int_stress T` 的 `read_spin_stress` 路径在当前已验证 runtime 中只支持 1 个 MPI task，多 task 运行必须 blocked / failed，除非有源码修复证据
 
 ---
 
@@ -497,7 +508,7 @@ cd /path/to/target-project
 
 ## 10. 开发原则文档
 
-后续继续补全 Lecture 4–8 或新增 workflow 时，请先阅读：
+后续继续补全已有 workflow 或新增 workflow 时，请先阅读：
 
 - `DEVELOPMENT_GUIDE.md`
 

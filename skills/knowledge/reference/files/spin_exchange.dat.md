@@ -10,12 +10,13 @@
 ## 全局读取合同
 下面规则来自开发时对 `spin_exchange.dat` 解析/诊断逻辑的整理，用于 agent 在 input preflight 中检查文件形状；它不是要求用户安装任何外部工具。
 
-- 文件按固定顺序包含五段：J interaction -> `dJ/du` -> SIA -> DMI -> fourth-order。
+- canonical 写法按固定顺序包含五段：J interaction -> `dJ/du` -> SIA -> DMI -> fourth-order。
 - 每段都以一个非负整数 count 行开始；count 行只能有一个数字，不能附加数据字段。
 - count 后必须跟随该段声明数量对应的条目。声明数量和实际解析到的条目数不一致时，应视为 preflight fail。
 - 数值字段可使用能被解析为实数的写法；编号/count 字段应为整数，除 SIA group id 可为一般整数外，其它 group id、元素 id、类型 id、count 均按非负整数检查。
 - `#` 后内容视为注释，不参与字段计数；注释前的数据字段仍必须完整。
 - 不要插入任意空行。空行在固定位置会被视为缺字段或导致后续段错位。
+- 当前源码读取 SIA、DMI、fourth-order count 时带 EOF fallback；如果文件在 DMI 后或更早的 trailing optional section 处结束，PASP 会把缺失的后续 optional count 视为 0。preflight 可把这种写法记录为非 canonical / 建议补显式 `0`，但不能仅因 trailing fourth-order count 省略而 hard fail。若某段 count 已经声明为非零，则该段条目仍必须完整。
 - 五段结束后不应再有额外数据行；若有非注释额外内容，应先检查前面各段 count 是否写错。
 
 ## 第一段：J interaction
@@ -149,10 +150,11 @@ preflight 必须同时检查 group 数量、坐标行数量和导数行数量；
   - type `2`：9 个数字。
   - type `3`：12 个数字。
 
-`Model magnon` 使用该文件时，最后的 fourth-order count 必须为 `0`。不要把含非零四阶项的 `Spin_lattice_interaction` 输入直接复制给 magnon。
+`Model magnon` 使用该文件时，最后的 fourth-order count 应显式为 `0`。不要把含非零四阶项的 `Spin_lattice_interaction` 输入直接复制给 magnon。
 
 ## preflight 速记
-- 确认五段顺序完整，即使某段不用也要有 count 行 `0`。
+- 优先确认五段顺序完整，即使某段不用也建议有 count 行 `0`。
+- 如果文件在 SIA / DMI / fourth-order 这些 trailing optional section 处 EOF，按当前 PASP 源码可解释为后续 count 为 0；记录为非 canonical / 建议补 `0`，但不要仅凭这一点判失败。
 - 检查每个 count 行只有一个非负整数。
 - 检查 J entry 是全文件一致的标量 10 字段或矩阵 18 字段，不要混写。
 - 检查第一段三行 lattice vector 来自 `unit_cell.str` / `%block unit_cell_in_Ang`，不是 `cell.str`。
@@ -168,6 +170,7 @@ preflight 必须同时检查 group 数量、坐标行数量和导数行数量；
 - 锚点：`#spin-exchange-dat`
 
 ## 开发时校准来源
-- `Latticemodel/src/spin_lat.F90` 的 `read_exchange_para` 读取顺序为：J -> `dJ/du` -> SIA -> DMI -> fourth-order。
+- `Latticemodel/src/spin_lat.F90` 的 `read_exchange_para` 读取顺序为：J -> `dJ/du` -> SIA -> DMI -> fourth-order；SIA、DMI、fourth-order count 读取使用 `END=` fallback，EOF 时对应 count 保持 0。
 - `Latticemodel/src/spin_lat_subs.f90` 写出的基础 `spin_exchange.dat` 以 `0 # higher order interaction` 收尾。
+- L8 runtime/dry-run calibration: `BiFeO3_ion_strain` 的 `spin_exchange.dat` 省略 trailing fourth-order count，但一任务 spin-stress diagnostic run 完成并输出 `P due to spin stress`。因此 verifier 不应把这个省略本身作为 hard fail。
 - 本文件的字段数、count mismatch 和 J scalar/matrix preflight 规则已吸收开发时 `spin_exchange.dat` 诊断逻辑；运行时 skill 不需要读取外部源码或工具。

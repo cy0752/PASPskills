@@ -1,6 +1,6 @@
 # PASP Skills 安装与使用
 
-[![Release](https://img.shields.io/github/v/release/cy0752/PASPskills?sort=semver)](https://github.com/cy0752/PASPskills/releases)
+[![Release](https://img.shields.io/github/v/release/cy0752/PASPskills?sort=semver&cacheSeconds=3600)](https://github.com/cy0752/PASPskills/releases)
 
 这个仓库提供一套面向 PASP 计算流程的 agent skills，用于让 Codex 或 Claude 在目标项目中回答 PASP workflow 和 reference 问题。
 

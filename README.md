@@ -168,32 +168,32 @@ PASP_SKILLS_SOURCE=/path/to/PASPskills /path/to/PASPskills/scripts/install-pasp-
 请帮我检查这个 PASP.input 草稿。修改任何字段前，先用本项目的 PASP reference 确认字段语义和格式。
 ```
 
-如果任务需要检查当前目录、输入文件、输出文件或运行日志，可以在提示词里写“可以使用 subagent”。
+如果任务需要检查当前目录、输入文件、输出文件或运行日志，可以在提示词里写“可以使用subagent”。
 
 ## 典型提示词
 
 Workflow 类：
 
 ```text
-我现在有一些结构文件和初始 PASP.input，想做 Monte Carlo 模拟。帮我判断已经具备哪些输入、还缺哪些文件或参数，以及下一步应该先补什么。可以使用 subagent。
+我现在有一些结构文件和初始 PASP.input，想做 Monte Carlo 模拟。帮我判断已经具备哪些输入、还缺哪些文件或参数，以及下一步应该先补什么。可以使用subagent。
 ```
 
 ```text
-这个目录里有一批 OUTCAR/OSZICAR 和 POSCAR，我想构建 effective Hamiltonian。可以使用 subagent。
+这个目录里有一批 OUTCAR/OSZICAR 和 POSCAR，我想构建 effective Hamiltonian。可以使用subagent。
 ```
 
 ```text
-解释 spin_exchange.dat 的格式和它在 magnon workflow 里的作用。需要时可以使用 subagent。
+解释 spin_exchange.dat 的格式和它在 magnon workflow 里的作用。需要时可以使用subagent。
 ```
 
 Reference 类：
 
 ```text
-解释 MC.input 里 PT.low_temp、PT.high_temp、PT.Tmesh 的含义、关系和常见风险。需要时可以使用 subagent。
+解释 MC.input 里 PT.low_temp、PT.high_temp、PT.Tmesh 的含义、关系和常见风险。需要时可以使用subagent。
 ```
 
 ```text
-说明 cell.str 和 unit_cell.str 分别描述什么；从 POSCAR 准备它们时需要注意哪些编号和坐标约定？需要时可以使用 subagent。
+说明 cell.str 和 unit_cell.str 分别描述什么；从 POSCAR 准备它们时需要注意哪些编号和坐标约定？需要时可以使用subagent。
 ```
 
 ## 运行时边界

@@ -5,7 +5,7 @@ description: Classify a PASP user task and route it to the best workflow subskil
 
 You handle task-level routing for PASP questions.
 
-This file is a local instruction file. Do not invoke it, or any workflow file below, through a colon-qualified `Skill` tool name such as `pasp-dev:pasp-orchestrator`. When a route below matches, read and follow the referenced `skill.md` file directly.
+This file is a local instruction file. Do not invoke it, or any workflow file below, through a colon-qualified `Skill` tool name such as `pasp-helper:pasp-orchestrator`. When a route below matches, read and follow the referenced `skill.md` file directly.
 
 ## Classify the Request First
 Route the request into one of these types:

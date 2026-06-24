@@ -404,15 +404,15 @@ cd /path/to/target-project
 ./install-pasp-skills.sh
 ```
 
-脚本会优先从自身相对路径识别源仓库；如果脚本是单独复制过去的，会使用脚本内置的源仓库路径。源仓库位置变化时，用 `--source /path/to/PASPskills` 或环境变量 `PASP_SKILLS_SOURCE=/path/to/PASPskills` 覆盖。
+脚本会优先从自身相对路径识别源仓库；如果脚本是单独复制过去的，建议用 `--source /path/to/PASPskills` 或环境变量 `PASP_SKILLS_SOURCE=/path/to/PASPskills` 指定源仓库。最后的默认 fallback 是当前工作目录 `./`。
 
 它会安装：
 - `/path/to/target-project/skills/`：PASP runtime skills package
-- `/path/to/target-project/.codex/skills/pasp-dev`：Codex 项目级入口 skill，软链接到工作目录的 `skills/`
+- `/path/to/target-project/.codex/skills/pasp-helper`：Codex 项目级入口 skill，软链接到工作目录的 `skills/`
 - `/path/to/target-project/.codex/skills/pasp-verifier/SKILL.md`：Codex verifier skill 包装器
 - `/path/to/target-project/.codex/agents/pasp-verifier.toml`：read-only Codex verifier subagent 配置
 - `/path/to/target-project/.claude/agents/pasp-verifier.md`：read-only Claude verifier subagent 配置
-- `/path/to/target-project/.claude/skills/pasp-dev`：Claude 项目级入口 skill，软链接到工作目录的 `skills/`
+- `/path/to/target-project/.claude/skills/pasp-helper`：Claude 项目级入口 skill，软链接到工作目录的 `skills/`
 
 如果目标目录已有旧版本，使用：
 
@@ -426,7 +426,7 @@ cd /path/to/target-project
 /path/to/PASPskills/scripts/install-pasp-skills.sh --copy
 ```
 
-如果从目标目录里的脚本安装，但源仓库不是脚本内置路径，使用：
+如果从目标目录里的脚本安装，但源仓库不在当前工作目录，使用：
 
 ```bash
 ./install-pasp-skills.sh --source /path/to/PASPskills
@@ -436,14 +436,14 @@ cd /path/to/target-project
 
 安装后的分层含义：
 - `skills/subskills/pasp-verifier/skill.md` 是 PASP 包内部的 canonical verifier 契约。
-- `.codex/skills/pasp-dev` 是 Codex 项目级入口，指向工作目录 `skills/`。
+- `.codex/skills/pasp-helper` 是 Codex 项目级入口，指向工作目录 `skills/`。
 - `.codex/skills/pasp-verifier/SKILL.md` 和 `.codex/agents/pasp-verifier.toml` 是 Codex 平台包装层。
-- `.claude/skills/pasp-dev` 是 Claude 项目级入口，指向工作目录 `skills/`。
+- `.claude/skills/pasp-helper` 是 Claude 项目级入口，指向工作目录 `skills/`。
 - `.claude/agents/pasp-verifier.md` 是 Claude 平台包装层。
 
 平台入口 / 包装层只负责暴露或导向 `skills/subskills/pasp-verifier/skill.md`，不要手工把 verifier 规则复制成多份长期维护。
 
-旧版安装可能留下 `$HOME/.claude/skills/pasp-dev` 这类 Claude 用户级入口；当前安装脚本只把它作为 legacy user-scope entry 检查、警告，或在 `--force` 时移除。新的 Claude 入口安装到目标项目的 `.claude/skills/pasp-dev`。
+旧版安装可能留下 `$HOME/.claude/skills/pasp-dev`、`$HOME/.claude/skills/paspskills` 或 `$HOME/.claude/skills/pasp-helper` 这类 Claude 用户级入口；当前安装脚本只把它们作为 legacy user-scope entry 检查、警告，或在 `--force` 时移除。新的 Claude 入口安装到目标项目的 `.claude/skills/pasp-helper`。
 
 ### 注意事项
 1. **保留目录层级不变**
@@ -452,7 +452,7 @@ cd /path/to/target-project
    - 当前 skill 文件里使用了相对路径引用
 3. **只把顶层 `SKILL.md` 当作注册入口**
    - `subskills/*/skill.md` 是运行时要读取的本地指令文件，不是假定已注册的独立 skill
-   - Claude 等环境里不要调用 `pasp-dev:pasp-orchestrator` 这类冒号式嵌套 skill 名；应由 `pasp-dev` 入口读取对应 `subskills/` 文件继续执行
+   - Claude 等环境里不要调用 `pasp-helper:pasp-orchestrator` 这类冒号式嵌套 skill 名；应由 `pasp-helper` 入口读取对应 `subskills/` 文件继续执行
 4. **路径名建议保持英文**
    - 更适合服务器、脚本、终端和不同环境下的兼容性
 5. **内容说明可以使用中文**

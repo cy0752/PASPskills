@@ -14,6 +14,8 @@ MD的常用设置。用于选择积分LLG方程（参见2.2.4节）时采用的�
 
 ## 注意事项
 - 修改前应确认当前 workflow 阶段确实需要该设置，不要用参数调整掩盖结构或文件依赖错误。
+- `method 1` 不支持 NVT。若 `MD.temperature` / nonzero damping 表示需要控温，不能默认保留 `LLG.method 1`；应确认是否使用 `LLG.method 2` 或用户明确指定的其他方法。
+- 对纯结构 / 仅位移自由度的 `atomic_effective_H` MD，即使没有真实自旋自由度，也不要忽略该字段：错误保留 `LLG.method 1` 可能使 NVT 相关路径与预期不一致。写入前仍需结合 `SLD.mode` 和 ensemble intent 检查。
 - 若涉及精确行格式或复杂示例，应回到来源章节核对。
 
 ## 来源章节

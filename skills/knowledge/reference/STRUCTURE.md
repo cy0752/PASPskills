@@ -213,6 +213,7 @@ files/
 ├── amp_local_mode.in.md
 ├── atat.NNN_Y.md
 ├── cell.str.md
+├── def_local_modes.dat.md
 ├── distortion.MAGMOM.md
 ├── distortion.pos.md
 ├── elastic.dat.md
@@ -220,6 +221,7 @@ files/
 ├── local_mode_PM.dat.md
 ├── mode_def.input.md
 ├── mode_mass.input.md
+├── run_pvasp.sh.md
 ├── seed.in.md
 ├── spin3.in.md
 ├── spin3_lowest.out.md

@@ -5,7 +5,11 @@
 ## 核心原则
 - L6 uses explicit `Model GA`. If `Model` is absent or not `GA`, do not assume the package is an L6 GA run.
 - Lecture-6 examples and run notes are historical observations. Their population size, generations, `SuperCell`, `Pher` / `Pmut`, VASP inputs, Slurm settings, job ids, energies and symmetry labels are not defaults.
+- `GA.population_size`, `GA.max_generation` and `save_str.nsave_str` do not auto-scale with system size in the curated reference. Very small values must be labeled smoke-test; production scale requires user confirmation.
+- `GA.Pher + GA.Pmut` must be checked. Values greater than `1` are invalid-risk; values below `1` leave a `Pperm` remainder and require explicit user intent.
+- `GA.parallel F` requires a current-environment `GA.VASPCMD` when VASP optimization is needed. `GA.parallel T` requires a current-environment `run_pvasp.sh` and VASP helper package.
 - Random-spacegroup, perturbation, magnetic, restart, fixed-lattice / constrained-cell, interface and parallel-external-evaluator branches have different dependencies. Do not flatten them into one generic file list.
+- VASP `INCAR`, `KPOINTS`, `POTCAR` and scheduler helpers are external evaluator inputs, not PASP defaults. GA often benefits from automatic mesh and staged relaxations, but those settings still require user/project confirmation.
 - `继续`、`ok`、`按例子来`、`去提交` do not confirm GA settings, external-evaluator settings, magnetic policy, run environment, or submission authorization.
 - `可以使用 subagent` only permits read-only fact collection when the runtime supports it. It does not confirm scientific parameters, promote files, create run directories, prepare submission artifacts, or submit jobs.
 - Read-only verifier tasks use `skills/subskills/pasp-verifier/skill.md`. The verifier cannot edit files, choose parameters, promote inputs, create runs, prepare submissions, or produce the final user answer.
@@ -55,6 +59,9 @@ L6 classifiers:
 - Structure route: `cell.str` / `unit_cell.str`, inline structure, POSCAR route, or unknown.
 - Direct `%include` targets.
 - External evaluator plan: serial command / `GA.VASPCMD`, parallel `run_pvasp.sh`, VASP / GULP files, scheduler helpers, stdout / stderr.
+- Heredity / mutation balance: effective `GA.Pher`, `GA.Pmut`, whether `Pperm` remainder is intended.
+- GA scale: `GA.population_size`, `GA.max_generation`, `save_str.nsave_str`, and smoke-test vs production label.
+- Symmetry/cutoff settings when present: `str.init_sym`, `GA.symmetrize_str`, `rmax_cut`.
 - Magnetic policy if any: `GA.magnetic`, `Spin_values`, `MAGMOM_*`, `OUTCAR` magnetic read, spin-polarized DFT.
 - Whether old generated outputs are present in a directory intended as candidate or formal input.
 
@@ -93,7 +100,10 @@ Before formal input, run derivation, submission-preparation or submission, the u
 - Composition, structure route, species order, `SuperCell` / structure relationship and whether the run is smoke-test or production.
 - Search objective: broad global search, known-framework perturbation, magnetic order search, restart, constrained search, interface / surface search, or output validation.
 - GA scale and search controls at workflow level: population, generations, saved-structure target, heredity / mutation balance, duplicate / symmetry handling.
-- External evaluator: VASP / GULP / other, serial vs parallel, command / helper, required input family, convergence responsibility, stdout / stderr and scheduler environment.
+- GA scale label: smoke-test vs production, including a warning that population `10` / generation `2` style settings are smoke-test unless the user explicitly accepts the limitation.
+- Heredity / mutation balance: whether `GA.Pher + GA.Pmut = 1` is intended; if less than `1`, whether the `Pperm` remainder is intentional.
+- External evaluator: VASP / GULP / other, serial vs parallel, `GA.VASPCMD` for `GA.parallel F` or `run_pvasp.sh` for `GA.parallel T`, required input family, convergence responsibility, stdout / stderr and scheduler environment.
+- VASP settings provenance: `INCAR`, `KPOINTS`, `POTCAR`, scheduler helper, whether fixed mesh vs automatic mesh and staged relaxation strategy are user/project confirmed.
 - Magnetic policy when active: random magnetic vs magnetic-spacegroup generation, AFM / FM restrictions, mutation, OUTCAR magnetic read, spin-polarized DFT support.
 - Constraint policy when active: pressure, fixed lattice, fixed cell, strain, fixed atom / axis, interface surfaces.
 - Restart provenance when active: saved files and generation id.
@@ -117,6 +127,11 @@ L6 checklist minimum:
 - `PASP.input` structural parse, direct include graph, duplicate first-wins behavior and explicit `Model GA`.
 - Structure route and direct include files present and same-package.
 - `Z_values`, `Spin_values`, `SuperCell` and branch controls align with user-confirmed current-material facts.
+- GA scale is explicitly user-confirmed and smoke-test / production labeled; tiny scale values are not accepted as production by inference.
+- `GA.Pher + GA.Pmut` is checked; `> 1` fails, `< 1` is blocked unless an intentional `Pperm` remainder is recorded.
+- `GA.parallel F` has nonempty current-environment `GA.VASPCMD` when VASP optimization is required; `GA.parallel T` has current-environment `run_pvasp.sh` plus VASP helper inputs.
+- VASP `INCAR`, `KPOINTS`, `POTCAR` and scheduler helper are user/project confirmed; automatic mesh or staged relaxation claims are recorded only when confirmed.
+- `str.init_sym`, `GA.symmetrize_str` and `rmax_cut` are checked as current-run choices when present; example values are not silently promoted.
 - Every explicit keyword, block, include target, file format and numbering rule has reference/user-authoritative coverage.
 - Branch-specific dependencies are present or marked blocked: random-spacegroup range, perturbation source structure, magnetic helper / MAGMOM / OUTCAR read, restart artifacts, interface `GA.surfaces`, external evaluator helper.
 - Environment helpers are not treated as portable defaults.

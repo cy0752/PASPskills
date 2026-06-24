@@ -28,6 +28,8 @@ preflight 应从根 `PASP.input` 遍历 include graph，确认：
 
 ```text
 %block local_mode.mode_definition
+2
+N_mode
 ...
 %endblock local_mode.mode_definition
 ```
@@ -35,6 +37,7 @@ preflight 应从根 `PASP.input` 遍历 include graph，确认：
 不要在本文件卡中按历史 example 复制具体 mode 内容。写入或修改该 block 前，必须先查：
 - `skills/knowledge/reference/params/local_mode.mode_definition.md`
 - 对纯自旋 mode 的代表点位分析，还应查 `skills/knowledge/reference/topics/symmetry_representative_sites.md`
+- 对多原子位移 / 声子 mode，必须确认 `N_atom` 后存在独立 species-id 列表行，后续才是逐原子的 `x y z dx dy dz` 行；不要把 species id 混写进坐标行第一列。
 
 ## Row-count / order 一致性检查
 preflight 至少应检查：
@@ -42,6 +45,7 @@ preflight 至少应检查：
 - `N` 后面直接接第一段 mode 定义，不插入额外空行；
 - 不同 mode 定义之间的空白分隔行符合 `local_mode.mode_definition` reference；
 - 每个 mode 的 species id、坐标系和方向定义与当前 `cell.str` / `unit_cell.str`、`Z_values`、`Spin_values` 和用户确认的建模自由度一致；
+- 对多原子位移 / 声子 mode，位移向量是 Cartesian components，不是 fractional / lattice-vector coordinates；
 - mode 顺序与同一数据链中的 `mode_mass.input` / `%block atom_Heff.MASS_local_mode` 顺序一致；
 - mode basis 与 `local_mode_PM.dat`、`J_best.dat`、`amp_local_mode.in` 属于同一上游模型，不混用其他材料、其他 supercell 或其他 stage 的文件。
 
@@ -63,6 +67,8 @@ Lecture-5 Cr2O3 SLD historical example 中，`mode_def.input` 是三阶段共同
 - 只把文件放进目录，但忘记在 `PASP.input` 中 `%include mode_def.input`。
 - `PASP.input` 中既 include 了 `mode_def.input`，又在别处内联重复 `%block local_mode.mode_definition`，导致 agent 修改了不生效的版本。
 - 把 Cr2O3 example 的 42 个 modes、坐标或 species id 当作其他体系默认值。
+- 把 PTO / soft-mode 多原子位移 mode 写成每行七列 `species_id x y z dx dy dz`，漏掉独立 species-id 列表行。
+- 把 `def_local_modes.dat` 的 displacement components 当作 fractional displacement 来反推 `mode_range`。
 - 修改 mode 定义后，没有同步检查 `mode_mass.input` 的质量个数和顺序。
 - 修改 mode 定义后，继续复用旧的 `local_mode_PM.dat`、`J_best.dat` 或 `amp_local_mode.in`，造成 local-mode basis 混用。
 - 忽略 `local_mode.mode_definition` 的空行 / 分隔行规则，导致 Fortran 读取错位或 EOF / syntax error。

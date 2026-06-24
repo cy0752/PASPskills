@@ -6,8 +6,8 @@
 ## 常见相关设置
 - 演化规模：`GA.population_size`、`GA.max_generation`、`save_str.nsave_str`
 - 遗传操作：`GA.perturbation`、`GA.Pher`、`GA.Pmut`、`GA.lchk_mut`
-- 对称性与结构比较：`str.init_sym`、`GA.symmetrize_str`、`GA.useBCM`、`GA.tol_BCM`
-- 并行与外场：`GA.parallel`、`GA.pressure`
+- 对称性、结构比较与截断：`str.init_sym`、`GA.symmetrize_str`、`GA.useBCM`、`GA.tol_BCM`、`rmax_cut`
+- 并行、外部评价与外场：`GA.parallel`、`GA.VASPCMD`、`run_pvasp.sh`、`GA.pressure`
 - 空间群随机结构：`GA.gen_ran_str_sym`、`GA.spg_front`、`GA.spg_rear`
 - 磁性搜索：`GA.magnetic`、`GA.random_magnetic`、`GA.lAFM_GA`、`GA.lmut_mag_GA`、`GA.flip_spin_rate`、`GA.ldiff_str_with_mag_GA`、`GA.lread_OUTCAR_mag`
 - 晶格或晶胞约束：`GA.fixlattice`、`GA.fix_cell`、`GA.biaxial_strain`、`block GA.lat_fix_2D_Ang`
@@ -20,6 +20,8 @@
 - `GA.fixlattice = T` 时，`GA.fix_cell` 也必须为 `T`
 - 若启用随机空间群生成，需要同时关注 `GA.spg_front/rear` 范围
 - 做磁性结构搜索时，要明确是否随机生成磁构型，还是按磁空间群生成
+- `GA.Pher + GA.Pmut` 会影响剩余遗传操作比例；L6 workflow 应检查二者之和是否为用户有意设置。
+- `GA.parallel F` 依赖 `GA.VASPCMD`；`GA.parallel T` 依赖环境适配的 `run_pvasp.sh`。
 
 ## 来源章节
 - 3.1.8 全局结构搜索常用设置项

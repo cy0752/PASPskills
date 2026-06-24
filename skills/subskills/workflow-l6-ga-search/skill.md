@@ -33,7 +33,7 @@ Always classify the current state using S0-S7 from the state-machine file first.
 
 ## Route To Reference When
 - The user asks for a single GA field definition.
-- The user asks about parameters such as `Model`, `GA.population_size`, `GA.max_generation`, `save_str.nsave_str`, `GA.Pher`, `GA.Pmut`, `GA.perturbation`, `GA.parallel`, `GA.gen_ran_str_sym`, `GA.spg_front`, `GA.spg_rear`, `GA.magnetic`, `GA.random_magnetic`, `GA.lAFM_GA`, `GA.lmut_mag_GA`, `GA.flip_spin_rate`, `GA.ldiff_str_with_mag_GA`, `GA.lread_OUTCAR_mag`, `GA.fixlattice`, `GA.fix_cell`, `GA.biaxial_strain`, or `GA.lat_fix_2D_Ang`.
+- The user asks about parameters such as `Model`, `GA.population_size`, `GA.max_generation`, `save_str.nsave_str`, `GA.Pher`, `GA.Pmut`, `GA.perturbation`, `GA.parallel`, `GA.VASPCMD`, `rmax_cut`, `str.init_sym`, `GA.symmetrize_str`, `GA.gen_ran_str_sym`, `GA.spg_front`, `GA.spg_rear`, `GA.magnetic`, `GA.random_magnetic`, `GA.lAFM_GA`, `GA.lmut_mag_GA`, `GA.flip_spin_rate`, `GA.ldiff_str_with_mag_GA`, `GA.lread_OUTCAR_mag`, `GA.fixlattice`, `GA.fix_cell`, `GA.biaxial_strain`, or `GA.lat_fix_2D_Ang`.
 - The user asks for exact formats of `PASP.input`, `%include`, `%block`, `seed.in`, `cell.str`, `unit_cell.str`, `SuperCell`, `Z_values`, or `Spin_values`.
-- The user asks whether a branch needs an external evaluator helper, `run_pvasp.sh`, `MAGMOM_*`, `OUTCAR`, `strs_saved.dat`, restart artifacts, interface surfaces, or any other conditionally required file.
+- The user asks whether a branch needs an external evaluator helper, `run_pvasp.sh`, `GA.VASPCMD`, `MAGMOM_*`, `OUTCAR`, `strs_saved.dat`, restart artifacts, interface surfaces, or any other conditionally required file.
 - A write depends on exact PASP field syntax, block row counts, defaults, file formats, numbering rules, model-specific output files, or setting-dependent dependencies.

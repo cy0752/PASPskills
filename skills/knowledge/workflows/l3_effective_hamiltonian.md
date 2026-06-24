@@ -261,6 +261,7 @@ project/
 
 4. 现有 `OUTCAR` 在数据链中的角色
 - 哪些样本只需要提取 `Energy.dat`
+- 能量必须从每个 `OUTCAR` 最后一条 converged `free energy TOTEN` 提取，不能取第一条 `TOTEN`；精确规则见 `skills/knowledge/reference/files/OUTCAR.md`
 - 哪些样本还需要提取最终逐原子磁矩
 - 哪些样本可以继续留在路径 A
 - 哪些样本应切到路径 B，并重建 `distortion.pos` / `distortion.MAGMOM`
@@ -291,8 +292,10 @@ project/
 - 请确认是否考虑 SOC；如果考虑，SOC / DMI / 各向异性项保留策略是什么。
 - 请确认 `local_mode.mode_definition` 的代表点位来源：用户提供、PASP `find_J_path_sym`、还是 agent 先做等价点位分析后再给你确认。
 - 请确认当前 `POSCAR` / `cell.str` 是用于定义模式的原胞/primitive，还是需要另行生成 `POSCAR_UC` / `unit_cell.str`。
+- 如果包含铁电/声子/局域位移模式，请确认 mode definition 的多原子格式、位置单位和位移向量来源；写入前必须参考 `params/local_mode.mode_definition.md`，运行后用 `def_local_modes.dat` / `local_mode-*.xsf` 校核 reduced mode 比例。
 - 如果走 Path A 并需要生成后续 DFT 样本结构，请确认目标 DFT 超胞：`cell.str` 是否已经是目标超胞；若不是，`%block SuperCell` 应写什么矩阵，或目标 POSCAR 应有多少原子。
 - 如果走 Path A 正向生成样本，请确认本轮希望生成多少个随机构型，即 `local_mode.nstr_random` 应写多少。
+- 如果 Path A 正向生成局域位移/软模样本，请确认 `local_mode.mode_range` 的估算依据；不能默认使用 `0.04`，应由目标物理位移、`def_local_modes.dat` reduced displacement component 和最小原子间距 smoke-test 共同约束。
 
 只有用户回答这些问题，或明确接受一份逐项列出并标注来源的设置表后，才能继续生成正式 shared-basis 输入。
 
@@ -312,6 +315,7 @@ preflight 必查项：
 - 是否所有 shared-basis 设置都有来源：用户确认、用户给定文件、reference 规则、或明确标注为待确认草稿。
 - `local_mode.mode_definition` 是否基于用户提供或对称性分析得到的不等价代表点位，而不是无证据地遍历所有磁性原子。
 - `local_mode.mode_definition` 的单原子自旋模式是否使用 `1 spin`，并把 species id 写在下一行；不得把 Mn 这类 species 2 误写成 `2 spin`。
+- 若是多原子位移 / 声子 mode，是否按 `N_atom`、独立 species-id 列表行、逐原子 `x y z dx dy dz` 行的格式写入；位移向量不得当成 fractional / lattice-vector 坐标。
 - mode 总数是否等于“不等价代表点位数 × 3”，且 mode 总数下一行没有空行。
 - 如果代表点位数等于结构中所有参与磁性原子数，是否有证据说明当前结构就是用于定义模式的原胞/primitive，且这些位点确实全部不等价。
 - `cell.str`、`unit_cell.str`、`POSCAR_UC` 和 `SuperCell` 是否处在同一轴向约定；`unit_cell.str` 是否使用 `unit_cell.na` / `%block unit_cell_in_Ang` / `%block Atoms_in_unit_cell_Ang` 格式。
@@ -495,6 +499,7 @@ workflow 文档应明确告诉 agent：
 如果用户起点是“批量 `OUTCAR`”，这套映射通常应从下面的现实动作开始：
 - Step 2：基于 `skills/knowledge/templates/l3_invariant/PASP.input` 起草共享基底骨架
 - Step 4 前置整理：从每个 `OUTCAR` 提取最终能量、最终结构和最终逐原子磁矩
+- 如果这些 `OUTCAR` 来自 L2 four-state exchange bridge，还必须记录每个状态取的是最后一条 `TOTEN`、四态线性组合公式、物理自旋 `S`、目标模型自旋幅值和换算因子；写入 `J_best.dat` 前按 `topics/four_state_method.md` / `files/J_best.dat.md` 检查格式与归一化
 - Step 3（路径 B）：把这些最终态逐样本整理为 `distortion.pos` / `distortion.MAGMOM`
 
 但这里要再加一条判据，避免 runtime agent 把目录看反：
@@ -720,6 +725,7 @@ workflow 文档应明确告诉 agent：
 - 你准备写、覆盖、提升或派生正式 `PASP.input` 时：必须逐项检查文件中每一个显式字段、block、`%include`、依赖文件格式和编号规则，而不是只检查看起来高风险的字段。
 - 你要改 `local_mode.mode_definition` 但不确定 block 语法时
 - 你准备写 `local_mode.mode_definition` 前，必须先查 `topics/symmetry_representative_sites.md` 和 `params/local_mode.mode_definition.md`，并先完成不等价代表点位分析
+- 你准备写多原子位移 / 软模 `local_mode.mode_definition`、解释 `def_local_modes.dat`、或设定 `local_mode.mode_range` 时，必须先查 `params/local_mode.mode_definition.md`、`files/def_local_modes.dat.md` 和 `params/local_mode.mode_range.md`
 - 你准备写 `fig.maxk`、`fig.mdist`、`Invariant.*`、SOC 相关项时，必须先查对应 reference，并确认它们不是模板默认值或 smoke-test 假设
 - 若 `Invariant.SOC T` 但用户没有要求显式限制 SOC 项，不要强行添加 `%block local_mode.special_SOC`；若用户要求限制 / 优先保留特定 SOC 项，则在写入 `%block local_mode.special_SOC` 前必须确认 interaction type 编号和最高阶数，不能先跑一个 restricted-basis 任务后再补改该 block
 - 你不确定 `read_interaction`、SOC 相关项或高级 local mode 选项的精确含义时
@@ -731,6 +737,7 @@ workflow 文档应明确告诉 agent：
 - `%include` 关系是否清楚
 - 结构文件、元素编号和自由度定义是否自洽
 - `local_mode.mode_definition` 的 mode 数是否等于对称不等价代表点位数 × 3；是否记录了代表点位来源、tolerance 和元素编号映射
+- 若包含局域位移 / 软模，运行后是否用同一 run 的 `def_local_modes.dat` 或 `local_mode-*.xsf` 检查实际 local-mode 个数、位移比例和 `mode_range` 估算是否仍合理
 - `unit_cell.str` 是否真的是 `unit_cell.na` / `unit_cell_in_Ang` / `Atoms_in_unit_cell_Ang` 格式，而不是误复制了 `cell.str` 格式
 - `cell.str` 是否只是扩胞前的基准结构；若它已经是目标超胞，则 `%block SuperCell` 是否已改成单位阵或等价“不再扩胞”的写法
 - 若 `PASP.input` 省略 `%block SuperCell`，是否有用户确认 1×1×1 就是目标 Path A 样本 / DFT 规模
@@ -909,6 +916,8 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 
 如需看历史实跑时某次输入具体生成了哪些样本文件、local mode 文件和辅助产物，请查 `./l3_effective_hamiltonian_run_notes.md`。
 
+`def_local_modes.dat` 的 `disp` 列应按 Cartesian local-mode displacement vector components 理解，不是 fractional displacement；具体说明见 `skills/knowledge/reference/files/def_local_modes.dat.md`。
+
 #### 待运行验证的依赖
 - PASP 原始运行还会不会产生未记录的中间文件
 - `postprocess.sh` 模板是否仍假设源文件位于 `test/` 子目录
@@ -989,6 +998,7 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 
 通常需要确认：
 - 能量是否来自一致的计算设置
+- 能量是否来自每个 `OUTCAR` 最后一条 converged `free energy TOTEN`，并记录收敛 / 正常结束证据
 - 样本编号是否与 PASP 输出的一一对应关系清楚
 - 是否已经能把每个样本对应到与其最终物理态一致的 `ene_symbol` 或等价特征表示
 
@@ -1060,6 +1070,7 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
   - 输入：各样本目录的 `OUTCAR`
   - 输出：`Energy.dat`
   - 假设：每个样本目录结构一致且能量文件可解析；当前版本也兼容扁平的 `<id>.OUTCAR` 结果集
+  - 能量规则：必须取最后一条 `free energy TOTEN` / `TOTEN`，而不是第一条；该规则见 `skills/knowledge/reference/files/OUTCAR.md`
   - 历史实跑中暴露出的脚本修正记录见 `./l3_effective_hamiltonian_run_notes.md`
 - `skills/knowledge/scripts/l3_effective_hamiltonian/extract_magmoms.py`
   - 作用：从 `OUTCAR` 提取最终逐原子磁矩，判断是否仍与输入磁矩方向近似平行，并可导出候选 `distortion.MAGMOM`
@@ -1413,7 +1424,8 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - L3 stage / run id、formal input 来源、S7 output-validation 证据路径。
 - `local_mode_PM.dat` 的来源：必须来自当前材料、当前 shared-basis 下成功的 Invariant / shared-basis run，不能来自 sibling example、旧 run 或未说明缓存。
 - 拟合参数文件来源：L5 / reference 侧消费的是 `J_best.dat` 这类 fitted interaction values；L3 应记录本次拟合实际验证并选择给 L5 的结果文件路径。如果当前 L3 run 还没有 runtime-validated `J_best.dat` 或等价选择记录，应把这一项标为 blocked / TODO，而不是假定模板已经给出。
-- 结构与基底：`cell.str`、`unit_cell.str` 或等价结构 route、`SuperCell`、有效 `Z_values` / `Spin_values`、mode definition，以及当前 L5 route 需要的 mass definition 来源。
+- 如果 `J_best.dat` 或等价参数来自 L2 four-state exchange bridge，而不是 L3 拟合器直接输出，handoff 还必须记录：每个 DFT 状态的最后 `TOTEN` 证据、四态 J 公式、物理自旋 `S`、目标模型 `Spin_values` / `S_model`、换算因子、单位、保留的 parameter id、零值项处理策略，以及 `J_best.dat` 每行 `<parameter_id> <value>` 的格式检查。
+- 结构与基底：`cell.str`、`unit_cell.str` 或等价结构 route、`SuperCell`、有效 `Z_values` / `Spin_values`、mode definition、`fig.maxk`、`fig.mdist`、`Invariant.power`、`Invariant.strain_power`、`Invariant.pure_strain_power`、SOC 策略，以及当前 L5 route 需要的 mass definition 来源。
 - 拟合 provenance：`Fitting_Dataset.txt`、`Fitting_Data_for_prediction.txt`、`Fitting_Settings.txt`、`Fitting_Set_Lambda.txt`、keep / skip 设置和数据链来源。这些通常是审计证据，不是 L5 运行时直接读取的核心文件。
 - 已知 gaps：缺失的 mode mass、未确认的 first-stage `amp_local_mode.in`、条件性的 `Zeff.dat`、生产 dynamics 设置、运行环境和任何仍需用户确认的科学判断。
 

@@ -1,5 +1,7 @@
 # PASP Skills 安装与使用
 
+[![Release](https://img.shields.io/github/v/release/cy0752/PASPskills?sort=semver)](https://github.com/cy0752/PASPskills/releases)
+
 这个仓库提供一套面向 PASP 计算流程的 agent skills，用于让 Codex 或 Claude 在目标项目中回答 PASP workflow 和 reference 问题。
 
 它主要解决两类问题：
@@ -39,6 +41,18 @@ unzip <downloaded-source>.zip
 
 后续命令里的 `/path/to/PASPskills` 请替换成你本机的实际目录。
 
+## 版本
+
+当前仓库的发布版本记录在根目录 `VERSION`，GitHub 最新发布版见页面顶部 release badge 或 [Releases](https://github.com/cy0752/PASPskills/releases)。
+
+安装后，目标项目中的 runtime skills 包会包含 `skills/VERSION`。用户可以在目标项目中查看当前安装版本：
+
+```bash
+cat skills/VERSION
+```
+
+如果 `skills/VERSION` 低于 GitHub 最新 release，说明目标项目安装的是旧版；可以重新运行安装脚本更新。
+
 ## 安装前提
 
 - Unix-like shell 环境，且可以运行 `bash`。
@@ -75,7 +89,7 @@ scripts/install-pasp-skills.sh [--force] [--copy] [--source <PASPskills-repo-or-
 
 常用选项：
 
-- `--force`：覆盖目标项目中已有的安装路径；同时会清理旧版 `.agents/skills/pasp-*` 和旧版 Claude 用户级 `pasp-dev` 入口。
+- `--force`：覆盖目标项目中已有的安装路径；同时会清理旧版 `.agents/skills/pasp-*`、旧版项目级 `pasp-dev` / `paspskills` 入口和旧版 Claude 用户级 PASP 入口。
 - `--copy`：把 `skills/` 复制进目标项目，而不是创建软链接。适合需要冻结当前版本、或目标项目不能依赖源仓库路径的场景。
 - `--source <path>`：显式指定 PASPskills 仓库目录，或直接指定其中的 `skills/` 目录。
 - `PASP_SKILLS_SOURCE=/path/to/PASPskills`：不想在命令里写 `--source` 时，可以用环境变量指定来源。
@@ -86,7 +100,7 @@ scripts/install-pasp-skills.sh [--force] [--copy] [--source <PASPskills-repo-or-
 1. `--source` 参数
 2. `PASP_SKILLS_SOURCE` 环境变量
 3. 相对安装脚本的位置查找本仓库
-4. 安装脚本内置的源路径兜底
+4. 当前工作目录 `./`
 
 示例：
 
@@ -116,21 +130,21 @@ PASP_SKILLS_SOURCE=/path/to/PASPskills /path/to/PASPskills/scripts/install-pasp-
 
 ```text
 <target>/skills/                          PASP runtime skills package
-<target>/.codex/skills/pasp-dev           Codex project skill symlink
+<target>/.codex/skills/pasp-helper       Codex project skill symlink
 <target>/.codex/skills/pasp-verifier/     Codex verifier skill wrapper
 <target>/.codex/agents/pasp-verifier.toml Read-only Codex agent config
-<target>/.claude/skills/pasp-dev          Claude project skill symlink
+<target>/.claude/skills/pasp-helper      Claude project skill symlink
 <target>/.claude/agents/pasp-verifier.md  Read-only Claude subagent config
 ```
 
-其中 `pasp-dev` 是用户主要入口；`pasp-verifier` 是只读事实检查契约，供主 agent 在需要检查参考资料、目录、输入文件、输出文件或日志时使用。
+其中 `pasp-helper` 是用户主要入口；`pasp-verifier` 是只读事实检查契约，供主 agent 在需要检查参考资料、目录、输入文件、输出文件或日志时使用。
 
 ## 平台入口
 
 安装到某个项目后，在该项目中打开 Codex 或 Claude。两个平台使用同一套 `skills/` 知识，入口路径不同：
 
-- Codex：`.codex/skills/pasp-dev`，只读 verifier agent 配置在 `.codex/agents/pasp-verifier.toml`。
-- Claude：`.claude/skills/pasp-dev`，只读 verifier agent 配置在 `.claude/agents/pasp-verifier.md`。
+- Codex：`.codex/skills/pasp-helper`，只读 verifier agent 配置在 `.codex/agents/pasp-verifier.toml`。
+- Claude：`.claude/skills/pasp-helper`，只读 verifier agent 配置在 `.claude/agents/pasp-verifier.md`。
 
 如果平台环境不会自动触发项目 skill，可以在提示词里明确要求读取本项目的 `skills/SKILL.md` 作为 PASP 入口。
 
@@ -139,13 +153,13 @@ PASP_SKILLS_SOURCE=/path/to/PASPskills /path/to/PASPskills/scripts/install-pasp-
 可以直接问任务型问题：
 
 ```text
-使用 pasp-dev。我想从 POSCAR 开始做 PASP 的交换路径分析，下一步应该准备什么？
+使用 pasp-helper。我想从 POSCAR 开始做 PASP 的交换路径分析，下一步应该准备什么？
 ```
 
 也可以问参考型问题：
 
 ```text
-使用 pasp-dev。PASP.input 里的 Model 字段有哪些常见取值？它们分别对应什么 workflow？
+使用 pasp-helper。PASP.input 里的 Model 字段有哪些常见取值？它们分别对应什么 workflow？
 ```
 
 如果你正在让 agent 修改或生成输入文件，推荐明确要求它先查 reference：
@@ -196,7 +210,7 @@ PASP skills 运行时只应依赖目标项目里的：
 
 ## 路径稳定性
 
-默认软链接安装要求源仓库路径保持存在。如果移动或删除 PASPskills 仓库，目标项目中的 `skills/`、`.codex/skills/pasp-dev` 和 `.claude/skills/pasp-dev` 可能失效。
+默认软链接安装要求源仓库路径保持存在。如果移动或删除 PASPskills 仓库，目标项目中的 `skills/`、`.codex/skills/pasp-helper` 和 `.claude/skills/pasp-helper` 可能失效。
 
 需要长期归档或跨机器使用时，优先使用：
 

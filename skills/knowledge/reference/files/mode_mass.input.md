@@ -28,11 +28,11 @@ preflight 应从根 `PASP.input` 遍历 include graph，确认：
 
 ```text
 %block atom_Heff.MASS_local_mode
-...
+mass_1 mass_2 ... mass_N
 %endblock atom_Heff.MASS_local_mode
 ```
 
-不要在本文件卡中复制具体质量值。写入或修改该 block 前，必须先查 `skills/knowledge/reference/params/atom_Heff.MASS_local_mode.md`。
+推荐把所有质量值写在同一数据行，按当前 local-mode 顺序形成一个连续列表。不要在本文件卡中复制具体质量值。写入或修改该 block 前，必须先查 `skills/knowledge/reference/params/atom_Heff.MASS_local_mode.md`。
 
 ## Row-count / order 一致性检查
 preflight 至少应检查：
@@ -58,6 +58,7 @@ Lecture-5 Cr2O3 SLD historical example 中，`mode_mass.input` 是三阶段共�
 
 ## 常见误区
 - 只按元素种类写少数几个质量值，而不是按 local-mode count 逐 mode 提供。
+- 把质量值写成每行一个 mode，但没有当前 PASP build / reference 证明这种写法被正确读取；本 skill 的 canonical 写法是同一数据行连续列出。
 - 修改 `mode_def.input` 后没有同步修改 mass 条目数量或顺序。
 - 把 Cr2O3 example 的质量值、mode 数或排列顺序当作其他材料默认值。
 - 在 `PASP.input` 或 include graph 中保留多个 `atom_Heff.MASS_local_mode` block，导致修改了不可达重复项。

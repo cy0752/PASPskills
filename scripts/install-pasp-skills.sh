@@ -9,11 +9,11 @@ usage() {
   printf '%s\n' ""
   printf '%s\n' "Installs:"
   printf '%s\n' "  <target>/skills/                         PASP runtime skills package"
-  printf '%s\n' "  <target>/.codex/skills/pasp-dev          Codex project skill symlink"
+  printf '%s\n' "  <target>/.codex/skills/pasp-helper     Codex project skill symlink"
   printf '%s\n' "  <target>/.codex/skills/pasp-verifier/    Codex verifier skill wrapper"
   printf '%s\n' "  <target>/.codex/agents/pasp-verifier.toml Read-only Codex agent config"
   printf '%s\n' "  <target>/.claude/agents/pasp-verifier.md Read-only Claude subagent config"
-  printf '%s\n' "  <target>/.claude/skills/pasp-dev         Claude project skill symlink"
+  printf '%s\n' "  <target>/.claude/skills/pasp-helper    Claude project skill symlink"
   printf '%s\n' ""
   printf '%s\n' "Options:"
   printf '%s\n' "  --force    overwrite existing installed files"
@@ -24,7 +24,7 @@ usage() {
   printf '%s\n' "  1. --source argument"
   printf '%s\n' "  2. PASP_SKILLS_SOURCE environment variable"
   printf '%s\n' "  3. path relative to this script, when run from the PASPskills repo"
-  printf '%s\n' "  4. built-in source path captured for copy-this-script installs"
+  printf '%s\n' "  4. ./ relative to the current working directory"
 }
 
 force=0
@@ -122,7 +122,7 @@ if [ -z "$source_skills" ] || [ ! -f "$source_skills/SKILL.md" ]; then
     printf 'Cannot find source PASP skills package from --source/PASP_SKILLS_SOURCE: %s\n' "$source_hint" >&2
   else
     printf 'Cannot find source PASP skills package.\n' >&2
-    printf 'Tried relative paths from this script and built-in source path: %s\n' "$default_source_root" >&2
+    printf 'Tried relative paths from this script and default source root: %s\n' "$default_source_root" >&2
   fi
   printf 'Provide the source repo with: %s --source /path/to/PASPskills\n' "$0" >&2
   printf 'Cannot find source PASP skills package at: %s\n' "$source_skills" >&2
@@ -133,14 +133,20 @@ target_skills="$target/skills"
 target_codex_skills="$target/.codex/skills"
 target_codex_agents="$target/.codex/agents"
 target_claude_agents="$target/.claude/agents"
-target_pasp_dev="$target_codex_skills/pasp-dev"
+target_pasp_helper="$target_codex_skills/pasp-helper"
 target_pasp_verifier_skill="$target_codex_skills/pasp-verifier"
 target_pasp_verifier_agent="$target_codex_agents/pasp-verifier.toml"
 target_claude_verifier_agent="$target_claude_agents/pasp-verifier.md"
 target_claude_skills="$target/.claude/skills"
-target_claude_pasp_dev="$target_claude_skills/pasp-dev"
+target_claude_pasp_helper="$target_claude_skills/pasp-helper"
 legacy_claude_user_skills_dir="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
 legacy_claude_user_pasp_dev="$legacy_claude_user_skills_dir/pasp-dev"
+legacy_claude_user_paspskills="$legacy_claude_user_skills_dir/paspskills"
+legacy_claude_user_pasp_helper="$legacy_claude_user_skills_dir/pasp-helper"
+legacy_codex_pasp_dev="$target_codex_skills/pasp-dev"
+legacy_claude_pasp_dev="$target_claude_skills/pasp-dev"
+legacy_codex_paspskills="$target_codex_skills/paspskills"
+legacy_claude_paspskills="$target_claude_skills/paspskills"
 legacy_agent_skills="$target/.agents/skills"
 legacy_agent_pasp_dev="$legacy_agent_skills/pasp-dev"
 legacy_agent_pasp_verifier_skill="$legacy_agent_skills/pasp-verifier"
@@ -155,11 +161,11 @@ require_overwrite_ok() {
 }
 
 require_overwrite_ok "$target_skills"
-require_overwrite_ok "$target_pasp_dev"
+require_overwrite_ok "$target_pasp_helper"
 require_overwrite_ok "$target_pasp_verifier_skill"
 require_overwrite_ok "$target_pasp_verifier_agent"
 require_overwrite_ok "$target_claude_verifier_agent"
-require_overwrite_ok "$target_claude_pasp_dev"
+require_overwrite_ok "$target_claude_pasp_helper"
 
 mkdir -p "$target_codex_skills" "$target_codex_agents" "$target_claude_agents" "$target_claude_skills"
 
@@ -173,10 +179,10 @@ else
   ln -s "$source_skills" "$target_skills"
 fi
 
-if { [ -e "$target_pasp_dev" ] || [ -L "$target_pasp_dev" ]; } && [ "$force" -eq 1 ]; then
-  rm -rf "$target_pasp_dev"
+if { [ -e "$target_pasp_helper" ] || [ -L "$target_pasp_helper" ]; } && [ "$force" -eq 1 ]; then
+  rm -rf "$target_pasp_helper"
 fi
-ln -s "../../skills" "$target_pasp_dev"
+ln -s "../../skills" "$target_pasp_helper"
 
 if { [ -e "$target_pasp_verifier_skill" ] || [ -L "$target_pasp_verifier_skill" ]; } && [ "$force" -eq 1 ]; then
   rm -rf "$target_pasp_verifier_skill"
@@ -193,12 +199,24 @@ Read and follow `skills/subskills/pasp-verifier/skill.md` in this target project
 This project-level skill is a thin Codex wrapper. The canonical verifier contract lives in the installed PASP package so it stays versioned with `skills/knowledge/`.
 EOF
 
-if { [ -e "$target_claude_pasp_dev" ] || [ -L "$target_claude_pasp_dev" ]; } && [ "$force" -eq 1 ]; then
-  rm -rf "$target_claude_pasp_dev"
+if { [ -e "$target_claude_pasp_helper" ] || [ -L "$target_claude_pasp_helper" ]; } && [ "$force" -eq 1 ]; then
+  rm -rf "$target_claude_pasp_helper"
 fi
-ln -s "../../skills" "$target_claude_pasp_dev"
+ln -s "../../skills" "$target_claude_pasp_helper"
 
 if [ "$force" -eq 1 ]; then
+  if { [ -e "$legacy_codex_pasp_dev" ] || [ -L "$legacy_codex_pasp_dev" ]; }; then
+    rm -rf "$legacy_codex_pasp_dev"
+  fi
+  if { [ -e "$legacy_claude_pasp_dev" ] || [ -L "$legacy_claude_pasp_dev" ]; }; then
+    rm -rf "$legacy_claude_pasp_dev"
+  fi
+  if { [ -e "$legacy_codex_paspskills" ] || [ -L "$legacy_codex_paspskills" ]; }; then
+    rm -rf "$legacy_codex_paspskills"
+  fi
+  if { [ -e "$legacy_claude_paspskills" ] || [ -L "$legacy_claude_paspskills" ]; }; then
+    rm -rf "$legacy_claude_paspskills"
+  fi
   if { [ -e "$legacy_agent_pasp_dev" ] || [ -L "$legacy_agent_pasp_dev" ]; }; then
     rm -rf "$legacy_agent_pasp_dev"
   fi
@@ -206,6 +224,10 @@ if [ "$force" -eq 1 ]; then
     rm -rf "$legacy_agent_pasp_verifier_skill"
   fi
 else
+  if { [ -e "$legacy_codex_pasp_dev" ] || [ -L "$legacy_codex_pasp_dev" ] || [ -e "$legacy_claude_pasp_dev" ] || [ -L "$legacy_claude_pasp_dev" ] || [ -e "$legacy_codex_paspskills" ] || [ -L "$legacy_codex_paspskills" ] || [ -e "$legacy_claude_paspskills" ] || [ -L "$legacy_claude_paspskills" ]; }; then
+    printf '%s\n' "Warning: legacy project skill entries named pasp-dev or paspskills were left unchanged."
+    printf '%s\n' "Re-run with --force to remove legacy entries from .codex/skills and .claude/skills."
+  fi
   if { [ -e "$legacy_agent_pasp_dev" ] || [ -L "$legacy_agent_pasp_dev" ] || [ -e "$legacy_agent_pasp_verifier_skill" ] || [ -L "$legacy_agent_pasp_verifier_skill" ]; }; then
     printf '%s\n' "Warning: legacy Codex skill entries under $legacy_agent_skills were left unchanged."
     printf '%s\n' "Re-run with --force to remove legacy pasp-dev and pasp-verifier entries from .agents/skills."
@@ -216,10 +238,16 @@ if [ "$force" -eq 1 ]; then
   if { [ -e "$legacy_claude_user_pasp_dev" ] || [ -L "$legacy_claude_user_pasp_dev" ]; }; then
     rm -rf "$legacy_claude_user_pasp_dev"
   fi
+  if { [ -e "$legacy_claude_user_paspskills" ] || [ -L "$legacy_claude_user_paspskills" ]; }; then
+    rm -rf "$legacy_claude_user_paspskills"
+  fi
+  if { [ -e "$legacy_claude_user_pasp_helper" ] || [ -L "$legacy_claude_user_pasp_helper" ]; }; then
+    rm -rf "$legacy_claude_user_pasp_helper"
+  fi
 else
-  if { [ -e "$legacy_claude_user_pasp_dev" ] || [ -L "$legacy_claude_user_pasp_dev" ]; }; then
-    printf '%s\n' "Warning: legacy Claude user-scope entry at $legacy_claude_user_pasp_dev was left unchanged."
-    printf '%s\n' "Re-run with --force to remove the legacy user-scope pasp-dev entry."
+  if { [ -e "$legacy_claude_user_pasp_dev" ] || [ -L "$legacy_claude_user_pasp_dev" ] || [ -e "$legacy_claude_user_paspskills" ] || [ -L "$legacy_claude_user_paspskills" ] || [ -e "$legacy_claude_user_pasp_helper" ] || [ -L "$legacy_claude_user_pasp_helper" ]; }; then
+    printf '%s\n' "Warning: legacy Claude user-scope PASP skill entry was left unchanged."
+    printf '%s\n' "Re-run with --force to remove the legacy user-scope PASP skill entry."
   fi
 fi
 
@@ -305,8 +333,8 @@ if [ "$copy" -eq 1 ]; then
 else
   printf '%s\n' "  skills mode:    symlink -> $source_skills"
 fi
-printf '%s\n' "  Codex skill:    $target_pasp_dev/SKILL.md"
+printf '%s\n' "  Codex skill:    $target_pasp_helper/SKILL.md"
 printf '%s\n' "  Verifier skill: $target_pasp_verifier_skill/SKILL.md"
 printf '%s\n' "  Codex agent:    $target_pasp_verifier_agent"
 printf '%s\n' "  Claude agent:   $target_claude_verifier_agent"
-printf '%s\n' "  Claude skill:   $target_claude_pasp_dev/SKILL.md"
+printf '%s\n' "  Claude skill:   $target_claude_pasp_helper/SKILL.md"

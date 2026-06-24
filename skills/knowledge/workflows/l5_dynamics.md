@@ -68,7 +68,7 @@ Lecture examples、run notes 和源码路径只能作为 authoring 证据；不�
 
 派生 run 目录时要避免把历史输出残留带入新 run。若 `input/` 或 candidate 是从旧 example / complete / previous run 复制来的，先清点文件角色；新 run 只复制当前需要的 `PASP.input`、`MD.input`、direct `%include` files、`local_mode_PM.dat`、`J_best.dat`、`amp_local_mode.in`、条件输入文件和运行 helper。
 
-Smoke-test reduction is allowed only as an explicitly labeled smoke test, not as production validation or a default parameter recommendation. When reducing `SuperCell` for a short run and current settings read an initial state, the `amp_local_mode.in` row count must be consistent with the reduced simulation cell and current local-mode/site basis. Planned MPI ranks must also remain compatible with the `SuperCell` determinant and the workflow / runtime requirement before submission is prepared.
+Smoke-test reduction is allowed only as an explicitly labeled smoke test, not as production validation or a default parameter recommendation. When reducing `SuperCell` for a short run and current settings read an initial state, the `amp_local_mode.in` row count must be consistent with the reduced simulation cell and current local-mode/site basis. Planned MPI ranks must also remain compatible with the current supercell factors before submission is prepared: there must be a decomposition `p1 * p2 * p3 = ranks` with `p1 | n1`, `p2 | n2`, and `p3 | n3`, where `(n1,n2,n3)` are the supercell factors PASP derives from the current `cell` / `unit_cell` relation.
 
 ## Generalized new-material input preparation
 
@@ -78,7 +78,7 @@ For a new material, L5 should be treated as a consumer of a prepared `Model atom
 |---|---|---|---|
 | User scientific intent | branch, active degrees of freedom, smoke-test vs production, output / handoff target | User | Must be explicitly confirmed before formal input, run derivation, or submission preparation |
 | Entry inputs | `PASP.input`, `MD.input`, every direct `%include` target | User / upstream / reference-backed edits | Hard-required for the current candidate route; exact writes require reference lookup |
-| Structure and basis | `cell.str`, `unit_cell.str`, `SuperCell`, `Z_values`, `Spin_values`, mode definition, mass definition | User / upstream structure and model preparation | Same-material / same-basis provenance must be recorded; split vs inline representation follows current `PASP.input` and reference |
+| Structure and basis | `cell.str`, `unit_cell.str`, `SuperCell`, `Z_values`, `Spin_values`, mode definition, mass definition, `fig.maxk`, `fig.mdist`, `Invariant.*`, SOC strategy, mode-info / soft-mode blocks when required | User / upstream structure and model preparation | Same-material / same-basis provenance must be recorded; split vs inline representation follows current `PASP.input` and reference |
 | Upstream model products | `local_mode_PM.dat`, `J_best.dat`, optional strain / spin-strain model files | L3 / fitting / user-authoritative model source | Treat as upstream products; do not synthesize or renumber in L5 without authoritative evidence |
 | Initial state | first-stage `amp_local_mode.in`, or validated previous-run `amp_local_mode.out` handoff | User / upstream run validation | Required when current settings read an initial state; row count and basis compatibility are preflight checks |
 | Conditional physics inputs | `Zeff.dat`, `elastic.dat`, `spin_strain.dat`, `Field_for_Electrocaloric`, other setting-triggered dependencies | Current settings plus reference or user authority | Required only when the active branch/settings establish the dependency; example presence is not enough |
@@ -104,15 +104,21 @@ Use the L3 record to map upstream products to L5 requirements:
 
 | L5 requirement | L3 / upstream evidence to look for | L5 interpretation |
 |---|---|---|
-| `local_mode_PM.dat` | Successful current-material shared-basis / Invariant run under the same structure, mode basis, cutoffs, expansion orders, and SOC strategy | Upstream model product; usually read through `local_mode.read_interaction T` for dynamics |
-| `J_best.dat` or selected fitted-parameter file | Runtime-validated fitting output selected for L5, plus fitting dataset / settings provenance | Fitted values; numbering must match `local_mode_PM.dat` or the authoritative interaction list |
-| structure and basis | `cell.str`, `unit_cell.str` or equivalent route, `SuperCell`, `Z_values`, `Spin_values`, mode definition, mass definition when used | Must be same-material / same-basis with model files and initial state when read |
+| `local_mode_PM.dat` | Successful current-material shared-basis / Invariant run under the same structure, mode basis, `fig.maxk`, `fig.mdist`, `Invariant.power` / related powers, and SOC strategy | Upstream model product; usually read through `local_mode.read_interaction T` for dynamics |
+| `J_best.dat` or selected fitted-parameter file | Runtime-validated fitting output selected for L5, plus fitting dataset / settings provenance. If values came from L2 four-state DFT, the handoff must include final-`TOTEN` evidence, spin-normalization factor, parameter-id mapping, and `J_best.dat` format check | Fitted / bridged values; numbering must match `local_mode_PM.dat` or the authoritative interaction list, and values must already be in the current model spin basis and units |
+| structure and basis | `cell.str`, `unit_cell.str` or equivalent route, `SuperCell`, `Z_values`, `Spin_values`, mode definition, mass definition when used, `fig.maxk`, `fig.mdist`, `Invariant.*`, SOC strategy, and any `fitting.Heff.soft_mode` / mode-info blocks required by the current `atomic_effective_H` package | Must be same-material / same-basis with model files and initial state when read |
 | fitting provenance | `Fitting_Dataset.txt`, prediction data, `Fitting_Settings.txt`, lambda scan, keep / skip status, selected run id | Audit evidence for model trust; not normally direct L5 runtime inputs |
 | first-stage `amp_local_mode.in` | User / upstream-selected initial state, or candidate from compatible L3-generated `*.amp_local_mode` with provenance | Required only when current settings read an initial state; row count and basis compatibility remain L5 preflight checks |
 | `Zeff.dat` | Separate same-basis BEC / polarization upstream evidence | Conditional; required for polarization / electric-field paths only when current settings/reference establish dependency |
 | production dynamics settings | User-confirmed L5 settings table | L3 fitting does not choose timestep, damping, temperature, run length, output cadence, field schedule, MPI ranks, or acceptance thresholds |
 
-Before formal L5 input or run derivation, the same-basis check must tie together structure route, `SuperCell`, species / spin values, mode definition, mass definition, `local_mode_PM.dat`, `J_best.dat`, `local_mode.read_interaction`, `Read_init_spin`, and initial `amp_local_mode.in` when read. If any of these objects changed after the L3 run, treat the handoff as blocked until the user or upstream evidence explains the replacement.
+Before formal L5 input or run derivation, the same-basis check must tie together structure route, `SuperCell`, species / spin values, mode definition, mass definition, `fig.maxk`, `fig.mdist`, `Invariant.*`, SOC strategy, mode-info / `fitting.Heff.soft_mode` requirements, `local_mode_PM.dat`, `J_best.dat`, `local_mode.read_interaction`, `Read_init_spin`, and initial `amp_local_mode.in` when read. If any of these objects changed after the L3 run, treat the handoff as blocked until the user or upstream evidence explains the replacement.
+
+For `atomic_effective_H`, do not assume that `local_mode_PM.dat` and `J_best.dat` alone are enough. If the current package needs shared model-basis settings or `fitting.Heff.soft_mode` / equivalent mode-info blocks to read the effective-H mode information, those settings must appear in `PASP.input` / direct includes or be supplied by a documented upstream-compatible route. A crash such as `read_mode_info: no fitting.Heff.soft_mode block` is a basis-definition failure, not an MD timestep or damping problem.
+
+For pure structural / ferroelectric local-mode MD, the active degrees of freedom should normally be recorded as lattice / displacement only, with `SLD.mode 1` explicitly set and `LLG.method` checked against NVT intent. Do not leave `SLD.mode` implicit, because its default is coupled spin-lattice mode `3`.
+
+For finite-temperature polarization fluctuation or Curie-Weiss-style analysis, system size and sampling length are scientific settings, not example defaults. A small cell such as `2x2x2` may be acceptable only as a labeled smoke test; production analysis must use a user-confirmed larger supercell and trajectory length adequate for the intended statistics.
 
 ## Branch routing
 
@@ -142,11 +148,11 @@ Generic branch routing is not material-name driven. If the material is neither C
 
 | 来源 | 文件 / record | 是否硬性必需 | 说明 |
 |---|---|---|---|
-| 用户 / 上游 | `PASP.input` | 必需 | Selects `Model atomic_effective_H`, structure route, model consumption, includes / inline blocks, and high-level package controls |
+| 用户 / 上游 | `PASP.input` | 必需 | Selects `Model atomic_effective_H`, structure route, model consumption, includes / inline blocks, high-level package controls, and any shared model-basis settings required to read mode information |
 | 用户 / 上游 | `MD.input` | 通常必需 | Required when included or otherwise used for the L5 dynamics driver; controls MD / LLG / ASD / SLD run behavior |
 | 用户 / 上游 | `cell.str` / `unit_cell.str` or documented equivalent | 当前 route 必需 | Structure files must match the current basis; exact route follows `PASP.input` reference and user authority |
-| L3 / 上游模型 | `local_mode_PM.dat` | setting-dependent but usually required for fitted effective-H dynamics | Upstream interaction / local-mode basis; must match `J_best.dat`, structures, and mode basis |
-| L3 / 上游拟合 | `J_best.dat` | setting-dependent but usually required for fitted effective-H dynamics | Fitted interaction values; numbering must match `local_mode_PM.dat` or authoritative interaction list |
+| L3 / 上游模型 | `local_mode_PM.dat` | setting-dependent but usually required for fitted effective-H dynamics | Upstream interaction / local-mode basis; must match `J_best.dat`, structures, mode basis, `fig.maxk`, `fig.mdist`, `Invariant.*`, and SOC strategy |
+| L3 / 上游拟合 | `J_best.dat` | setting-dependent but usually required for fitted effective-H dynamics | Fitted / bridged interaction values; numbering must match `local_mode_PM.dat` or authoritative interaction list, and values must already be in the current model spin basis |
 | 用户 / 上游 | mode definition and mass definition | route-dependent | Can be split files or inline blocks; count/order/same-basis checks route through reference before writing |
 | 用户 / 上游 | `amp_local_mode.in` | required when the current settings read an initial state | First-stage source is user/upstream-owned; later-stage source must be validated `amp_local_mode.out` handoff |
 | 用户 / 上游 | `Zeff.dat` | conditional | Required for polarization/BEC paths such as active electric-field or `atom_Heff.getP` when reference/current settings establish dependency |
@@ -156,6 +162,8 @@ Generic branch routing is not material-name driven. If the material is neither C
 
 For generic packages, preflight must answer whether the package is internally consistent for the stated branch. It does not prove the effective Hamiltonian is scientifically valid, that fitted parameters are good, or that production settings are adequate.
 
+For mode masses, exact writes route through `skills/knowledge/reference/params/atom_Heff.MASS_local_mode.md`: all masses should be written as one continuous list in the block, count equals the current local-mode count, and order follows `mode_def.input` / `def_local_modes.dat` / `local_mode-*.xsf` evidence.
+
 ### Common required files for Cr2O3 MVP candidate packages
 
 | 来源 | 文件 | 是否硬性必需 | 说明 |
@@ -164,8 +172,8 @@ For generic packages, preflight must answer whether the package is internally co
 | 用户 / 上游 | `MD.input` | 必需 | Controls `atom_Heff.MD`, `SLD.mode`, time step, run length, LLG / MD damping, temperature, output cadence |
 | 用户 / 上游 | `cell.str` | 通常必需 | Current simulation structure; exact structure route follows `PASP.input` reference |
 | 用户 / 上游 | `unit_cell.str` | 通常必需 | Unit-cell / reference structure; if not used, README must explain structure route |
-| L3 / 上游模型 | `local_mode_PM.dat` | `atomic_effective_H` dynamics 通常必需 | Interaction / local-mode basis; should match `J_best.dat` |
-| L3 / 上游拟合 | `J_best.dat` | `atomic_effective_H` dynamics 通常必需 | Fitted interaction values; numbering must match `local_mode_PM.dat` or corresponding interaction list |
+| L3 / 上游模型 | `local_mode_PM.dat` | `atomic_effective_H` dynamics 通常必需 | Interaction / local-mode basis; should match `J_best.dat`, structure route, mode basis, shared-basis controls, and SOC strategy |
+| L3 / 上游拟合 | `J_best.dat` | `atomic_effective_H` dynamics 通常必需 | Fitted / bridged interaction values; numbering must match `local_mode_PM.dat` or corresponding interaction list, and values must already be in the current model spin basis |
 | 用户 / 上游 | `amp_local_mode.in` | 必需 for Cr2O3 branch | Stage initial state; stage 2 / 3 source must be validated upstream `amp_local_mode.out` |
 | 用户 / 上游 | direct include files | 条件必需 | Any file directly `%include`d by `PASP.input`, such as `mode_def.input` or `mode_mass.input` |
 | 用户 / 上游 | `Zeff.dat` | 条件必需 | Needed only when current settings / reference establish polarization-related dependency |
@@ -199,8 +207,8 @@ BaTiO3 uses a single prepared MD run, not Cr2O3 stage 1 -> stage 2 -> stage 3 ha
 | 用户 / 上游 | `MD.input` | 必需 | Controls `atom_Heff.MD`, time integration, damping / temperature, electric-field waveform, polarization flag, output cadence, and optional local-mode bounds |
 | 用户 / 上游 | `cell.str` | 通常必需 | Current BaTiO3 simulation structure; exact route follows `PASP.input` reference |
 | 用户 / 上游 | `unit_cell.str` | 通常必需 | Unit-cell / reference structure used for local-mode and `Zeff.dat` consistency checks |
-| L3 / 上游模型 | `local_mode_PM.dat` | `atomic_effective_H` dynamics 通常必需 | Interaction / local-mode basis; should match `J_best.dat` and the structure/mode definition |
-| L3 / 上游拟合 | `J_best.dat` | `atomic_effective_H` dynamics 通常必需 | Fitted interaction values matching the current model basis |
+| L3 / 上游模型 | `local_mode_PM.dat` | `atomic_effective_H` dynamics 通常必需 | Interaction / local-mode basis; should match `J_best.dat`, structure / mode definition, shared-basis controls, and SOC strategy |
+| L3 / 上游拟合 | `J_best.dat` | `atomic_effective_H` dynamics 通常必需 | Fitted / bridged interaction values matching the current model basis |
 | 用户 / 上游 | `amp_local_mode.in` | 必需 when `Read_init_spin T` or an initial local-mode state is read | Initial local-mode amplitude state; row count must match current `SuperCell` and local-mode/site basis before run derivation |
 | 用户 / 上游 | direct include files | 条件必需 | Any file directly `%include`d by `PASP.input`; inline mode definition / mass settings still require param reference before writing |
 | 用户 / 上游 | `Zeff.dat` | 条件必需 for polarization path | Required when `atom_Heff.getP T` or active electric-field behavior requires BEC polarization support; check against current `unit_cell.str`, species order, and mode basis |
@@ -246,6 +254,9 @@ Also check that `MD.aft_step` leaves a nonempty sampled window inside the total 
 | `atom_Heff.MASS_local_mode` | `skills/knowledge/reference/params/atom_Heff.MASS_local_mode.md` |
 | `local_mode_PM.dat` | `skills/knowledge/reference/files/local_mode_PM.dat.md` |
 | `J_best.dat` | `skills/knowledge/reference/files/J_best.dat.md` |
+| L2 four-state J bridge into `J_best.dat` | `skills/knowledge/reference/topics/four_state_method.md`, `skills/knowledge/reference/files/OUTCAR.md` |
+| shared-basis controls consumed from L3 | `skills/knowledge/reference/params/fig.maxk.md`, `skills/knowledge/reference/params/fig.mdist.md`, `skills/knowledge/reference/params/Invariant.power.md` |
+| `def_local_modes.dat` | `skills/knowledge/reference/files/def_local_modes.dat.md` |
 | `amp_local_mode.in` | `skills/knowledge/reference/files/amp_local_mode.in.md` |
 | `cell.str`、`unit_cell.str` | `skills/knowledge/reference/files/cell.str.md`, `skills/knowledge/reference/files/unit_cell.str.md` |
 | `Zeff.dat`、`elastic.dat`、`spin_strain.dat` | `skills/knowledge/reference/files/Zeff.dat.md`, `skills/knowledge/reference/files/elastic.dat.md`, `skills/knowledge/reference/files/spin_strain.dat.md` |
@@ -406,7 +417,7 @@ Do not use output validation to retroactively authorize an unconfirmed input, st
 - `atom_Heff.getP` / active electric-field path and `Zeff.dat` provenance are consistent before expecting valid `P_abs.dat`.
 - For periodic/cosine field runs, `atom_Heff.MD_time` covers the intended period(s) and `MD.aft_step` leaves a nonempty sampled window for the desired loop; demo-vs-production equilibration intent is explicitly recorded.
 - `SuperCell` and `amp_local_mode.in` row count match the current basis, especially after smoke-test reduction.
-- Planned MPI ranks and scheduler helper are compatible with the run plan before submission preparation.
+- Planned MPI ranks and scheduler helper are compatible with the run plan before submission preparation; for `atomic_effective_H` MD this means a valid `p1 * p2 * p3 = ranks` factorization against the current supercell factors.
 - Candidate remains marked not submit-ready until S4 preflight passes.
 
 ### 预期输出与分析 handoff
@@ -440,6 +451,7 @@ Hysteresis plotting is a post-validation analysis step. First validate that `fie
 | time integration | `MD.Delta_t`, `atom_Heff.MD_time` | runtime cost, stability risk, smoke-test vs production intent |
 | bath / damping / ensemble | `LLG.method`, `LLG.damping`, `MD.damping`, `MD.temperature`, `MD.init_velocity_temp` | user-confirmed physical ensemble and target subsystem |
 | output cadence | `MD.aft_step`, `MD.int_step`, `MD.output_amp_lm`, field / polarization output target | expected output size, plotting / handoff needs, and validation target |
+| finite-size / statistics | `SuperCell`, trajectory length, equilibration / sampling window | user-confirmed analysis target; small cells are smoke tests unless accepted by the user |
 | model package | `local_mode_PM.dat`, `J_best.dat`, mode / mass definition, structure files | upstream same-basis provenance; no example-derived model files |
 | initial state | `amp_local_mode.in` when current settings read one | first-stage user/upstream authority or validated previous-run handoff |
 | conditional physics | `Zeff.dat`, `elastic.dat`, `spin_strain.dat`, `Field_for_Electrocaloric`, `local_mode.MD_mode_range` | active settings plus reference/user authority; exact writes require reference |
@@ -449,7 +461,8 @@ Hysteresis plotting is a post-validation analysis step. First validate that `fie
 - `PASP.input` direct includes resolve inside the candidate package, with duplicate / inactive declarations reported.
 - Every written keyword, block, file format, numbering rule, and conditionally required file has reference coverage or user-authoritative evidence.
 - Dynamics settings match the user-confirmed table and are not inherited from Cr2O3 or BaTiO3 examples.
-- If current settings read an initial state, `SuperCell`, `amp_local_mode.in`, mode basis, and planned MPI ranks remain compatible, especially for smoke-test reductions.
+- If current settings read an initial state, `SuperCell`, `amp_local_mode.in`, mode basis, and planned MPI ranks remain compatible, especially for smoke-test reductions; ranks must factor into three process-grid dimensions that divide the current supercell factors.
+- For polarization-fluctuation statistics, smoke-test cells must not be promoted to production evidence unless the user explicitly accepts the finite-size and sampling limitations.
 - Candidate remains marked not submit-ready until S4 generic input preflight passes.
 
 ### 预期输出与 handoff

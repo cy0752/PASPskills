@@ -14,7 +14,17 @@
 
 ## 注意事项
 - 修改前应确认当前 workflow 阶段确实需要该设置，不要用参数调整掩盖结构或文件依赖错误。
+- 不要把默认最大值 `0.04` 当成铁电/声子局域模式的物理合理默认范围。对 PTO 等集体软模，`mode_range` 控制的是 local-mode amplitude，不是直接的 Angstrom 位移。
+- 估算范围时，先用当前同基底运行产生的 `def_local_modes.dat` 或 `local_mode-*.xsf` 确认 reduced local-mode 分量；再用目标物理位移除以对应分量估算 amplitude。例如目标 Ti 位移约为 `u_target`，而 `def_local_modes.dat` 中 Ti reduced displacement component 为 `u_reduced`，则候选 amplitude 量级为 `u_target / u_reduced`。安全裕度、是否取对称正负、以及最终数值必须由用户或物理目标确认。
+- 对 `local_mode.cal_para_method = 1` 的随机构型，若 `local_mode.randstr_randsign T`，非负区间再随机取符号；不要因为 block 行里只写了正最大值就误以为样本只取正振幅。
+- 设定较大范围后，应通过 smoke test 检查生成结构的最小原子间距和物理合理性；不能只凭 PASP 作业成功判断范围合理。
 - 若涉及精确行格式或复杂示例，应回到来源章节核对。
+
+## 相关条目
+- `files/def_local_modes.dat.md`
+- `params/local_mode.mode_definition.md`
+- `params/local_mode.nstr_random.md`
+- `params/local_mode.randstr_randsign.md`
 
 ## 来源章节
 - 3.1.7.7 随机生成构型或自定义构型的相关设置

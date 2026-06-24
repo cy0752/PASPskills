@@ -28,7 +28,7 @@
 
 | 问题 | 用户必须给出的明确答案 |
 |---|---|
-| 想分析哪两类元素之间的相互作用？ | 例如 "Ni-Ni"、"Fe-Fe"、"Gd-Mn"——直接对应 `isaAB` 的两个元素 |
+| 想把哪些磁性元素纳入相互作用分析？ | 例如 "Ni"、"Fe"、"Mn+Fe"。两个不同元素会直接对应 `isaAB = A B`，并在相关 pair / cluster 搜索中覆盖 A-A、A-B、B-B，不是只覆盖交叉 pair |
 | 是各向同性（标量 J）还是矩阵形式（含 SOC、DM、Kitaev）？ | 决定下游 DFT 计算是 4 次 per pair 还是 9 × 4 = 36 次 per pair |
 | 起始结构来源？ | (a) 已有 `cell.str` / `unit_cell.str`；(b) 只有 `POSCAR`；(c) 只有材料名 / 化学式（这种情况不接受，必须先要结构文件） |
 
@@ -116,7 +116,7 @@ PASP **不**附带 POSCAR → cell.str 的官方转写脚本；这是用户侧�
 - `cell.str` 中的 `LatticeVectors` 与原子排布（决定分析超胞大小）
 - `%block SuperCell` 矩阵（在 `cell.str` 基础上是否进一步扩胞）
 - `%block Z_values`（元素顺序）
-- `%block isaAB`（要研究哪两类元素之间的 pair）
+- `%block isaAB`（要纳入相互作用搜索的活动磁性元素集合）
 - `%block Spin_values`（自旋尺度，每元素一项）
 - `%block magnetic_or_ligand`（角色：磁性 / 配位 / 其他）
 - `fig.maxk`（最高考虑几体）
@@ -126,7 +126,7 @@ PASP **不**附带 POSCAR → cell.str 的官方转写脚本；这是用户侧�
 
 - `cell.str` + `SuperCell`：确定真正用于对称性分析的超胞规模——直接影响远近邻识别能力
 - `Z_values`：建立"元素编号 ↔ 化学元素"的内部映射；后续 `isaAB` / `Spin_values` / `magnetic_or_ligand` 全部按这个编号解释
-- `isaAB`：限定本次分析关注的元素对类型
+- `isaAB`：限定本次分析关注的活动磁性元素集合；`1 2` 在相关 pair / cluster 搜索中表示 species 1 和 species 2 均参与，通常会覆盖 1-1、1-2、2-2 相互作用
 - `Spin_values`：自旋尺度；非磁性元素必须显式写 0
 - `magnetic_or_ligand`：在 PASP 内部区分磁性 / 配位 / 旁观角色，影响哪些原子被纳入 pair 搜索
 - `fig.maxk` + `fig.mdist`：相互作用的体数与每体的距离截断；体数越高、截断越大，pair 数量增长越快
@@ -166,7 +166,7 @@ PASP **不**附带 POSCAR → cell.str 的官方转写脚本；这是用户侧�
 - `cell.str` 的 `number_of_species` = `Z_values` 项数 = `Spin_values` 项数 = `magnetic_or_ligand` 项数
 - `cell.str` 的 `%block AtomicCoordinatesAndAtomicSpecies` 按 species id 分组且第四列非递减；任何 `1,2,2,1,2,2...` 或 `Ni I I Ni I I...` 这类 interleaved supercell 输出必须在运行前重排，否则 `find_J_path_sym` 会停止并报 `find_J_path_sym: species are not ordered!`
 - `cell.str` 中元素**首次出现顺序** = `Z_values` 顺序（前后不一致会让 `isaAB` 选错对象）
-- `isaAB` 两个值都在 `[1, number_of_species]` 内，且对应到用户想分析的元素
+- `isaAB` 两个值都在 `[1, number_of_species]` 内，且对应到用户想纳入活动磁性集合的元素；多磁性元素不要用 `0 0` 冒充“所有磁对”
 - 非磁性元素在 `Spin_values` 中显式写 `0`（不是省略）
 - `magnetic_or_ligand` 中磁性原子写 `1`，配位原子写 `2`，其他写 `0`
 - `fig.mdist` 第一位为 `1`（占位，无物理含义），第二位起为各体数的截断（**单位 Bohr**，1 Bohr ≈ 0.529 Å）
@@ -360,6 +360,7 @@ runs/<dft-run-id>/
 
 - 用户的 VASP 计算流水线（4 × n_pairs 或 36 × n_pairs 个 DFT 计算）
 - 后续从 4 个状态能量按 `topics/four_state_method.md` 的线性组合公式拟合 J（如果继续到 `Spin_lattice_interaction` 工作流，得到的 J 矩阵会汇总为 `spin_exchange.dat`，参见 `workflows/l2_spin_lattice_interaction.md`）
+- 如果继续到 L3/L5 `atomic_effective_H` pure-spin local-mode 路线，四态法 J 需要先按 `topics/four_state_method.md` 换算到目标 `Spin_values` / normalized spin basis，再按 `files/J_best.dat.md` 写成 fitted-parameter handoff；不能把物理自旋尺度下的原始 J 直接交给 L5 dynamics
 
 ### 本阶段使用的脚本
 
@@ -370,8 +371,9 @@ PASP **不**附带这部分脚本。用户侧的工作量包括：
 | 把 `log.out` 中带 `#@` 注释的 MAGMOM / M_CONSTR 行抽取出来并按 pair / Y 分发 | 用户 grep 或 awk 脚本 |
 | 默认：把 `J.POS` 复制为 4 个状态的 POSCAR，并把对应 `MAGMOM` / `M_CONSTR` 行追加到用户确认的 INCAR | 用户 grep / awk / organizer 脚本 |
 | 可选 advanced：把 4 个 `atat.NNN_Y` 与对应 INCAR 拼成 4 个 VASP 工作目录 | 仅在用户确认 Sc placeholder / POTCAR 策略后使用 |
-| 4 状态能量 → J 拟合 | 用户写的 J 拟合脚本（线性组合公式见 `topics/four_state_method.md`） |
+| 4 状态能量 → J 拟合 | 用户写的 J 拟合脚本（能量抽取见 `files/OUTCAR.md`，线性组合和归一化换算见 `topics/four_state_method.md`） |
 | 把若干 pair 的 J 汇总为 `spin_exchange.dat` | Stage 4（即 `Spin_lattice_interaction` 工作流的输入准备） |
+| 把若干 pair 的 J 映射为 `J_best.dat` | L3/L5 bridge；必须有同一 `local_mode_PM.dat` / interaction list 的 parameter id、最终 `TOTEN` 能量证据、J 归一化换算记录和 `J_best.dat` 格式检查 |
 
 注意：本仓库 `skills/knowledge/scripts/l3_effective_hamiltonian/` 下的脚本面向 L3 effective Hamiltonian fitting，不能直接复用到 `find_J_path_sym` 的四态 DFT 整理。
 
@@ -405,6 +407,8 @@ PASP **不**附带这部分脚本。用户侧的工作量包括：
 | 验证 J.POS 与 atat.NNN_Y 的关系 | `files/J.POS.md` |
 | 拼装 POTCAR 顺序 | `files/atat.NNN_Y.md` "注意事项" 段 + VASP 官方文档 |
 | 写 `spin_exchange.dat` 把 J 矩阵汇总 | `files/spin_exchange.dat.md` |
+| 从 VASP `OUTCAR` 提取四态能量 | `files/OUTCAR.md` |
+| 写 `J_best.dat` 交给 `atomic_effective_H` | `files/J_best.dat.md` + `topics/four_state_method.md` |
 | 解读 `log.out` 中的 `#@` 注释行 | `topics/four_state_method.md` |
 
 ### 修改后要检查什么
@@ -414,6 +418,8 @@ PASP **不**附带这部分脚本。用户侧的工作量包括：
 - 矩阵 J 情形：NCL / SOC 相关 INCAR 设置必须由用户确认，agent 只追加 PASP 生成的 `M_CONSTR`
 - advanced `atat.NNN_Y` 路线：POTCAR 元素顺序与 `atat.NNN_Y` 第 1 行严格一致（包括占位 Sc 的位置），且 INCAR 中 MAGMOM / M_CONSTR 的原子总数 = `atat.NNN_Y` 中所有元素的原子计数之和
 - 用 `topics/four_state_method.md` 的线性组合公式核对：`J = (E_↑↑ + E_↓↓ - E_↑↓ - E_↓↑) / (4 S²)` 数值是否合理（先看符号；铁磁基态下 J 应为负）
+- 每个 VASP 状态的能量来自最后一条 `free energy TOTEN`，并有收敛 / 正常结束证据；脚本不得读第一条 `TOTEN`
+- 若输出给 `J_best.dat`，确认 J 已按目标模型自旋尺度换算，例如物理 `S=5/2` 到 `Spin_values=2` 的 normalized spin 模型需要乘以 6.25，并且 `J_best.dat` 每个 retained row 为 `<parameter_id> <value>`、无数据行注释、无无意义零值 retained row
 
 ### 服务器实跑后应补录的信息
 
@@ -463,6 +469,15 @@ PASP 会在当前目录写大量 `pair_POS.NNN` / `atat.NNN_Y`，覆盖或夹杂
 `Spin_values` 必须有 `number_of_species` 项；漏掉一项会让 PASP 把后续 block 行当数值读，触发 Fortran list-directed I/O 错误。
 预防：每个非磁性元素显式写 `0`。
 
+### 坑 7a：误解 `isaAB = 1 2`
+
+`isaAB = 1 2` 表示 species 1 和 species 2 都属于活动磁性集合；在多磁性元素体系中，它通常覆盖 1-1、1-2、2-2 相互作用，而不是只分析交叉 pair。`0 0` 是默认行为，不是“明确分析所有磁对”的安全写法。
+
+### 坑 7b：四态能量 / J bridge 没有记录最终 `TOTEN` 和自旋归一化
+
+从 `OUTCAR` 读第一条 `TOTEN` 会得到未收敛能量；把物理 `S` 下的四态 J 直接写入 normalized spin 的 `J_best.dat` 会把温标和动力学能量尺度弄错。
+预防：每个状态取最后一条 converged `free energy TOTEN`，记录四态公式、单位、物理 `S`、目标 `S_model` 和换算因子，再写 `J_best.dat`。
+
 ### 坑 8：扩超胞时按 unit-cell copy 交错输出 `cell.str`
 
 症状：PASP 启动后立即停止并报 `find_J_path_sym: species are not ordered!`。
@@ -475,7 +490,7 @@ PASP 会在当前目录写大量 `pair_POS.NNN` / `atat.NNN_Y`，覆盖或夹杂
 
 按使用频率：
 
-- **Files**: `cell.str` / `unit_cell.str` / `J.POS` / `atat.NNN_Y` / `PASP.used_info` / `seed.in`
+- **Files**: `cell.str` / `unit_cell.str` / `J.POS` / `atat.NNN_Y` / `OUTCAR` / `J_best.dat` / `PASP.used_info` / `seed.in`
 - **Params**: `Model` / `SuperCell` / `Z_values` / `isaAB` / `Spin_values` / `magnetic_or_ligand` / `fig.maxk` / `fig.mdist`
 - **Topics**: `PASP.input` / `four_state_method` / `structure_from_poscar` / `symmetry_representative_sites`（如需对称性代表位点辅助）
 

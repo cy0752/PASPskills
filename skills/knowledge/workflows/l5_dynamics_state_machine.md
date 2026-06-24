@@ -73,6 +73,8 @@ Generic / new-material branch 判据：
 - 如果上游来源是 L3，记录 L3 Step 6 / Step 7 output-validation README / PROGRESS 路径；它应说明 `local_mode_PM.dat`、拟交给 L5 的 fitted-parameter file（通常是 runtime-validated `J_best.dat` 或等价选择记录）、结构 route、`SuperCell`、`Z_values`、`Spin_values`、mode / mass definition、fitting dataset / settings provenance 和 known gaps。不能用 L3 template、Lecture-5 example 或 run notes 替代当前材料的 handoff record。
 - 当前 workflow 是消费已建立的 `atomic_effective_H` model 做 dynamics，而不是回到 L3 重新拟合。
 - Generic / new-material branch 中，`cell.str` / `unit_cell.str` or equivalent structure route、`SuperCell`、species / spin values、mode definition、mass definition、`local_mode_PM.dat`、`J_best.dat`、以及 current settings 读取 initial state 时的 `amp_local_mode.in` 是否来自同一 current-material effective-H basis。
+- Generic / new-material branch 中，同一 effective-H basis 还必须覆盖 `fig.maxk`、`fig.mdist`、`Invariant.*`、SOC strategy，以及当前 `atomic_effective_H` package 读取 mode information 所需的 `fitting.Heff.soft_mode` / equivalent mode-info blocks；缺这些共享基底设置时，不得用 MD 参数调整来掩盖。
+- 如果 `J_best.dat` 是由 L2 four-state DFT J 手工映射而来，记录最后 `TOTEN` 能量证据、物理自旋到模型自旋的换算因子、parameter id 映射、零值项处理和 `J_best.dat` 格式检查；缺这些证据时，`J_best.dat` same-basis provenance 为 blocked。
 - Generic / new-material branch 中，`Zeff.dat`、`elastic.dat`、`spin_strain.dat`、`Field_for_Electrocaloric` 等 conditional inputs / dependencies 只有在 current settings, reference, or user authority 建立依赖时才作为硬检查对象。
 - stage 2 的 `amp_local_mode.in` 是否来自已验证 stage 1 `amp_local_mode.out`。
 - stage 3 的 `amp_local_mode.in` 是否来自已验证 stage 2 `amp_local_mode.out`。
@@ -105,6 +107,7 @@ BaTiO3 electric-hysteresis candidate package should cover:
 
 Generic new-material `atomic_effective_H` candidate package should cover:
 - `PASP.input`: `Model atomic_effective_H`, direct `%include` graph, structure route, `SuperCell`, species / spin values when applicable, model-consumption controls, mode definition, mass definition, and provenance notes.
+- L3 shared-basis controls needed by the model consumer: `fig.maxk`, `fig.mdist`, `Invariant.power` / related powers, SOC strategy, and `fitting.Heff.soft_mode` / equivalent mode-info blocks when required by the current package.
 - `MD.input`: active dynamics branch, time-step / run length, damping / temperature / ensemble intent, output cadence, optional LLG / ASD / SLD / electric-field controls, and expected output targets.
 - Hard-required current-route inputs: `PASP.input`, `MD.input` when used, structure files or documented equivalent, `local_mode_PM.dat`, `J_best.dat`, `amp_local_mode.in` when initial state is read, and every direct `%include` target.
 - Conditional inputs: `Zeff.dat`, `elastic.dat`, `spin_strain.dat`, `Field_for_Electrocaloric`, `local_mode.MD_mode_range`, or branch-specific files only when current settings/reference/user authority establish dependency.
@@ -122,10 +125,14 @@ Generic new-material `atomic_effective_H` candidate package should cover:
 必须确认：
 - workflow branch：generic new-material MD / LLG / ASD / SLD / electric-field response、Cr2O3 stage 1 lattice heating、stage 2 spin heating、stage 3 coupled SLD relaxation、BaTiO3 electric hysteresis single-stage MD、已有输出验证，或其他 out-of-scope branch。
 - 上游模型来源：`local_mode_PM.dat`、`J_best.dat`、结构、`mode_def.input` / mode definition、`mode_mass.input` / mass definition、拟合数据链是否来自同一模型基底。
+- shared-basis provenance：`fig.maxk`、`fig.mdist`、`Invariant.*`、SOC strategy、mode-info / `fitting.Heff.soft_mode` requirements 是否与 `local_mode_PM.dat`、`J_best.dat`、structure 和 mode definition 来自同一 upstream basis。
+- `J_best.dat` parameter-value provenance：如果来自 L2 four-state exchange，确认最后 `TOTEN`、four-state formula、spin normalization、unit、parameter id mapping 和 file format；如果来自 L3 fitting，确认 runtime-validated fitting output 和 selected file path。
+- local-mode mass 来源：`atom_Heff.MASS_local_mode` / `mode_mass.input` 的条目数、顺序、有效质量计算或用户提供来源；缺少质量来源时不得为 MD 生产输入静默代填。
 - `amp_local_mode` handoff：stage 1 初始态来源；stage 2 来自哪个 validated stage 1 run；stage 3 来自哪个 validated stage 2 run。
-- `SuperCell` / 系统尺寸与目标物理周期、内存和时间预算是否合适；如果是 smoke-test reduction 且 current settings read an initial state，`amp_local_mode.in` row count 是否匹配 reduced simulation cell；planned MPI ranks 是否兼容 `SuperCell` determinant / workflow requirement。
+- `SuperCell` / 系统尺寸与目标物理周期、内存和时间预算是否合适；如果是 smoke-test reduction 且 current settings read an initial state，`amp_local_mode.in` row count 是否匹配 reduced simulation cell；planned MPI ranks 是否存在三维因数分解 `p1 * p2 * p3 = ranks` 且分别整除 supercell factors `(n1,n2,n3)`。
 - Generic / new-material branch active degrees of freedom：plain MD、LLG / ASD、SLD、electric-field / polarization response、smoke-test, equilibration, production, output validation, or downstream handoff；expected primary outputs and validation target.
-- dynamics 设置意图：`SLD.mode`、`LLG.method`、`MD.Delta_t`、`atom_Heff.MD_time`、`LLG.damping`、`MD.damping`、`MD.temperature`、`MD.init_velocity_temp`、`MD.aft_step`、`MD.int_step`、`MD.output_amp_lm`。
+- dynamics 设置意图：`SLD.mode`、`LLG.method`、`MD.Delta_t`、`atom_Heff.MD_time`、`LLG.damping`、`MD.damping`、`MD.temperature`、`MD.init_velocity_temp`、`MD.aft_step`、`MD.int_step`、`MD.output_amp_lm`。对纯结构 / 铁电 local-mode MD，必须确认 active degrees of freedom 是 lattice / displacement only，并显式检查 `SLD.mode 1` 与 NVT intent 下的 `LLG.method 2`。
+- 如果目标是有限温极化涨落、`<P^2>` vs `T` 或 Curie-Weiss 分析，必须确认 production supercell size、总时长、平衡/采样窗口和有限尺寸限制；小超胞只能标为 smoke test，不能自动作为 production statistics。
 - BaTiO3 electric-field / polarization intent when that branch is active：`MD.E_type`、`MD.E_x/y/z`、`MD.E_omega`、`MD.E_phi`、`Field_for_Electrocaloric` if used、`atom_Heff.getP`、`Zeff.dat` provenance、`local_mode.MD_mode_range` intent、which `P_*` vs `E_*` components the user wants to plot.
 - BaTiO3 periodic/cosine-field planning when that branch is active：whether `atom_Heff.MD_time` covers the intended field period(s); for cosine field use `T = 2*pi / MD.E_omega` only after current input/reference confirms units and semantics. Confirm whether `MD.aft_step` is demonstration-style recording or production equilibration, and that it leaves a nonempty sampled window before the total MD steps are exhausted.
 - ensemble / thermostat intent：stage 1 / 2 是否为受热 bath dynamics；stage 3 是否为 coupled relaxation / NVE-like run；exact semantics still require reference.
@@ -152,7 +159,7 @@ L5 Cr2O3 preflight checklist 至少包括：
 - 文件齐备：`PASP.input`、`MD.input`、结构文件、`local_mode_PM.dat`、`J_best.dat`、`amp_local_mode.in`、所有 direct `%include` files。
 - 上游一致性：模型基底、结构、`mode_def.input` / mode definition、`mode_mass.input` / mass definition、`Z_values` / `Spin_values`、`local_mode.read_interaction`、`Read_init_spin` 没有无说明混用。
 - stage / `SLD.mode` 一致：stage 1 -> `SLD.mode 1`，stage 2 -> `SLD.mode 2`，stage 3 -> `SLD.mode 3`。
-- 如果候选包降低了 `SuperCell` 做 smoke test，`amp_local_mode.in` row count 必须匹配 reduced simulation cell；planned MPI ranks 必须与 `SuperCell` determinant / workflow requirement 兼容，unknown 或 incompatible ranks 在提交准备前 blocked。
+- 如果候选包降低了 `SuperCell` 做 smoke test，`amp_local_mode.in` row count 必须匹配 reduced simulation cell；planned MPI ranks 必须有合法三维因数分解 `p1 * p2 * p3 = ranks` 且 `p_i` 分别整除 supercell factors，unknown 或 incompatible ranks 在提交准备前 blocked。
 - damping / temperature / initial-velocity intent 与用户确认表一致；不把 historical example values 当默认值。
 - stage 2 / 3 `amp_local_mode.in` 的 upstream run id、source path、output-validation evidence 和 copy/rename action 已记录。
 - `PASP.input` direct includes 在候选包中可解析；重复 setting / block 不让后续 inactive declaration 被误改。
@@ -164,12 +171,14 @@ L5 generic / new-material preflight checklist 至少包括：
 - Include resolution starts at the candidate package root; duplicate settings / inactive declarations are reported rather than silently edited.
 - Branch consistency：`Model atomic_effective_H` and current dynamics controls match the user-confirmed branch target: MD, LLG / ASD, SLD, electric-field / polarization response, smoke test, production, output validation, or handoff.
 - L3 handoff evidence when applicable：the candidate README / PROGRESS cites the current-material L3 output-validation record, not a historical example; any missing `J_best.dat`, mode mass, initial state, `Zeff.dat`, or production dynamics setting is reported as blocked / user-owned instead of silently filled.
-- Upstream same-basis provenance：structure route、`SuperCell`、species / spin values、mode definition、mass definition、`local_mode_PM.dat`、`J_best.dat`、`local_mode.read_interaction`、`Read_init_spin`、and `amp_local_mode.in` when current settings read an initial state have same-material evidence or are blocked for user confirmation.
+- Upstream same-basis provenance：structure route、`SuperCell`、species / spin values、mode definition、mass definition、`fig.maxk`、`fig.mdist`、`Invariant.*`、SOC strategy、mode-info / `fitting.Heff.soft_mode` requirements、`local_mode_PM.dat`、`J_best.dat`、`local_mode.read_interaction`、`Read_init_spin`、and `amp_local_mode.in` when current settings read an initial state have same-material evidence or are blocked for user confirmation.
+- If `J_best.dat` came from L2 four-state DFT rather than direct L3 fitting, final-`TOTEN` evidence, spin-normalization conversion, retained-parameter id mapping, omitted-zero policy, and `files/J_best.dat.md` row format are checked before pass.
 - Conditional inputs / dependencies：`Zeff.dat`、`elastic.dat`、`spin_strain.dat`、`Field_for_Electrocaloric`、`local_mode.MD_mode_range` or other branch-specific dependencies are required only when current settings/reference/user authority establish dependency.
-- `SuperCell` vs `amp_local_mode.in` consistency when current settings read an initial state：row count and current local-mode/site basis match. Smoke-test reductions must keep `SuperCell`, initial state, and planned MPI ranks compatible.
-- Dynamics settings：`MD.Delta_t`、`atom_Heff.MD_time`、`SLD.mode` when active、`LLG.method`、`LLG.damping`、`MD.damping`、`MD.temperature`、`MD.init_velocity_temp`、`MD.aft_step`、`MD.int_step`、`MD.output_amp_lm`, and branch-specific controls have user-confirmation or authoritative evidence.
+- `SuperCell` vs `amp_local_mode.in` consistency when current settings read an initial state：row count and current local-mode/site basis match. Smoke-test reductions must keep `SuperCell`, initial state, and planned MPI ranks compatible; MPI compatibility means a valid `p1 * p2 * p3 = ranks` decomposition with each `p_i` dividing the corresponding supercell factor.
+- Dynamics settings：`MD.Delta_t`、`atom_Heff.MD_time`、`SLD.mode` when active、`LLG.method`、`LLG.damping`、`MD.damping`、`MD.temperature`、`MD.init_velocity_temp`、`MD.aft_step`、`MD.int_step`、`MD.output_amp_lm`, and branch-specific controls have user-confirmation or authoritative evidence. For pure structural / ferroelectric MD, `SLD.mode 1`, `LLG.method 2` for NVT intent, and `atom_Heff.MASS_local_mode` same-line count/order are explicit preflight checks.
+- For polarization-fluctuation / Curie-Weiss targets, supercell size and sampling length are user-confirmed analysis settings; smoke-test cells or short trajectories must be labeled as such and cannot pass as production statistics.
 - No historical Cr2O3 / BaTiO3 numeric values, model files, mode counts, field schedules, or scheduler settings are presented as current-material defaults.
-- Planned MPI ranks / scheduler helper / executable path are treated as environment facts and checked for compatibility before submission preparation; unknown or incompatible ranks block submission preparation.
+- Planned MPI ranks / scheduler helper / executable path are treated as environment facts and checked for compatibility before submission preparation; unknown ranks, or ranks without a valid three-dimensional factorization against the current supercell factors, block submission preparation.
 - No stale outputs, historical `complete/` residues, old `PASP.used_info`, old `*_used.dat`, old logs, old `temperature.dat`, old `energy.dat`, old `field.dat`, or old `P_abs.dat` are mixed into a new run package.
 - README、脚本、目录名没有把 candidate 写成 submit-ready。
 
@@ -182,7 +191,7 @@ L5 BaTiO3 electric-hysteresis preflight checklist 至少包括：
 - `SuperCell` vs `amp_local_mode.in` consistency：row count and current local-mode/site basis match. If the run is a smoke-test reduction, both `SuperCell` and initial amplitudes must be reduced/regenerated consistently.
 - Period/window consistency：for periodic/cosine field intent, planned `atom_Heff.MD_time` covers the user-confirmed period count, and `MD.aft_step` is less than total MD steps so `field.dat` / `P_abs.dat` can record a useful window. If `MD.aft_step >= total_steps`, demonstration plotting is blocked; production equilibration intent must be explicitly user-confirmed and paired with a longer run or different analysis window.
 - `local_mode.MD_mode_range`, when present, has reference/user-authority coverage, row count / component scope compatible with the current local-mode basis, and lower bound not greater than upper bound.
-- Planned MPI ranks / scheduler helper / executable path are treated as environment facts and checked for compatibility before submission preparation; unknown or incompatible ranks block submission preparation.
+- Planned MPI ranks / scheduler helper / executable path are treated as environment facts and checked for compatibility before submission preparation; unknown ranks, or ranks without a valid three-dimensional factorization against the current supercell factors, block submission preparation.
 - No stale outputs, historical `complete/` residues, old `PASP.used_info`, old `field.dat`, old `P_abs.dat`, old `*_used.dat`, or old logs are mixed into a new run package.
 - README、脚本、目录名没有把 candidate 写成 submit-ready，也没有把 MD-1 historical values 写成 production defaults。
 
@@ -292,10 +301,11 @@ Reference inventory: <reference files checked or gaps>
 检查：
 - PASP.input、MD.input、结构文件、local_mode_PM.dat、J_best.dat、amp_local_mode.in、所有 direct %include files 是否齐备。
 - 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 skills/knowledge/reference/ 或用户权威来源覆盖。
-- local_mode_PM.dat、J_best.dat、结构、mode definition、mass definition、Z_values / Spin_values 是否存在无说明混用。
+- local_mode_PM.dat、J_best.dat、结构、mode definition、mass definition、Z_values / Spin_values、shared-basis controls (`fig.maxk`, `fig.mdist`, `Invariant.*`, SOC strategy, mode-info blocks) 是否存在无说明混用。
+- 如果 J_best.dat 来自 L2 four-state DFT，是否有最后 TOTEN、spin normalization、parameter id mapping、omitted-zero policy 和文件格式证据。
 - stage 与 SLD.mode 是否一致：stage 1 -> 1，stage 2 -> 2，stage 3 -> 3。
-- smoke-test reduction 是否保持 SuperCell、amp_local_mode.in row count、planned MPI ranks 之间的一致性；unknown 或 incompatible ranks 是否在提交准备前 blocked。
-- MD.Delta_t、atom_Heff.MD_time、LLG.method、LLG.damping、MD.damping、MD.temperature、MD.init_velocity_temp、MD.aft_step、MD.int_step、MD.output_amp_lm 是否与用户确认表一致。
+- smoke-test reduction 是否保持 SuperCell、amp_local_mode.in row count、连续 active-site/local-mode numbering、planned MPI ranks 之间的一致性；planned ranks 是否能分解为 `p1 * p2 * p3` 且分别整除当前 supercell factors；unknown 或 incompatible ranks 是否在提交准备前 blocked。
+- MD.Delta_t、atom_Heff.MD_time、LLG.method、LLG.damping、MD.damping、MD.temperature、MD.init_velocity_temp、MD.aft_step、MD.int_step、MD.output_amp_lm 是否与用户确认表一致；MD.output_amp_lm 是否是布尔 T/F，而不是输出间隔整数。
 - stage 2 / 3 amp_local_mode.in 是否有 upstream run id、source path、output-validation evidence 和 copy/rename 记录。
 - README、脚本、目录名是否错误声称 candidate 已 submit-ready。
 
@@ -340,11 +350,11 @@ Reference inventory: <reference files checked or gaps>
 - Branch 是否为 Model atomic_effective_H + atom_Heff.MD T + electric-field / polarization intent，而不是 Cr2O3 SLD stage sequence。
 - 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 skills/knowledge/reference/ 或用户权威来源覆盖。
 - atom_Heff.getP / active electric field / Zeff.dat 的一致性；Zeff.dat 是否与 current unit_cell.str、species order、mode basis provenance 对应。
-- local_mode_PM.dat、J_best.dat、结构、mode definition、mass definition、Z_values、local_mode.read_interaction、Read_init_spin 是否有 same-basis evidence。
-- SuperCell 与 amp_local_mode.in row count / current local-mode basis 是否一致；smoke-test reduction 是否同步处理。
+- local_mode_PM.dat、J_best.dat、结构、mode definition、mass definition、Z_values、shared-basis controls、local_mode.read_interaction、Read_init_spin 是否有 same-basis evidence。
+- SuperCell 与 amp_local_mode.in row count / continuous active-site numbering / current local-mode basis 是否一致；smoke-test reduction 是否同步处理。
 - 对 periodic/cosine field，atom_Heff.MD_time 是否覆盖用户确认的周期数；MD.aft_step 是否小于 total MD steps 并留下可记录的 field/P_abs window；若是 production equilibration window，是否有用户明确确认。
-- MD.E_type、MD.E_x/y/z、MD.E_omega、MD.E_phi、Field_for_Electrocaloric（若使用）、local_mode.MD_mode_range、MD.Delta_t、atom_Heff.MD_time、damping、temperature、output cadence 是否与用户确认表一致；reference gap 是否阻断正式写入。
-- planned MPI ranks / scheduler helper 是否只是环境事实，且提交准备前没有 unknown 或 incompatible rank issue。
+- MD.E_type、MD.E_x/y/z、MD.E_omega、MD.E_phi、Field_for_Electrocaloric（若使用）、local_mode.MD_mode_range、MD.Delta_t、atom_Heff.MD_time、damping、temperature、output cadence 是否与用户确认表一致；MD.output_amp_lm when present 是否是布尔 T/F；reference gap 是否阻断正式写入。
+- planned MPI ranks / scheduler helper 是否只是环境事实，且提交准备前没有 unknown rank 或无法按当前 supercell factors 三维分解的 incompatible rank issue。
 - candidate 中没有 stale output、historical complete residue、old PASP.used_info、old field.dat、old P_abs.dat、old logs；README 未把 candidate 或 MD-1 values 写成 submit-ready/default。
 
 返回：Scope、Findings、Sources、Uncertain、Needs main-agent decision、Conclusion(pass/fail/blocked)。
@@ -364,11 +374,12 @@ Reference inventory: <reference files checked or gaps>
 - PASP.input、MD.input when used、structure files or documented equivalent route、local_mode_PM.dat、J_best.dat、amp_local_mode.in when current settings read an initial state、所有 direct %include files 是否齐备且可解析。
 - Branch 是否为 user-confirmed generic/new-material atomic_effective_H dynamics path，并且 active degrees of freedom、expected outputs、smoke-test/production label 与确认表一致。
 - 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 skills/knowledge/reference/ 或用户权威来源覆盖。
-- 如果 upstream 是 L3，candidate README / PROGRESS 是否引用当前材料的 L3 output-validation / handoff record；该 record 是否覆盖 local_mode_PM.dat、拟交给 L5 的 J_best.dat 或等价 fitted-parameter selection、structure route、mode / mass definition、species / spin values、fitting provenance 和 known gaps。
-- local_mode_PM.dat、J_best.dat、structure route、SuperCell、species / spin values、mode definition、mass definition、local_mode.read_interaction、Read_init_spin、amp_local_mode.in when current settings read an initial state 是否有 same-material / same-basis provenance。
+- 如果 upstream 是 L3，candidate README / PROGRESS 是否引用当前材料的 L3 output-validation / handoff record；该 record 是否覆盖 local_mode_PM.dat、拟交给 L5 的 J_best.dat 或等价 fitted-parameter selection、structure route、mode / mass definition、species / spin values、fig.maxk、fig.mdist、Invariant.*、SOC strategy、fitting provenance 和 known gaps。
+- local_mode_PM.dat、J_best.dat、structure route、SuperCell、species / spin values、mode definition、mass definition、fig.maxk、fig.mdist、Invariant.*、SOC strategy、mode-info blocks、local_mode.read_interaction、Read_init_spin、amp_local_mode.in when current settings read an initial state 是否有 same-material / same-basis provenance。
+- 如果 J_best.dat 来自 L2 four-state DFT，最后 TOTEN、spin normalization、parameter id mapping、omitted-zero policy、units 和 file format 是否有证据。
 - Zeff.dat、elastic.dat、spin_strain.dat、Field_for_Electrocaloric、local_mode.MD_mode_range 或其他 conditional inputs / dependencies 是否只在 current settings/reference/user authority 建立依赖时列为必需。
-- 如果 current settings read an initial state，SuperCell 与 amp_local_mode.in row count / current local-mode basis 是否一致；smoke-test reduction 是否同步处理并保持 planned MPI ranks compatible。
-- MD.Delta_t、atom_Heff.MD_time、SLD.mode when active、LLG.method、LLG.damping、MD.damping、MD.temperature、MD.init_velocity_temp、MD.aft_step、MD.int_step、MD.output_amp_lm 和 branch-specific controls 是否与用户确认表一致；reference gap 是否阻断正式写入。
+- 如果 current settings read an initial state，SuperCell 与 amp_local_mode.in row count / continuous active-site numbering / current local-mode basis 是否一致；smoke-test reduction 是否同步处理并保持 planned MPI ranks compatible，即 ranks 可按当前 supercell factors 做三维因数分解。
+- MD.Delta_t、atom_Heff.MD_time、SLD.mode when active、LLG.method、LLG.damping、MD.damping、MD.temperature、MD.init_velocity_temp、MD.aft_step、MD.int_step、MD.output_amp_lm 和 branch-specific controls 是否与用户确认表一致；MD.output_amp_lm 是否为 T/F；reference gap 是否阻断正式写入。
 - candidate 中没有 stale output、historical complete residue、old PASP.used_info、old *_used.dat、old temperature.dat、old energy.dat、old field.dat、old P_abs.dat、old logs。
 - README、脚本、目录名是否错误声称 candidate 已 submit-ready，或把 Cr2O3 / BaTiO3 historical values 写成 current-material defaults。
 

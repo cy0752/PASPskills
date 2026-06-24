@@ -1,5 +1,5 @@
 ---
-name: pasp-dev
+name: pasp-helper
 description: Classify PASP user intent and route the request to the most relevant workflow or reference subskill.
 ---
 
@@ -8,8 +8,9 @@ You are the entry skill for PASP Assistant.
 Your responsibilities are only:
 1. Decide whether the user is asking for a workflow or for reference information.
 2. Continue by reading the smallest relevant local instruction file under this `skills/` directory.
+3. If the user asks which PASPskills version is installed, read `VERSION` in this `skills/` directory and answer with that value.
 
-Do not call nested names such as `pasp-dev:pasp-orchestrator` with the `Skill` tool. In Claude-style runtimes, only the top-level skill name may be registered. The files under `subskills/` are local instruction files, not separately registered skills unless the deployment explicitly says so.
+Do not call nested names such as `pasp-helper:pasp-orchestrator` with the `Skill` tool. In Claude-style runtimes, only the top-level skill name may be registered. The files under `subskills/` are local instruction files, not separately registered skills unless the deployment explicitly says so.
 
 Do not expand PASP domain details here. Keep this entry layer thin and avoid loading unrelated lecture or example context.
 

@@ -13,9 +13,11 @@ For a new material, L5 starts from a prepared or user-authoritative `Model atomi
 跑前先让用户或上游证据给出：
 - Branch / goal: plain MD, LLG / ASD, SLD, electric-field / polarization response, smoke test, production run, output validation, or downstream handoff.
 - Upstream model package: `local_mode_PM.dat`, `J_best.dat`, structures, mode definition, mass definition, species / spin values when applicable, and proof that they share the same material/basis.
+- Local-mode masses: mass count/order and effective-mass source, especially for collective soft modes; do not let the agent silently fill `atom_Heff.MASS_local_mode`.
 - Initial state, when current settings read one: first-stage `amp_local_mode.in` from user/upstream authority, or validated previous-run `amp_local_mode.out` with run id and validation evidence.
 - Conditional physics inputs / dependencies: `Zeff.dat`, `elastic.dat`, `spin_strain.dat`, `Field_for_Electrocaloric`, or `local_mode.MD_mode_range` only when current settings/reference/user authority establish dependency.
 - Dynamics settings: timestep, run length, damping, temperature, initial velocity, output cadence, active `SLD.mode` / LLG / field controls, and smoke-test vs production label.
+- Finite-temperature statistics: production supercell size, equilibration/sampling window, and finite-size limitations when the target is `<P^2>` vs `T`, polarization fluctuations, or Curie-Weiss-style analysis.
 - Expected outputs: `temperature.dat`, `energy.dat`, `amp_local_mode.out`, same-run `field.dat` / `P_abs.dat`, or another user-defined validation target.
 - Run environment: command, MPI ranks, scheduler/image/executable path, stdout/stderr paths, queue/walltime. These are environment facts, not portable defaults.
 
@@ -72,11 +74,14 @@ Before L5 preflight, confirm that `local_mode_PM.dat`, `J_best.dat`, structure r
 
 - `PASP.input` 的 direct includes 都在同一候选包内，路径可解析。
 - `MD.input` 里的 `SLD.mode` 和当前 stage 匹配：Stage 1 -> `1`，Stage 2 -> `2`，Stage 3 -> `3`。
+- 对纯结构 / 铁电 local-mode MD，确认 `SLD.mode 1` 已显式设置；若目标是 NVT，不要保留不支持 NVT 的 `LLG.method 1`，通常应确认 `LLG.method 2`。
+- `%block atom_Heff.MASS_local_mode` 的质量个数等于当前 local-mode count，顺序与 mode basis 一致，并按 reference 写成同一连续列表。
 - `amp_local_mode.in` 行数和当前 supercell / local-mode basis 一致；如果做 smoke-test 缩小 supercell，必须同步调整或重建 `amp_local_mode.in`。
-- planned MPI ranks 与 supercell factoring rule 兼容；不确定时不要准备提交。
+- planned MPI ranks 与 supercell factoring rule 兼容：存在 `p1 * p2 * p3 = ranks`，且 `p1 | n1`、`p2 | n2`、`p3 | n3`。例如 `8x8x8` 可用 `64=4x4x4`，但不能用 `54`；不确定时不要准备提交。
 - `local_mode_PM.dat`、`J_best.dat`、mode definition、mass definition、结构文件来自同一模型基底，没有混用。
 - damping、temperature、time step、run length、output cadence 已由用户确认；历史 example 数值不是 production default。
 - smoke-test settings 和 production settings 已明确区分；smoke-test 结果不能写成 production validation。
+- 做极化涨落 / `<P^2>` vs `T` 分析时，小超胞和短轨迹只能作为 smoke test；production 分析必须有用户确认的更大超胞、采样时长和接受标准。
 - 新 run 目录不要复制旧输出：不要带入旧 `temperature.dat`、`energy.dat`、`amp_local_mode.out`、`PASP.used_info`、`*_used.dat`、旧日志或 historical `complete/` 快照。
 
 正式 input、run 派生、submission preparation 或提交前，还必须满足状态机中的用户确认和 read-only input preflight gate。
@@ -129,7 +134,7 @@ BaTiO3 electric hysteresis is a single-stage `Model atomic_effective_H` MD elect
 - For periodic/cosine fields, `atom_Heff.MD_time` covers the intended field period(s); use `T = 2*pi / MD.E_omega` only when the current input/reference confirms units and branch semantics.
 - `MD.aft_step` leaves a nonempty sampled window before the total MD steps end. For demos, `aft_step >= total_steps` means no useful loop recording; production equilibration windows must be explicitly confirmed.
 - `local_mode.MD_mode_range` is reference/user-authority covered before writing; lower bounds must not exceed upper bounds.
-- Scheduler helper, MPI ranks, executable path, module setup, and walltime are environment facts only, not defaults from MD-1.
+- Scheduler helper, MPI ranks, executable path, module setup, and walltime are environment facts only, not defaults from MD-1; MPI ranks must satisfy the same `p1 * p2 * p3 = ranks` supercell-factor rule before submission.
 - Candidate package contains no stale `field.dat`, `P_abs.dat`, `PASP.used_info`, old logs, or historical `complete/` residues.
 
 跑后至少确认：

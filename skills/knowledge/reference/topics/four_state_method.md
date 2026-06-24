@@ -33,6 +33,24 @@ J_ij = ( E_↑↑ + E_↓↓ − E_↑↓ − E_↓↑ ) / (4 S²)
 
 `S` 是磁性原子的自旋量子数（与 `Spin_values` 中除以 2 后得到的值一致）。
 
+### DFT 能量抽取
+
+四态法中的 `E_↑↑`、`E_↑↓`、`E_↓↑`、`E_↓↓` 必须来自每个 VASP `OUTCAR` 的最后一条 converged `free energy TOTEN`，不能取第一条 `TOTEN`。第一条通常对应初始 SCF 迭代附近的未收敛能量，会让 J 差出几个数量级。
+
+抽取规则见 `files/OUTCAR.md`。脚本中即使用宽匹配 `TOTEN`，也必须保留最后一条，例如 `grep "TOTEN" OUTCAR | tail -1` 这类思路；不要在读到第一条后 `break`。
+
+### 写入 PASP 归一化自旋模型前的换算
+
+四态公式中的 `S` 是 DFT/物理自旋尺度；而 `Model Invariant` / `atomic_effective_H` 中的 pure spin local-mode 常使用归一化自旋变量。把四态法得到的 J 写入 `J_best.dat` 前，必须换算到当前 PASP 模型的自旋幅值：
+
+```text
+J_model = J_four_state * (S_physical / S_model)^2
+```
+
+这里 `S_model` 是 `J_best.dat` 消费端 local-mode / spin basis 使用的自旋向量幅值。常见 `Spin_values = 2` 的归一化 spin 模型中，模型 spin 向量幅值按 1 处理；若 Mn/Fe 物理自旋为 `S = 5/2`，则换算因子为 `(2.5 / 1.0)^2 = 6.25`。
+
+该换算必须和 `local_mode_PM.dat`、`Spin_values`、mode definition 以及 L5 `atomic_effective_H` 输入记录在同一 handoff 中。否则 L5 dynamics 得到的温标会系统性偏差。
+
 ---
 
 ## 矩阵形式（含 SOC、各向异性、DM、Kitaev）
@@ -103,6 +121,7 @@ PASP `find_J_path_sym` **不**生成完整的 VASP 输入。下列由用户负�
 ## 注意事项
 
 - 自旋值 `spin_val(isa(ia))` 来自 PASP 的 `Spin_values` 块；MAGMOM 中写出的是这个值的整数倍（已经是 `2S` 量级）
+- `Spin_values` 在 `find_J_path_sym` 里用于生成 DFT 端磁矩约束，不自动说明后续 `J_best.dat` 是否已经按 effective-H 归一化 spin basis 换算。跨到 L3/L5 前必须显式记录换算关系
 - 非 pair 的磁性原子在 MAGMOM 中按 `spin3.in` 的 z 分量写出（值 = `spin3(3, ia) * 2`）；这意味着如果用户希望非 pair 自旋"任意但与 pair 垂直"，需要确保 `spin3.in` 中第三方自旋方向已正确设置
 - 非磁性物种的 MAGMOM 段会写成 `<NITYP>*0`；M_CONSTR 段会写成 `<3*NITYP>*0`
 - 在 M_CONSTR 中：pair 原子 1 沿 x 轴约束，pair 原子 2 沿 y 轴约束。这是矩阵 J 计算的标准设置（确保两个 pair 自旋方向相互垂直）

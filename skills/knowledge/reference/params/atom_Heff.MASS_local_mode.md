@@ -9,12 +9,30 @@ MD的常用设置。提供各局域模式的等效相对原子质量信息。提
 ## 取值
 正实数
 
+## 写法示例
+质量值应按当前实际 local-mode count 和顺序写成同一个连续列表。推荐格式是把所有 local-mode masses 放在 block 内同一数据行：
+
+```text
+%block atom_Heff.MASS_local_mode
+33.5219 33.5219 33.5219
+%endblock atom_Heff.MASS_local_mode
+```
+
+这里的 `3` 个数只对应示例中的 `3` 个 local modes；实际条目数必须等于当前 local-mode 总数。不要写成“每种元素一个质量”，也不要把应变模式计入这个 block。
+
 ## 何时使用
 - 当使用 `3.1.6 附属文件MD.input：分子动力学模拟相关设置` 相关功能并需要设置 `block atom_Heff.MASS_local_mode` 时。
 
 ## 注意事项
 - 这是 block 类型设置，写入时必须使用 `%block ... %endblock` 结构，并保持 block 内格式完整。
+- block 内的 mass 顺序必须与当前 `local_mode.mode_definition` / `def_local_modes.dat` / `local_mode-*.xsf` 的 local-mode 顺序一致。
+- 对集体位移/软模，质量值不能由 Agent 自动取某个元素质量；应由用户提供、材料数据计算或按已确认公式计算有效质量，并记录来源。
 - 若涉及精确行格式或复杂示例，应回到来源章节核对。
+
+## 相关条目
+- `files/mode_mass.input.md`
+- `files/def_local_modes.dat.md`
+- `params/local_mode.mode_definition.md`
 
 ## 来源章节
 - 3.1.6 附属文件MD.input：分子动力学模拟相关设置

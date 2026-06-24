@@ -72,7 +72,7 @@ Branch classification is not material-name driven. Si, NaNbO3 and BiFeO3 example
 | User / upstream | GA evolution controls | Required for an intentional run | `GA.population_size`, `GA.max_generation`, `save_str.nsave_str`, heredity/mutation and selection controls need user-confirmed intent |
 | User / upstream | Branch controls | Branch dependent | `GA.perturbation`, `GA.gen_ran_str_sym`, magnetic flags, restart flags, constraints, `GA.parallel` and external command policy must match user goal |
 | User / upstream | `seed.in` | Optional | Reproducibility helper; if present, exact format routes to reference |
-| Environment / user | External evaluator inputs / command | Required when local optimization is external | VASP / GULP inputs, `GA.VASPCMD`, serial helper or `run_pvasp.sh` are environment facts, not workflow defaults |
+| Environment / user | External evaluator inputs / command | Required when local optimization is external | VASP / GULP inputs, `GA.VASPCMD` for `GA.parallel F`, or `run_pvasp.sh` for `GA.parallel T` are environment facts, not workflow defaults |
 | Environment / user | Scheduler helpers | Submission only | `pasp.slurm`, `vasp.slurm`, `vasp.pbs`, image / queue / path / module / MPI facts are not scientific defaults |
 | Agent | README / PROGRESS, reference inventory, preflight record | Required for formalization | Records branch, file roles, user confirmations, reference gaps and preflight status |
 
@@ -83,7 +83,9 @@ Branch classification is not material-name driven. Si, NaNbO3 and BiFeO3 example
 | `PASP.input` has `%include <file>` | The include target must exist in the candidate package and be regular/readable | Input preflight starts from root `PASP.input`, resolves include graph and catches inactive duplicates |
 | `GA.gen_ran_str_sym T` | `GA.spg_front` / `GA.spg_rear`; possible volume / structure placeholders | User must confirm space-group range and physical scope; branch-specific structure looseness is high-risk |
 | `GA.perturbation T` | Meaningful current structure framework | Current structure must be user/upstream-owned; do not use arbitrary coordinates from random-spacegroup notes |
+| `GA.parallel F` | Nonempty, user-confirmed `GA.VASPCMD`; serial / one-by-one VASP command behavior | Block preflight if VASP optimization is needed but `GA.VASPCMD` is empty, stale, or not current-environment confirmed |
 | `GA.parallel T` | `run_pvasp.sh` or equivalent parallel external-evaluation helper; `vasp_N/` runtime provenance | Helper script and VASP inputs are environment-specific and must be checked before submission |
+| `GA.Pher` / `GA.Pmut` set | Heredity / mutation / remaining-operation balance | Check `GA.Pher + GA.Pmut`: `> 1` is invalid-risk; `< 1` leaves a `Pperm` remainder and must be user-intended |
 | Magnetic branch | `Spin_values`, magnetic GA flags, possible `MAGMOM_*`, magnetic-aware helper, spin-polarized DFT inputs | User confirms magnetic policy; helper must support the selected magnetic workflow |
 | `GA.lread_OUTCAR_mag T` | `GA.magnetic T` plus readable `OUTCAR` magnetic moments after external run | Block unless magnetic branch and OUTCAR availability are established |
 | Restart from saved structures | `strs_saved.dat`, `CONTCAR.NNN.GGG`, `OSZICAR.NNN.GGG`, generation number / saved-state provenance | Treat as restart branch, not fresh input; validate same-run provenance |
@@ -119,6 +121,18 @@ These are workflow-level knobs only. Before writing or changing exact values, re
 | Fixed lattice / pressure / strain | `GA.fixlattice`, `GA.fix_cell`, `GA.pressure`, `GA.biaxial_strain`, `GA.lat_fix_2D_Ang` | High-risk physics constraints; `GA.fix_cell` source default caveat applies |
 | Restart a GA run | `GA.read_strs_saved`, `GA.read_CONTCAR`, `GA.read_OSZICAR`, `GA.generation_saved` | Same-run generation artifacts and saved-state provenance must be validated |
 
+### GA Scale Sanity Guidance
+
+The source/reference defaults for `GA.population_size`, `GA.max_generation` and `save_str.nsave_str` must not be treated as automatic system-size scaling. The runtime agent should ask the user to confirm these values for the current branch and budget.
+
+| Intent | Scale guidance | Required label / warning |
+|---|---|---|
+| Smoke test | Very small population or generation counts, such as population `10` or generation `2`, only check wiring and helper behavior | Must be explicitly labeled smoke-test; do not report GA convergence or production low-energy claims |
+| Modest known-framework perturbation | Search space is smaller; a user-confirmed starting point such as `GA.population_size 20`, `GA.max_generation 10`, `save_str.nsave_str 20` can be reasonable for small systems | Still requires user confirmation and current-structure provenance |
+| Broader global search | Usually needs branch-specific scale discussion, not copied defaults | Confirm atom count, composition, random-spacegroup / perturbation policy, external evaluator cost and stopping criteria |
+
+For heredity/mutation, a common robust practice is to keep `GA.Pher + GA.Pmut = 1` when no remainder operation is intended, for example `0.75/0.25` or `0.80/0.20`. This is a workflow guardrail, not a replacement for the reference defaults.
+
 ## Reference-before-write Inventory
 
 Before generating or editing an L6 `PASP.input`, build an inventory of every explicit keyword, block, include and read file. Common reference entry points:
@@ -133,14 +147,29 @@ Before generating or editing an L6 `PASP.input`, build an inventory of every exp
 | Species / spin / supercell blocks | `skills/knowledge/reference/params/Z_values.md`, `Spin_values.md`, `SuperCell.md` |
 | Evolution scale | `GA.population_size.md`, `GA.max_generation.md`, `save_str.nsave_str.md` |
 | Genetic operations | `GA.Pher.md`, `GA.Pmut.md`, `GA.perturbation.md`, `GA.lchk_mut.md` |
-| Symmetry / similarity | `str.init_sym.md`, `GA.symmetrize_str.md`, `GA.useBCM.md`, `GA.tol_BCM.md` |
-| Parallel / pressure | `GA.parallel.md`, `GA.pressure.md` |
+| Symmetry / similarity / cutoff | `str.init_sym.md`, `GA.symmetrize_str.md`, `GA.useBCM.md`, `GA.tol_BCM.md`, `rmax_cut.md` |
+| Parallel / pressure | `GA.parallel.md`, `GA.VASPCMD.md`, `GA.pressure.md` |
+| Parallel VASP helper | `skills/knowledge/reference/files/run_pvasp.sh.md` |
 | Random space group | `GA.gen_ran_str_sym.md`, `GA.spg_front.md`, `GA.spg_rear.md` |
 | Magnetic search | `GA.magnetic.md`, `GA.random_magnetic.md`, `GA.lAFM_GA.md`, `GA.lmut_mag_GA.md`, `GA.flip_spin_rate.md`, `GA.ldiff_str_with_mag_GA.md`, `GA.lread_OUTCAR_mag.md` |
 | Cell / lattice constraints | `GA.fixlattice.md`, `GA.fix_cell.md`, `GA.biaxial_strain.md`, `GA.lat_fix_2D_Ang.md` |
 | Effective settings output | `skills/knowledge/reference/files/PASP.used_info.md` |
 
-Known reference gaps: several source-backed or example-observed L6 controls and output artifacts do not yet have dedicated cards, including restart controls, `GA.VASPCMD`, `GA.system`, `GA.surfaces`, `GA.Vcell_init`, `GA.Nadapt`, `GA.Wadapt`, random-spacegroup layer controls, and GA output files such as `Saved_NNN.POS`, `Saved_gen.dat`, `low_ene_strs.dat`, `pc_low_ene_strs.dat`, `strs_saved.dat`, `POSCAR.NNN.GGG`, `CONTCAR.NNN.GGG`, `OSZICAR.NNN.GGG`, `OUTCAR.NNN.GGG`, `MAGMOM.NNN.GGG`, and `vasp_N/`. Do not write those exact settings or claim their file formats as reference-backed unless the user supplies authority or new reference cards are added.
+Known reference gaps: several source-backed or example-observed L6 controls and output artifacts do not yet have dedicated cards, including restart controls, `GA.system`, `GA.surfaces`, `GA.Vcell_init`, `GA.Nadapt`, `GA.Wadapt`, random-spacegroup layer controls, and GA output files such as `Saved_NNN.POS`, `Saved_gen.dat`, `low_ene_strs.dat`, `pc_low_ene_strs.dat`, `strs_saved.dat`, `POSCAR.NNN.GGG`, `CONTCAR.NNN.GGG`, `OSZICAR.NNN.GGG`, `OUTCAR.NNN.GGG`, `MAGMOM.NNN.GGG`, and `vasp_N/`. Do not write those exact settings or claim their file formats as reference-backed unless the user supplies authority or new reference cards are added.
+
+## External VASP Evaluator Guidance
+
+GA structure relaxation/evaluation is an external DFT or optimizer responsibility. The workflow can check that the external evaluator is explicitly planned, but it must not invent production VASP settings.
+
+Required confirmations:
+- `GA.parallel F`: `GA.VASPCMD` is present, nonempty, and runnable in the target environment; stdout/stderr and timeout/failure behavior are understood.
+- `GA.parallel T`: `run_pvasp.sh` exists in the run directory, matches current candidate naming, waits for jobs to finish, reports failures, and leaves `CONTCAR` / `OSZICAR` / `OUTCAR` / magnetic outputs where PASP expects them.
+- `INCAR`, `KPOINTS`, `POTCAR`, scheduler script and VASP executable path come from the user, current project, or an explicitly accepted settings table.
+
+DFT-side recommendations to discuss, not silently apply:
+- For GA, the lattice can fluctuate between candidates. An automatic-length `KPOINTS` style is often safer than a fixed mesh that was tuned for one cell.
+- Multi-stage relaxation is often preferred: start with looser `PREC` / `EDIFF` / `EDIFFG` / automatic k-point length, then tighten in later stages.
+- Values such as automatic lengths `5`, `10`, `15` and staged `PREC=NORMAL/ACCURATE` can be useful starting points only when the user accepts them for the current material and budget.
 
 ## Input Preflight Checklist
 
@@ -152,9 +181,13 @@ The L6 preflight must check:
 - structure route is established: `cell.str` / `unit_cell.str`, inline structure, POSCAR route, or user-authorized equivalent;
 - `SuperCell`, `Z_values`, `Spin_values` when present, species order, and structure basis have current-material provenance;
 - branch settings match user-confirmed intent: random-spacegroup, perturbation, magnetic, restart, fixed lattice / cell, interface, parallel external evaluation, smoke-test or production;
+- GA scale is user-confirmed and labeled as smoke-test or production; very small settings such as population `10` / generation `2` are not accepted as production by default;
+- heredity / mutation balance is checked: `GA.Pher + GA.Pmut > 1` blocks, and `< 1` must be recorded as an intentional `Pperm` remainder;
+- `str.init_sym`, `GA.symmetrize_str` and `rmax_cut` are treated as explicit current-run choices when present; official/example values such as `T/T/6.5` are not assumed defaults;
 - every explicit PASP keyword / block / dependent file format has reference coverage or user-authoritative coverage;
 - `seed.in`, if present, is checked as optional reproducibility input, not required by default;
-- external evaluator plan is explicit: serial command / `GA.VASPCMD`, parallel `run_pvasp.sh`, VASP / GULP input package, scheduler helper, executable path, stdout / stderr and cleanup behavior;
+- external evaluator plan is explicit: if `GA.parallel F`, `GA.VASPCMD` is present and current-environment confirmed; if `GA.parallel T`, `run_pvasp.sh` is present and preflighted; VASP / GULP input package, scheduler helper, executable path, stdout / stderr and cleanup behavior are current-environment facts;
+- VASP `INCAR`, `KPOINTS` and `POTCAR` have user/project provenance; fixed `KPOINTS` meshes are not treated as GA defaults, and automatic mesh / staged relaxation claims are recorded only when user-confirmed;
 - magnetic branch helper can handle `MAGMOM_*` or `OUTCAR` magnetic moment reading when current settings require it;
 - restart branch artifacts are same-run and generation-consistent;
 - no stale outputs such as old `PASP.used_info`, `Saved_*.POS`, `low_ene_strs.dat`, generation-suffixed DFT artifacts, `vasp_N/`, old logs or old `opt/` products are mixed into a fresh input package;

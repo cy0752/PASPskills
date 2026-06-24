@@ -208,13 +208,13 @@ skills/
 - 它不能决定 workflow 路由、不能替用户选择物理参数、不能修改文件、不能提升正式 input、不能准备或提交任务、不能输出最终用户答复
 
 平台注册文件由安装脚本生成：
-- `<target>/.codex/skills/pasp-dev`：Codex 项目级入口 skill，安装时软链接到工作目录的 `skills/`
+- `<target>/.codex/skills/pasp-helper`：Codex 项目级入口 skill，安装时软链接到工作目录的 `skills/`
 - `<target>/.codex/skills/pasp-verifier/SKILL.md`：Codex verifier skill wrapper
 - `<target>/.codex/agents/pasp-verifier.toml`：Codex read-only verifier agent
-- `<target>/.claude/skills/pasp-dev`：Claude 项目级入口 skill，安装时软链接到工作目录的 `skills/`
+- `<target>/.claude/skills/pasp-helper`：Claude 项目级入口 skill，安装时软链接到工作目录的 `skills/`
 - `<target>/.claude/agents/pasp-verifier.md`：Claude read-only verifier agent，使用 `tools: Read, Glob, Grep`
 
-旧版安装可能留下 `$HOME/.claude/skills/pasp-dev` 这类 Claude 用户级入口；当前安装脚本只把它作为 legacy user-scope entry 检查、警告或在 `--force` 时移除，不把它作为新安装目标。
+旧版安装可能留下 `$HOME/.claude/skills/pasp-dev`、`$HOME/.claude/skills/paspskills` 或 `$HOME/.claude/skills/pasp-helper` 这类 Claude 用户级入口；当前安装脚本只把它们作为 legacy user-scope entry 检查、警告或在 `--force` 时移除，不把它们作为新安装目标。
 
 这些入口 / agent 文件应保持很薄，只负责暴露或导向 `skills/subskills/pasp-verifier/skill.md`。不要在平台 wrapper 中复制完整 PASP reference、workflow gate 或 verifier mode 细节；否则安装目标和 PASP 包内容会漂移。
 
@@ -606,7 +606,7 @@ PASP workflow 往往包含较长的 reference 查询、用户目录盘点、日�
 - Codex agent 注册文件是 `.codex/agents/pasp-verifier.toml`，使用 TOML 格式和 `sandbox_mode = "read-only"`。
 - Claude agent 注册文件是 `.claude/agents/pasp-verifier.md`，使用 frontmatter，例如 `tools: Read, Glob, Grep`。
 - Codex 项目级 skills 放在 `.codex/skills/`，Claude 项目级 skill 入口放在 `.claude/skills/`；它们都是平台入口 wrapper，不是 PASP runtime 知识源。
-- `$HOME/.claude/skills/pasp-dev` 只是旧版 Claude 用户级入口。当前安装脚本只检查、警告或在 `--force` 时移除它，不把它作为新安装目标。
+- `$HOME/.claude/skills/pasp-dev`、`$HOME/.claude/skills/paspskills` 和 `$HOME/.claude/skills/pasp-helper` 都只是旧版 Claude 用户级入口。当前安装脚本只检查、警告或在 `--force` 时移除它们，不把它们作为新安装目标。
 
 不要手工维护多份 verifier 规则。新增 mode、修改输出格式或改变禁止事项时，先改 `skills/subskills/pasp-verifier/skill.md`，再更新 `scripts/install-pasp-skills.sh` 生成的 Codex / Claude wrapper，让 wrapper 继续引用 canonical 契约。默认使用安装脚本部署，不建议单独复制某一个 `.codex` 或 `.claude` 文件。安装脚本必须支持从源仓库直接运行，也支持把脚本单独复制到目标目录后运行；后者不能依赖脚本相对路径反推源仓库，必要时应通过 `--source` 或 `PASP_SKILLS_SOURCE` 指定源 PASPskills 仓库。
 

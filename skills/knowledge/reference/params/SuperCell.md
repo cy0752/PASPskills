@@ -26,6 +26,7 @@
 - 如果 `cell.str` 本身已经是所需大超胞，`SuperCell` 往往可保持为单位阵
 - 如果 `cell.str` 与 `unit_cell.str` 内容相同，只能说明当前提供的晶胞和原胞相同；这不等于用户的目标 DFT / 样本生成超胞就是 1×1×1
 - 在 L3 Path A 中，`SuperCell` 是目标样本 / DFT 结构规模的建模确认项。不要因为用户只提供了 `cell.str` 和 `unit_cell.str`，或两者相同，就自动省略 `SuperCell`
+- 在 `Model atomic_effective_H` MD / SLD 提交前，还必须把计划 MPI ranks 与当前 supercell factors 一起检查。合法 ranks 需要能写成 `p1 * p2 * p3`，且三个 `p_i` 分别整除 supercell 三个方向的 factors；仅仅让 ranks 整除总 site 数或原子数不够。比如 `8x8x8` 可用 `64 = 4x4x4`，但 `54` 不合法；`6x6x6` 可用 `54 = 3x3x6`。
 - 对交换路径分析来说，超胞过小会导致较远近邻识别错误
 - 对多 species `Model find_J_path_sym`，不要依赖非单位 `SuperCell` 从 primitive / interleaved `cell.str` 自动扩胞，除非已证明扩胞后的全局 `isa` 仍非递减。PASP 会按 cell copy 复制 species id；primitive 顺序如 `1,2,2` 会扩成 `1,2,2,1,2,2...`，再被 `find_J_path_sym` 的 species-order 检查拒绝。安全路线是把完整目标分析超胞直接写入 `cell.str`，按第四列 species id 分组，并在该 `cell.str` 已是目标超胞时保持 identity `SuperCell`。
 

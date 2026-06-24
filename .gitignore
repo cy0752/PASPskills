@@ -1,3 +1,14 @@
+# Local AI/workflow state
+.agents/
+.claude/
+.codex/
+.trellis/
+
+# Local environment and logs
+.env
+.env.*
+*.log
+
 # macOS system files
 .DS_Store
 .AppleDouble
@@ -23,12 +34,7 @@ __MACOSX/
 # Python cache
 __pycache__/
 *.pyc
-
-# Local agent/workflow metadata
-.trellis/
-.codex/
-.agents/
-.claude/
+.pytest_cache/
 
 # Crash dumps
 core.*

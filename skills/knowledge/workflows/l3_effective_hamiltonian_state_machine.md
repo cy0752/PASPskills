@@ -57,7 +57,7 @@
 
 ### S1：整理候选材料与缺失项
 允许自动执行：
-- 提取能量、最终磁矩、样本编号、结构摘要。
+- 提取能量、最终磁矩、样本编号、结构摘要；从 VASP `OUTCAR` 提取能量时必须取最后一条 converged `free energy TOTEN`，并记录收敛 / 正常结束证据。
 - 生成缺失文件清单、候选代表点位分析计划、待确认问题。
 - 在 `notes/`、`drafts/` 或 `*.draft` 中保存明确标注“待确认 / 不可提交”的候选材料。
 
@@ -270,6 +270,7 @@ S6 才允许：
 - `STAGE_OUTPUT_VALIDATION_PASS=true`
 - 目标 run、关键输出文件、日志路径和下游 handoff 文件。
 - 若下游目标是 L5 dynamics，还必须记录 `L3_TO_L5_HANDOFF_READY=true` 或明确 blocked / TODO，并在 README / PROGRESS 中列出：L3 run id、`local_mode_PM.dat`、拟交给 L5 的 fitted-parameter file（例如 runtime-validated `J_best.dat` 或等价选择记录）、结构 route、`SuperCell`、`Z_values`、`Spin_values`、mode definition、mass definition 来源、fitting dataset / settings provenance、same-basis 检查结论，以及 L3 不提供的 first-stage `amp_local_mode.in`、`Zeff.dat`、production dynamics settings 和 run-environment gaps。
+- 如果拟交给 L5 的 `J_best.dat` 来自 L2 four-state DFT bridge，还必须记录每个状态使用最后 `TOTEN` 的证据、物理自旋到模型自旋的换算因子、单位、parameter id 映射和 `J_best.dat` 格式检查；缺这些证据时不能标记 `L3_TO_L5_HANDOFF_READY=true`。
 
 fail 或 blocked 时，不得把结果交给下游 MC / MD / fitting / analysis；只能输出阻断原因、证据路径和需要重跑或人工确认的项。
 
@@ -285,11 +286,13 @@ S7 完成后必须更新 run README / PROGRESS：记录 output validation 结论
 - `Spin_values` 的数值个数是否等于 `number_of_species` / `Z_values` 元素数；非磁性元素也必须有显式 `0`。
 - `local_mode.mode_definition` 是否基于用户提供或对称性分析得到的不等价代表点位。
 - 单原子 spin mode 的第一行是否全部为 `1 spin`，species id 是否写在下一行；不得把 species id 写到 `spin` 前面。
+- 多原子位移 / 声子 mode 是否按 `N_atom`、独立 species-id 列表行、逐原子 `x y z dx dy dz` 行写入；位移向量不得被当成 fractional / lattice-vector 坐标。
 - mode 总数是否等于“不等价代表点位数 × 3”，且 mode 总数下一行没有空行。
 - 如果代表点位数等于结构中所有参与磁性原子数，是否有证据说明当前结构就是用于定义模式的 primitive，且这些位点确实全部不等价。
 - `cell.str`、`unit_cell.str`、`POSCAR_UC` 是否处在同一轴向约定；若 PASP `%block SuperCell` 出现，确认它是否确实表示在 `cell.str` 基础上继续扩胞。
 - 对 Path A shared-basis，是否存在用户确认的目标 DFT / 样本超胞设置；若候选输入省略 `%block SuperCell`，preflight 必须确认用户明确接受 1×1×1 作为目标样本 / DFT 规模，而不是由 agent 从文件存在性自动推断。
 - 对 Path A `local_mode.cal_para_method = 1`，是否存在用户确认的 `local_mode.nstr_random` / 样本数；若候选输入只为了生成 `local_mode_PM.dat` 而没有生成样本计划，preflight 必须 blocked，并返回 S2 询问样本数。
+- 对 Path A 局域位移 / 软模样本，是否存在用户确认的 `local_mode.mode_range` 估算依据；不得把默认 `0.04` 或历史 PTO 数值当作当前材料默认值。若已有同基底 `def_local_modes.dat` / `local_mode-*.xsf`，preflight 应检查 reduced mode 分量没有被误读为 fractional displacement。
 - 对 `Model Invariant` shared-basis / interaction-basis 运行，preflight 必须记录计划使用的进程数。默认应为单进程；若使用 MPI，必须有当前 PASP build 和当前工作流分支的 MPI-safe 证据，否则结论为 blocked 或至少明确警告。若候选输入包含 `%block local_mode.special_SOC`，MPI 视为不安全，除非已经有该 special-SOC 路径的显式验证证据。
 - 输入文件之间的相关性是否正确：`PASP.input` 中的 `%include` 是否真实存在并指向同一套结构基准；`cell.str` / `unit_cell.str` / `POSCAR_UC` 是否满足同一 primitive-supercell 映射；PASP `%block SuperCell` 是否没有被误用为 `unit_cell.str -> cell.str` 的关系矩阵；`local_mode.mode_definition` 坐标是否与当前结构坐标系一致；`Z_values`、species id、`Spin_values`、SOC 设置和上游产物来源是否属于同一数据链。类似 `unit_cell.str` 轴向或坐标顺序错误必须 fail / blocked，不能靠提交试跑发现。
 - 对 `unit_cell.str` / `cell.str` 的映射检查，可使用 `skills/knowledge/scripts/l3_effective_hamiltonian/rebase_unit_cell.py --relation ...` 做只读验证。这里的 `--relation` 只表示 unit-cell 到 `cell.str` 的验证关系，不是 PASP `%block SuperCell`。若需要重排轴向，该脚本必须在已有用户确认、read-only structure subagent 结论或其他可核查映射来源后使用，并且必须同步处理基矢和原子坐标；不能只旋转 cell 而不旋转后续坐标。

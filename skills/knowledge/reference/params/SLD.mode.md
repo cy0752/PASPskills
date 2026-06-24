@@ -14,6 +14,9 @@ MD的常用设置。用于设置动力学模拟的模式，1表示仅考虑原�
 
 ## 注意事项
 - 修改前应确认当前 workflow 阶段确实需要该设置，不要用参数调整掩盖结构或文件依赖错误。
+- 默认值是 `3`，即同时考虑位移和自旋自由度。对纯结构型 effective-H / 铁电 local-mode MD，如果目标是只演化 lattice / displacement degrees of freedom，应显式写 `SLD.mode 1`；不要依赖默认值。
+- 如果用户目标是 spin-only ASD / LLG，则 `SLD.mode 2` 才匹配；如果目标是 coupled spin-lattice dynamics，才使用 `SLD.mode 3`。
+- 对任意 L5 MD 输入，`SLD.mode` 必须与用户确认的 active degrees of freedom 一致，并在 preflight 中检查；不能只看历史 example 或材料名套用。
 - 若涉及精确行格式或复杂示例，应回到来源章节核对。
 
 ## 来源章节

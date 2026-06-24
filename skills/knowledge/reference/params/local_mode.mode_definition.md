@@ -50,7 +50,59 @@ x y z  sx sy sz
 ```
 
 ## 局域声子或位移模式
-局域声子模式可以用普通模式定义，不写 `spin`。典型结构是先给出该 mode 涉及的原子数，再给相关原子类型和每个原子的坐标与位移方向。此类模式可能还会带 `lamp` 形式，用于处理大振幅模式的软边界。
+局域声子模式可以用普通模式定义，不写 `spin`。在 `mode_def_type = 2` 的用户自定义模式中，PASP 的读取顺序是：
+
+```text
+%block local_mode.mode_definition
+2
+N_mode
+N_atom_in_mode_1
+species_id_1 species_id_2 ... species_id_N
+x_1 y_1 z_1  dx_1 dy_1 dz_1
+x_2 y_2 z_2  dx_2 dy_2 dz_2
+...
+
+N_atom_in_mode_2
+species_id_1 species_id_2 ... species_id_N
+x_1 y_1 z_1  dx_1 dy_1 dz_1
+...
+%endblock local_mode.mode_definition
+```
+
+关键点：
+- `N_mode` 是自定义 local mode 的个数。
+- 每个 mode 先写该 mode 涉及的原子数，然后单独一行写这些原子的 `species_id` 列表。
+- 后续每个原子一行，前三列是该原子的 Cartesian 位置，后三列是 Cartesian 位移向量分量。
+- 源码注释显示输入位置按 Angstrom 读取并转换；位移向量按 Cartesian 分量使用并会在内部归一化。不要把后三列当作 fractional / lattice-vector 坐标。
+- 不同 mode 之间仍必须保留一行空白分隔行；单个 mode 后面直接接 `%endblock` 时不需要额外 mode 分隔行。
+
+PTO 15 原子集体铁电软模的格式示例（数值只说明格式，不能作为其他材料默认值）：
+
+```text
+%block local_mode.mode_definition
+2
+1
+15
+1 2 2 2 2 2 2 2 2 3 3 3 3 3 3
+ 0.000000  0.000000  0.000000  0.000000  0.000000  0.168100
+-3.750208 -3.750208 -3.750208  0.000000  0.000000  0.016800
+ 3.750208 -3.750208 -3.750208  0.000000  0.000000  0.016800
+-3.750208  3.750208 -3.750208  0.000000  0.000000  0.016800
+-3.750208 -3.750208  3.750208  0.000000  0.000000  0.016800
+ 3.750208  3.750208 -3.750208  0.000000  0.000000  0.016800
+ 3.750208 -3.750208  3.750208  0.000000  0.000000  0.016800
+-3.750208  3.750208  3.750208  0.000000  0.000000  0.016800
+ 3.750208  3.750208  3.750208  0.000000  0.000000  0.016800
+ 0.000000 -3.750208  0.000000  0.000000  0.000000 -0.144100
+ 0.000000  3.750208  0.000000  0.000000  0.000000 -0.144100
+-3.750208  0.000000  0.000000  0.000000  0.000000 -0.144100
+ 3.750208  0.000000  0.000000  0.000000  0.000000 -0.144100
+ 0.000000  0.000000 -3.750208  0.000000  0.000000 -0.432400
+ 0.000000  0.000000  3.750208  0.000000  0.000000 -0.432400
+%endblock local_mode.mode_definition
+```
+
+此类模式可能还会带 `lamp` 形式，用于处理大振幅模式的软边界。
 
 纯自旋有效哈密顿量通常不需要写这类位移模式；若涉及铁电、声子或自旋-晶格耦合，应回到 workflow 判断当前模型边界后再写。
 
@@ -73,6 +125,7 @@ x y z  sx sy sz
 - 坐标应使用 Cartesian 坐标，并与当前结构文件的坐标系保持一致。
 - `<species_id>` 不是原子序号，而是元素/类型编号，需与 `Z_values` 和结构文件中的元素顺序对应。
 - 单原子自旋 mode 的第一行应写 `1 spin`；不要把这里的 `1` 改成元素编号。元素编号写在下一行 `<species_id>`。例如 Mn 是 species 2 时也应写成三行 `1 spin` / `2` / `x y z sx sy sz`。
+- 多原子位移 / 声子 mode 的 `species_id` 应单独成行；不要把每个 species id 混写到坐标行第一列。
 - 参与自旋的元素不能由 agent 擅自决定，应由用户或材料物理目标确认。
 - `N` 后面不要空行，应直接接第一段 mode 定义；不同 mode 定义之间必须有一行空白分隔行。
 - 如果同时混合自旋模式和位移模式，仍按同一个 mode 总数计数。
@@ -83,6 +136,8 @@ x y z  sx sy sz
 - 把 `<species_id>` 写成原子编号。
 - 把 mode 第一行的原子数写成 species id，例如为 Mn 写 `2 spin`。这会把单原子自旋模式误写成两原子模式，后续解析或物理语义都会错。
 - 忘记为每个自旋代表位点写三个方向。
+- 把多原子位移 mode 写成 `species_id x y z dx dy dz` 每行七列，而漏掉原子数后的独立 species-id 列表行。
+- 把位移向量后三列误解为 fractional / lattice-vector 坐标；它们是 Cartesian 位移向量分量，并会在 PASP 内部归一化。
 - 在 mode 总数 `N` 后插入空行；PASP 在 `read_local_mode_general` 做 Fortran list-directed read 时可能读到空记录，并报 `forrtl: severe (24): end-of-file during read`。
 - 不同 mode 定义之间没有空白分隔行；PASP 会把下一段 mode 的第一行当作分隔行吞掉，随后从错误位置继续读取，常见报错是 `forrtl: severe (59): list-directed I/O syntax error`。
 - 修改 `local_mode.mode_definition` 后，没有同步检查 `Spin_values`、`Z_values`、结构文件和后续 `local_mode_PM.dat` 复用条件。
@@ -117,6 +172,7 @@ forrtl: severe (59): list-directed I/O syntax error
 - `params/Z_values.md`
 - `params/Spin_values.md`
 - `files/unit_cell.str.md`
+- `files/def_local_modes.dat.md`
 
 ## 来源章节
 - 3.1.7.5 自定义局域模式 (`block local_mode.mode_definition`)

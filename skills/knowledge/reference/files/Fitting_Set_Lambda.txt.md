@@ -14,9 +14,24 @@
 ### 后续每行 3 个有效数据
 1. 行编号 `I`
 2. 本轮允许模型包含的最大参数个数 `Nc_p_s(I)`
-3. 本轮 λ 值 `LAMBDAS(I)`
+3. 本轮阈值的乘法因子 `LAMBDAS(I)`，不是加性 ridge 正则化系数
+
+## Automatic Exploration Contract
+
+Each `LAMBDAS(I)` entry successively multiplies the regularization/search
+threshold. A factor greater than 1 grows that threshold, below 1 shrinks it,
+and 1 leaves it unchanged. Automatic exploration requires finite factors
+strictly greater than 1 for every row; the factors themselves need not be
+monotone across rows. For example, factors 1.02 and 1.01 both grow the threshold.
+
+`Nc_p_s(I)` is the maximum retained parameter count for that round, not the full
+candidate matrix width. In automatic exploration it must not exceed
+`min(candidate_feature_count, 150, floor(1.5 * actual_training_rows))`.
+The independent full candidate-width gate still applies before any fitting.
+Run `prepare_l3.py check-fit` on the actual fit directory before every PASP run.
 
 ## 注意事项
+- 以下默认设置描述为历史参考，不能用于要求乘法递增阈值的自动探索。
 - 文档示例是默认设置，共 20 轮、λ 递减，最后一个 λ 为 `1.0`
 - 文档特别提醒：`λ = 1.0` 的最后一轮可能明显变慢
 - 若想节省时间，可把首行总轮数从 `20` 改为 `19` 或更小，跳过最后一轮
@@ -25,9 +40,9 @@
 ## 最小示例
 ```text
 3 1
-1 158 1.30
-2 158 1.10
-3 158 1.00
+1 150 1.30
+2 150 1.10
+3 150 1.02
 ```
 
 ## 来源章节

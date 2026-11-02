@@ -34,6 +34,8 @@
 - 自旋向量默认已归一化，因此相互作用参数单位与能量一致，取 eV
 - 如果这些值来自四态法 DFT 交换参数，写入前必须已经换算到当前 `Spin_values` / `local_mode_PM.dat` 所定义的模型自旋尺度；不要把物理自旋 `S` 下的原始 J 直接塞进归一化 spin 模型
 - `parameter_id` 必须对应当前同一 `local_mode_PM.dat` / interaction list 的编号。换了结构、mode definition、`fig.maxk`、`fig.mdist`、`Invariant.power`、SOC 策略或 species / spin 顺序后，不能盲目复用旧 `J_best.dat`
+- L3 拟合优先使用所选 PASP 报告的原生 `*_LM.txt`：它使用物理参数编号并排除常数。报告内部 `XM` 包含拟合常数列，可能经过变量重写，不得直接复制为物理编号。报告总项数也不等于 MC 保留相互作用数。
+- 在交接前，用原始完整特征矩阵和单独的能量常数回算全部训练、selection 预测。仅“编号在范围内”“与 XM 字节相同”不足以通过。支持格式可用 `knowledge/scripts/l3_effective_hamiltonian/fit_handoff.py`；契约见 `knowledge/workflows/l3_model_integrity.md` 和脚本 README。
 
 ## 最小示例
 ```text

@@ -85,6 +85,7 @@ preflight 是 read-only subagent 任务。主 agent 本地检查、目录盘点�
 ### 上游依赖
 - L3 或等价流程产出的 same-basis `local_mode_PM.dat`。
 - 拟合得到并与 interaction 编号匹配的 `J_best.dat`。
+- L3 拟合模型按 `l3_model_integrity.md` 核验原生 LM、常数排除与完整 train/selection 回算，并记录训练胞到目标胞的可辨识性限制。该要求不把 L2 四态法参数强行套用为 L3 拟合报告。
 - 用户确认的模型目标、超胞、温度区间、PT 副本数、步数、初始态策略、strain / CG 和输出需求。
 
 ### 当前阶段已知输出

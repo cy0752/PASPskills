@@ -24,6 +24,24 @@ Route the request into one of these types:
 - The user, Claude, or Codex is modifying workflow inputs and asks which settings are adjustable or what they control.
 - Identify the workflow first, then add only the reference detail needed for that step.
 
+## L3 early route
+For effective-Hamiltonian construction/fitting, read
+`../workflow-l3-effective-hamiltonian/skill.md` now and follow its state machine.
+Completed four-state DFT data that is intended to produce `spin_exchange.dat` or a
+magnon belongs to the L2 spin-model route below; do not send it to the unrelated L3
+local-mode workflow merely because the data came from DFT. The L3 helper is distinct
+from the read-only verifier.
+Persist actual handoffs and consumer paths before dispatch. Under TASK RUNTIME the
+controller executes the local stage; a local launcher does not require a scheduler.
+
+For completed four-state DFT data targeting exchange and dispersion, read
+`../../knowledge/workflows/l2_four_state_delivery.md` with the L2 route. Its
+prepare-first, receipt reuse and bounded-review rules specialize the generic
+confirmation/reference-delegation rules below for this route. Preserve genuine
+native `pasp-helper` writer delegation and scientific verifier review. Do not
+restart a reference or verifier delegation solely for a deterministic mechanical
+check already covered by a current receipt. Keep all supplied quartets in scope.
+
 ## Early Confirmation When Multiple Paths Are Plausible
 If two or more workflows or branches are plausible, and the choice would change:
 - downstream file dependencies
@@ -228,5 +246,5 @@ Do not delegate:
 - final judgment of the user's scientific goal
 - final workflow selection or cross-workflow routing
 - high-risk parameter decisions without reference support
-- file modification, formal input promotion, run-directory derivation, submission artifact creation, or job submission
+- file modification, formal input promotion, run-directory derivation, submission artifact creation, or job submission **to the read-only verifier**; a native `pasp-helper` writer follows its authorized workflow scope
 - final user-facing response generation

@@ -1,0 +1,62 @@
+Command: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=candidate/knowledge/scripts/l3_effective_hamiltonian python -B -m unittest -v candidate/knowledge/scripts/l3_effective_hamiltonian/test_fit_handoff.py candidate/knowledge/scripts/l3_effective_hamiltonian/test_study_contract.py
+Exit code: 0
+Scope: local synthetic regression fixtures for native handoff and publication; no PASP calculation, executor acceptance, compatibility result or speedup measurement.
+
+test_cli_collision_is_nonzero_with_actionable_evidence (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.AliasTest.test_cli_collision_is_nonzero_with_actionable_evidence) ... ok
+test_no_claim_of_physical_identity_when_target_also_aliases (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.AliasTest.test_no_claim_of_physical_identity_when_target_also_aliases) ... ok
+test_non_diagonal_and_invalid_cell_rejected (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.AliasTest.test_non_diagonal_and_invalid_cell_rejected) ... ok
+test_site_ids_and_relative_multiplicities_are_preserved (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.AliasTest.test_site_ids_and_relative_multiplicities_are_preserved) ... ok
+test_three_cell_shell_alias_disappears_in_six_cell (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.AliasTest.test_three_cell_shell_alias_disappears_in_six_cell) ... ok
+test_clean_native_completion_passes (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_clean_native_completion_passes) ... ok
+test_clean_reduced_refit_still_rejects_original_wider_basis (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_clean_reduced_refit_still_rejects_original_wider_basis) ... ok
+test_cli_exports_native_bytes_and_preserves_old_artifacts (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_cli_exports_native_bytes_and_preserves_old_artifacts) ... ok
+test_every_logged_width_must_match_native_lm (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_every_logged_width_must_match_native_lm) ... ok
+test_malformed_parameters_and_basis (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_malformed_parameters_and_basis) ... ok
+test_missing_native_completion_rejected (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_missing_native_completion_rejected) ... ok
+test_native_completion_rejects_rewritten_or_incomplete_fit (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_native_completion_rejects_rewritten_or_incomplete_fit) ... ok
+test_native_lm_excludes_offset_and_reconstructs (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_native_lm_excludes_offset_and_reconstructs) ... ok
+test_old_xm_export_rejected_even_when_ids_in_range (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_old_xm_export_rejected_even_when_ids_in_range) ... ok
+test_row_order_and_units_mismatch (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_row_order_and_units_mismatch) ... ok
+test_unsupported_reduced_matrix_and_test_access (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_unsupported_reduced_matrix_and_test_access) ... ok
+test_wrong_physical_mapping_rejected_by_predictions (candidate.knowledge.scripts.l3_effective_hamiltonian.test_fit_handoff.HandoffTest.test_wrong_physical_mapping_rejected_by_predictions) ... ok
+test_accidental_feature_source_reuse (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_accidental_feature_source_reuse) ... ok
+test_bad_csvs_rejected_before_publication (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_bad_csvs_rejected_before_publication) ... ok
+test_basis_change_invalidates_encoding_capture (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_basis_change_invalidates_encoding_capture) ... ok
+test_changed_artifact_invalidates_receipt (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_changed_artifact_invalidates_receipt) ... ok
+test_cli_and_no_cwd_dependency (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_cli_and_no_cwd_dependency) ... ok
+test_cli_failure_is_nonzero_without_outputs (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_cli_failure_is_nonzero_without_outputs) ... ok
+test_conversion_order_units_and_complete_features (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_conversion_order_units_and_complete_features) ... ok
+test_duplicate_energy_id (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_duplicate_energy_id) ... ok
+test_duplicate_manifest_keys (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_duplicate_manifest_keys) ... ok
+test_empty_basis (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_empty_basis) ... ok
+test_energy_from_another_original_outcar_rejected (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_energy_from_another_original_outcar_rejected) ... ok
+test_explicit_text_header (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_explicit_text_header) ... ok
+test_failed_or_incomplete_run (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_failed_or_incomplete_run) ... ok
+test_final_spins_overwritten_after_initial_encoding_rejected (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_final_spins_overwritten_after_initial_encoding_rejected) ... ok
+test_header_cannot_skip_first_sample (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_header_cannot_skip_first_sample) ... ok
+test_identity_requirement_cannot_silently_fall_back (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_identity_requirement_cannot_silently_fall_back) ... ok
+test_initial_spin_used_instead_of_final_rejected (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_initial_spin_used_instead_of_final_rejected) ... ok
+test_malformed_features (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_malformed_features) ... ok
+test_missing_features (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_missing_features) ... ok
+test_missing_or_duplicate_samples (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_missing_or_duplicate_samples) ... ok
+test_mixed_basis (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_mixed_basis) ... ok
+test_nonfinite_and_invalid_divisors (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_nonfinite_and_invalid_divisors) ... ok
+test_nonfinite_energy (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_nonfinite_energy) ... ok
+test_old_ene_symbol_cannot_pair_with_final_encoding_record (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_old_ene_symbol_cannot_pair_with_final_encoding_record) ... ok
+test_original_identity_and_final_inputs (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_original_identity_and_final_inputs) ... ok
+test_publication_metrics_and_idempotence (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_publication_metrics_and_idempotence) ... ok
+test_publication_requires_declared_top_level_consumer_files (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_publication_requires_declared_top_level_consumer_files) ... ok
+test_published_consumer_references (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_published_consumer_references) ... ok
+test_receipt_cannot_replace_artifact (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_receipt_cannot_replace_artifact) ... ok
+test_renumbered_wrong_original_sample_rejected (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_renumbered_wrong_original_sample_rejected) ... ok
+test_safe_destinations_and_conflicts (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_safe_destinations_and_conflicts) ... ok
+test_split_isolation_and_full_coverage (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_split_isolation_and_full_coverage) ... ok
+test_symlink_destination_rejected (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_symlink_destination_rejected) ... ok
+test_symlink_source_rejected (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_symlink_source_rejected) ... ok
+test_width_mismatch (candidate.knowledge.scripts.l3_effective_hamiltonian.test_study_contract.ContractTest.test_width_mismatch) ... ok
+
+----------------------------------------------------------------------
+Ran 52 tests in 0.860s
+
+OK
+

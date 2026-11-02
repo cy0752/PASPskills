@@ -9,6 +9,8 @@ usage() {
   printf '%s\n' ""
   printf '%s\n' "Installs:"
   printf '%s\n' "  <target>/skills/                         PASP runtime skills package"
+  printf '%s\n' "  <target>/.agents/skills/pasp-helper       Codex project skill symlink"
+  printf '%s\n' "  <target>/.agents/skills/pasp-verifier/     Codex verifier skill wrapper"
   printf '%s\n' "  <target>/.codex/skills/pasp-helper     Codex project skill symlink"
   printf '%s\n' "  <target>/.codex/skills/pasp-verifier/    Codex verifier skill wrapper"
   printf '%s\n' "  <target>/.codex/agents/pasp-verifier.toml Read-only Codex agent config"
@@ -90,12 +92,12 @@ resolve_source_skills() {
   fi
 
   if [ -f "$candidate/skills/SKILL.md" ]; then
-    cd "$candidate/skills" && pwd
+    cd "$candidate/skills" && pwd -P
     return 0
   fi
 
   if [ -f "$candidate/SKILL.md" ] && [ -d "$candidate/subskills" ] && [ -d "$candidate/knowledge" ]; then
-    cd "$candidate" && pwd
+    cd "$candidate" && pwd -P
     return 0
   fi
 
@@ -130,6 +132,9 @@ if [ -z "$source_skills" ] || [ ! -f "$source_skills/SKILL.md" ]; then
 fi
 
 target_skills="$target/skills"
+target_agent_skills="$target/.agents/skills"
+target_agent_pasp_helper="$target_agent_skills/pasp-helper"
+target_agent_pasp_verifier="$target_agent_skills/pasp-verifier"
 target_codex_skills="$target/.codex/skills"
 target_codex_agents="$target/.codex/agents"
 target_claude_agents="$target/.claude/agents"
@@ -147,9 +152,21 @@ legacy_codex_pasp_dev="$target_codex_skills/pasp-dev"
 legacy_claude_pasp_dev="$target_claude_skills/pasp-dev"
 legacy_codex_paspskills="$target_codex_skills/paspskills"
 legacy_claude_paspskills="$target_claude_skills/paspskills"
-legacy_agent_skills="$target/.agents/skills"
-legacy_agent_pasp_dev="$legacy_agent_skills/pasp-dev"
-legacy_agent_pasp_verifier_skill="$legacy_agent_skills/pasp-verifier"
+legacy_agent_pasp_dev="$target_agent_skills/pasp-dev"
+legacy_agent_paspskills="$target_agent_skills/paspskills"
+
+# Removing a real target directory must never remove the selected source.
+# A target symlink pointing at the source is safe to replace during upgrades.
+if [ -d "$target_skills" ] && [ ! -L "$target_skills" ]; then
+  physical_target_skills="$(cd "$target_skills" && pwd -P)"
+  case "$source_skills/" in
+    "$physical_target_skills/"*)
+      printf 'Source skills are inside the destination: %s\n' "$target_skills" >&2
+      printf 'Choose a separate target project; the source was left unchanged.\n' >&2
+      exit 1
+      ;;
+  esac
+fi
 
 require_overwrite_ok() {
   local path="$1"
@@ -161,13 +178,15 @@ require_overwrite_ok() {
 }
 
 require_overwrite_ok "$target_skills"
+require_overwrite_ok "$target_agent_pasp_helper"
+require_overwrite_ok "$target_agent_pasp_verifier"
 require_overwrite_ok "$target_pasp_helper"
 require_overwrite_ok "$target_pasp_verifier_skill"
 require_overwrite_ok "$target_pasp_verifier_agent"
 require_overwrite_ok "$target_claude_verifier_agent"
 require_overwrite_ok "$target_claude_pasp_helper"
 
-mkdir -p "$target_codex_skills" "$target_codex_agents" "$target_claude_agents" "$target_claude_skills"
+mkdir -p "$target_agent_skills" "$target_codex_skills" "$target_codex_agents" "$target_claude_agents" "$target_claude_skills"
 
 if { [ -e "$target_skills" ] || [ -L "$target_skills" ]; } && [ "$force" -eq 1 ]; then
   rm -rf "$target_skills"
@@ -179,6 +198,16 @@ else
   ln -s "$source_skills" "$target_skills"
 fi
 
+if { [ -e "$target_agent_pasp_helper" ] || [ -L "$target_agent_pasp_helper" ]; } && [ "$force" -eq 1 ]; then
+  rm -rf "$target_agent_pasp_helper"
+fi
+ln -s "../../skills" "$target_agent_pasp_helper"
+
+if { [ -e "$target_agent_pasp_verifier" ] || [ -L "$target_agent_pasp_verifier" ]; } && [ "$force" -eq 1 ]; then
+  rm -rf "$target_agent_pasp_verifier"
+fi
+mkdir -p "$target_agent_pasp_verifier"
+
 if { [ -e "$target_pasp_helper" ] || [ -L "$target_pasp_helper" ]; } && [ "$force" -eq 1 ]; then
   rm -rf "$target_pasp_helper"
 fi
@@ -187,8 +216,8 @@ ln -s "../../skills" "$target_pasp_helper"
 if { [ -e "$target_pasp_verifier_skill" ] || [ -L "$target_pasp_verifier_skill" ]; } && [ "$force" -eq 1 ]; then
   rm -rf "$target_pasp_verifier_skill"
 fi
-mkdir -p "$target_pasp_verifier_skill"
-cat > "$target_pasp_verifier_skill/SKILL.md" <<'EOF'
+ln -s "../../.agents/skills/pasp-verifier" "$target_pasp_verifier_skill"
+cat > "$target_agent_pasp_verifier/SKILL.md" <<'EOF'
 ---
 name: pasp-verifier
 description: Use the local read-only PASP verifier contract for bounded fact collection tasks.
@@ -220,17 +249,17 @@ if [ "$force" -eq 1 ]; then
   if { [ -e "$legacy_agent_pasp_dev" ] || [ -L "$legacy_agent_pasp_dev" ]; }; then
     rm -rf "$legacy_agent_pasp_dev"
   fi
-  if { [ -e "$legacy_agent_pasp_verifier_skill" ] || [ -L "$legacy_agent_pasp_verifier_skill" ]; }; then
-    rm -rf "$legacy_agent_pasp_verifier_skill"
+  if { [ -e "$legacy_agent_paspskills" ] || [ -L "$legacy_agent_paspskills" ]; }; then
+    rm -rf "$legacy_agent_paspskills"
   fi
 else
   if { [ -e "$legacy_codex_pasp_dev" ] || [ -L "$legacy_codex_pasp_dev" ] || [ -e "$legacy_claude_pasp_dev" ] || [ -L "$legacy_claude_pasp_dev" ] || [ -e "$legacy_codex_paspskills" ] || [ -L "$legacy_codex_paspskills" ] || [ -e "$legacy_claude_paspskills" ] || [ -L "$legacy_claude_paspskills" ]; }; then
     printf '%s\n' "Warning: legacy project skill entries named pasp-dev or paspskills were left unchanged."
     printf '%s\n' "Re-run with --force to remove legacy entries from .codex/skills and .claude/skills."
   fi
-  if { [ -e "$legacy_agent_pasp_dev" ] || [ -L "$legacy_agent_pasp_dev" ] || [ -e "$legacy_agent_pasp_verifier_skill" ] || [ -L "$legacy_agent_pasp_verifier_skill" ]; }; then
-    printf '%s\n' "Warning: legacy Codex skill entries under $legacy_agent_skills were left unchanged."
-    printf '%s\n' "Re-run with --force to remove legacy pasp-dev and pasp-verifier entries from .agents/skills."
+  if { [ -e "$legacy_agent_pasp_dev" ] || [ -L "$legacy_agent_pasp_dev" ] || [ -e "$legacy_agent_paspskills" ] || [ -L "$legacy_agent_paspskills" ]; }; then
+    printf '%s\n' "Warning: legacy Codex skill entries under $target_agent_skills were left unchanged."
+    printf '%s\n' "Re-run with --force to remove legacy pasp-dev and paspskills entries from .agents/skills."
   fi
 fi
 
@@ -333,8 +362,9 @@ if [ "$copy" -eq 1 ]; then
 else
   printf '%s\n' "  skills mode:    symlink -> $source_skills"
 fi
-printf '%s\n' "  Codex skill:    $target_pasp_helper/SKILL.md"
-printf '%s\n' "  Verifier skill: $target_pasp_verifier_skill/SKILL.md"
+printf '%s\n' "  Codex skill:    $target_agent_pasp_helper/SKILL.md"
+printf '%s\n' "  Verifier skill: $target_agent_pasp_verifier/SKILL.md"
+printf '%s\n' "  Legacy alias:   $target_pasp_helper/SKILL.md"
 printf '%s\n' "  Codex agent:    $target_pasp_verifier_agent"
 printf '%s\n' "  Claude agent:   $target_claude_verifier_agent"
 printf '%s\n' "  Claude skill:   $target_claude_pasp_helper/SKILL.md"

@@ -1,0 +1,40 @@
+Command: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=candidate/knowledge/scripts python -m unittest -v test_geometry_mapping test_four_state_native
+test_endpoint_coordinate_must_match_claimed_source_site (test_geometry_mapping.GeometryMapping.test_endpoint_coordinate_must_match_claimed_source_site) ... ok
+test_equal_distance_pairs_have_distinct_geometry_signatures (test_geometry_mapping.GeometryMapping.test_equal_distance_pairs_have_distinct_geometry_signatures) ... ok
+test_image_must_be_exact_integer_triplet (test_geometry_mapping.GeometryMapping.test_image_must_be_exact_integer_triplet) ... ok
+test_mismatched_final_lattice_is_rejected_at_strict_tolerance (test_geometry_mapping.GeometryMapping.test_mismatched_final_lattice_is_rejected_at_strict_tolerance) ... ok
+test_pair_mapping_rejects_collapsed_relative_image (test_geometry_mapping.GeometryMapping.test_pair_mapping_rejects_collapsed_relative_image) ... ok
+test_relative_image_is_preserved_in_long_bond (test_geometry_mapping.GeometryMapping.test_relative_image_is_preserved_in_long_bond) ... ok
+test_species_and_site_identity_are_checked (test_geometry_mapping.GeometryMapping.test_species_and_site_identity_are_checked) ... ok
+test_supercell_to_primitive_keeps_integer_image_in_pair_mapping (test_geometry_mapping.GeometryMapping.test_supercell_to_primitive_keeps_integer_image_in_pair_mapping) ... ok
+test_swapped_equal_vector_rows_under_actual_space_group (test_geometry_mapping.GeometryMapping.test_swapped_equal_vector_rows_under_actual_space_group) ... /root/miniconda3/lib/python3.13/site-packages/spglib/spg.py:354: DeprecationWarning: Set OLD_ERROR_HANDLING to false and catch the errors directly.
+  _set_no_error()
+ok
+test_two_final_sites_within_tolerance_are_ambiguous (test_geometry_mapping.GeometryMapping.test_two_final_sites_within_tolerance_are_ambiguous) ... ok
+test_ambiguous_same_species_endpoint_rejected (test_four_state_native.NativeReceipt.test_ambiguous_same_species_endpoint_rejected) ... ok
+test_bandlines_format_failure (test_four_state_native.NativeReceipt.test_bandlines_format_failure) ... ok
+test_both_nonprimitive_despite_matching_inputs (test_four_state_native.NativeReceipt.test_both_nonprimitive_despite_matching_inputs) ... /root/miniconda3/lib/python3.13/site-packages/spglib/cell.py:152: DeprecationWarning: Set OLD_ERROR_HANDLING to false and catch the errors directly.
+  _set_no_error()
+ok
+test_cross_lattice_endpoint_rejected_then_exact_rebuild_passes (test_four_state_native.NativeReceipt.test_cross_lattice_endpoint_rejected_then_exact_rebuild_passes) ... ok
+test_duplicate_lineage (test_four_state_native.NativeReceipt.test_duplicate_lineage) ... ok
+test_endpoint_maps_nonorthogonal_lattice_and_species (test_four_state_native.NativeReceipt.test_endpoint_maps_nonorthogonal_lattice_and_species) ... ok
+test_explicit_two_image_report_with_common_translation (test_four_state_native.NativeReceipt.test_explicit_two_image_report_with_common_translation) ... ok
+test_generate_dual_primitive_from_poscar (test_four_state_native.NativeReceipt.test_generate_dual_primitive_from_poscar) ... ok
+test_generator_rejects_split_chemical_species (test_four_state_native.NativeReceipt.test_generator_rejects_split_chemical_species) ... ok
+test_incomplete_and_duplicate_report_rows_rejected (test_four_state_native.NativeReceipt.test_incomplete_and_duplicate_report_rows_rejected) ... ok
+test_long_image_cannot_be_replaced_by_minimum_image (test_four_state_native.NativeReceipt.test_long_image_cannot_be_replaced_by_minimum_image) ... ok
+test_native_noncommensurate_cell_is_rejected (test_four_state_native.NativeReceipt.test_native_noncommensurate_cell_is_rejected) ... ok
+test_nonprimitive_cell_or_unit (test_four_state_native.NativeReceipt.test_nonprimitive_cell_or_unit) ... ok
+test_oszicar_byte_mismatch (test_four_state_native.NativeReceipt.test_oszicar_byte_mismatch) ... ok
+test_report_site_species_and_image_must_match_real_row (test_four_state_native.NativeReceipt.test_report_site_species_and_image_must_match_real_row) ... ok
+test_scalar_delivery_lineage (test_four_state_native.NativeReceipt.test_scalar_delivery_lineage) ... ok
+test_valid_native_and_bandlines (test_four_state_native.NativeReceipt.test_valid_native_and_bandlines) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.275s
+
+OK
+
+Exit code: 0
+Scope: local synthetic regression tests; no PASP execution or executor acceptance.

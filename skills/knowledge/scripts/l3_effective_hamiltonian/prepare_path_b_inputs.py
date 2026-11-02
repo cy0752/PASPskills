@@ -15,17 +15,25 @@ Optionally it also writes a shared Energy.dat table for downstream fitting.
 from __future__ import annotations
 
 import argparse
+import math
+import os
 import re
 from pathlib import Path
 
-from extract_magmoms import normalize, parse_outcar_magmoms
+from extract_magmoms import normalize
+from study_contract import digest, json_bytes, require, write_package
 
 
-TOTEN_RE = re.compile(r"TOTEN\s*=\s*([-+0-9.Ee]+)")
-FLOAT_RE = re.compile(r"[-+]?\d+(?:\.\d*)?(?:[Ee][-+]?\d+)?|[-+]?\.\d+(?:[Ee][-+]?\d+)?")
+TOTEN_RE = re.compile(r"TOTEN\s*=\s*(\S+)")
 
 
-def parse_args() -> argparse.Namespace:
+def finite(token: str) -> float:
+    value = float(token.replace('D', 'E').replace('d', 'e'))
+    require(math.isfinite(value), 'nonfinite OUTCAR value')
+    return value
+
+
+def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Extract per-sample distortion.pos/distortion.MAGMOM packages from one "
@@ -50,8 +58,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--pattern",
-        default="*.OUTCAR",
-        help="Glob used when source is a directory without numbered subdirectories. Default: *.OUTCAR",
+        default=None,
+        help="Optional flat-file glob; IDs still come from <id>.OUTCAR or OUTCAR.<id>. By default both are found.",
     )
     parser.add_argument(
         "--primitive-cells",
@@ -74,7 +82,7 @@ def parse_args() -> argparse.Namespace:
         default="Cartesian",
         help="Coordinate mode used in written distortion.pos files. Default: Cartesian",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def read_lines(path: Path) -> list[str]:
@@ -102,11 +110,12 @@ def parse_poscar_reference(path: Path) -> tuple[str, list[str], list[int], int]:
         )
 
     natoms = sum(counts)
+    require(counts and all(c > 0 for c in counts), f'invalid POSCAR counts in {path}')
     return comment, species, counts, natoms
 
 
-def parse_outcar_species_counts(path: Path) -> tuple[str, list[str], list[int], int]:
-    lines = read_lines(path)
+def parse_outcar_species_counts(path: Path, lines=None) -> tuple[str, list[str], list[int], int]:
+    lines = read_lines(path) if lines is None else lines
 
     counts: list[int] | None = None
     for line in lines:
@@ -135,6 +144,7 @@ def parse_outcar_species_counts(path: Path) -> tuple[str, list[str], list[int], 
         )
 
     natoms = sum(counts)
+    require(counts and all(c > 0 for c in counts), f'invalid species counts in {path}')
     comment = " ".join(species)
     return comment, species, counts, natoms
 
@@ -147,7 +157,7 @@ def parse_last_lattice(lines: list[str], outcar: Path) -> list[list[float]]:
     start = indices[-1] + 1
     lattice: list[list[float]] = []
     for line in lines[start : start + 3]:
-        values = [float(token) for token in FLOAT_RE.findall(line[:48])]
+        values = [finite(token) for token in line.split()[:3]]
         if len(values) < 3:
             raise ValueError(f"Failed to parse lattice vector in {outcar}: {line}")
         lattice.append(values[:3])
@@ -169,7 +179,7 @@ def parse_last_positions(lines: list[str], outcar: Path, natoms: int) -> list[li
     start = indices[-1] + 2
     positions: list[list[float]] = []
     for line in lines[start : start + natoms]:
-        values = [float(token) for token in FLOAT_RE.findall(line)]
+        values = [finite(token) for token in line.split()[:3]]
         if len(values) < 3:
             raise ValueError(f"Failed to parse atomic position in {outcar}: {line}")
         positions.append(values[:3])
@@ -186,7 +196,7 @@ def parse_last_toten(lines: list[str], outcar: Path) -> float:
     for line in lines:
         match = TOTEN_RE.search(line)
         if match:
-            energy = float(match.group(1))
+            energy = finite(match.group(1))
     if energy is None:
         raise ValueError(f"No TOTEN line found in {outcar}")
     return energy
@@ -218,26 +228,29 @@ def invert_3x3(matrix: list[list[float]]) -> list[list[float]]:
     ]
 
 
-def mat_vec_mul(matrix: list[list[float]], vector: list[float]) -> list[float]:
-    return [
-        matrix[0][0] * vector[0] + matrix[0][1] * vector[1] + matrix[0][2] * vector[2],
-        matrix[1][0] * vector[0] + matrix[1][1] * vector[1] + matrix[1][2] * vector[2],
-        matrix[2][0] * vector[0] + matrix[2][1] * vector[1] + matrix[2][2] * vector[2],
-    ]
-
-
 def to_direct_positions(lattice: list[list[float]], cart_positions: list[list[float]]) -> list[list[float]]:
     inverse = invert_3x3(lattice)
-    return [mat_vec_mul(inverse, position) for position in cart_positions]
+    # OUTCAR lattice vectors are rows: Cartesian = fractional @ lattice.
+    return [[sum(position[j] * inverse[j][i] for j in range(3)) for i in range(3)]
+            for position in cart_positions]
 
 
-def discover_outcars(source: Path, pattern: str) -> list[tuple[str, Path]]:
+def sample_id(path: Path) -> str:
+    if path.name == 'OUTCAR':
+        sid = path.parent.name
+    elif path.name.startswith('OUTCAR.'):
+        sid = path.name[len('OUTCAR.'):]
+    elif path.name.endswith('.OUTCAR'):
+        sid = path.name[:-len('.OUTCAR')]
+    else:
+        raise ValueError(f'unsupported OUTCAR filename: {path}')
+    require(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', sid), f'unsafe sample ID: {sid}')
+    return str(int(sid)) if sid.isdigit() else sid
+
+
+def discover_outcars(source: Path, pattern: str | None = None) -> list[tuple[str, Path]]:
     if source.is_file():
-        if source.name.endswith(".OUTCAR"):
-            return [(source.stem, source)]
-        if source.name == "OUTCAR":
-            return [(source.parent.name, source)]
-        raise ValueError(f"{source} is not an OUTCAR file")
+        return [(sample_id(source), source)]
 
     if not source.is_dir():
         raise ValueError(f"{source} does not exist")
@@ -246,30 +259,59 @@ def discover_outcars(source: Path, pattern: str) -> list[tuple[str, Path]]:
         [path for path in source.iterdir() if path.is_dir() and path.name.isdigit()],
         key=lambda path: int(path.name),
     )
-    if numbered_dirs:
-        outcars: list[tuple[str, Path]] = []
-        for directory in numbered_dirs:
-            outcar = directory / "OUTCAR"
-            if outcar.is_file():
-                outcars.append((directory.name, outcar))
-        if outcars:
-            return outcars
-
-    flat_outcars = [path for path in source.glob(pattern) if path.is_file()]
-    if not flat_outcars:
+    paths = []
+    for directory in numbered_dirs:
+        outcar = directory / 'OUTCAR'
+        require(outcar.is_file(), f'missing numbered sample OUTCAR: {outcar}')
+        paths.append(outcar)
+    patterns = [pattern] if pattern else ['*.OUTCAR', 'OUTCAR.*']
+    paths.extend(sorted({p for glob in patterns for p in source.glob(glob) if p.is_file()}))
+    if not paths:
         raise ValueError(f"No OUTCAR files found under {source}")
+    outcars, ids, sources = [], set(), set()
+    for path in paths:
+        sid = sample_id(path)
+        require(sid not in ids, f'duplicate/ambiguous sample ID: {sid}')
+        require(path.resolve() not in sources, f'source reused under multiple IDs: {path}')
+        ids.add(sid)
+        sources.add(path.resolve())
+        outcars.append((sid, path))
+    return sorted(outcars, key=lambda item: (0, int(item[0])) if item[0].isdigit() else (1, item[0]))
 
-    def sort_key(path: Path) -> tuple[int, int | str]:
-        stem = path.stem
-        if stem.isdigit():
-            return (0, int(stem))
-        return (1, stem)
 
-    return [(path.stem, path) for path in sorted(flat_outcars, key=sort_key)]
+def final_moments(lines, natoms):
+    """Reject incomplete final axes rather than falling back to an earlier state."""
+    axes, last_starts = {}, {}
+    for axis in 'xyz':
+        starts = [i for i, line in enumerate(lines) if line.strip() == f'magnetization ({axis})']
+        if not starts:
+            continue
+        last_starts[axis] = starts[-1]
+        rows, header, complete = [], False, False
+        for raw in lines[starts[-1] + 1:]:
+            text = raw.strip()
+            if text.startswith('magnetization ('):
+                break
+            if text.startswith('# of ion'):
+                header = True
+            elif header and text.startswith('tot'):
+                complete = True
+                break
+            elif header and re.match(r'^\d+\s', text):
+                t = text.split()
+                require(int(t[0]) == len(rows) + 1, 'magnetization ion ordering mismatch')
+                rows.append(finite(t[-1]))
+        require(complete and len(rows) == natoms, f'incomplete final magnetization ({axis})')
+        axes[axis] = rows
+    require(set(axes) in ({'x'}, {'x', 'y', 'z'}), 'missing/partial magnetization axes')
+    if len(axes) == 1:
+        return [(v, 0.0, 0.0) for v in axes['x']], 'collinear-x'
+    require(last_starts['x'] < last_starts['y'] < last_starts['z'],
+            'final magnetization axes belong to different snapshots')
+    return list(zip(axes['x'], axes['y'], axes['z'])), 'noncollinear'
 
 
-def write_distortion_pos(
-    path: Path,
+def distortion_pos(
     comment: str,
     sample_id: str,
     species: list[str],
@@ -277,47 +319,52 @@ def write_distortion_pos(
     lattice: list[list[float]],
     positions: list[list[float]],
     coordinate_mode: str,
-) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+) -> bytes:
     lines = [f"{comment} | sample {sample_id}", "1.0"]
     lines.extend(" ".join(f"{value: .16f}" for value in vector) for vector in lattice)
     lines.append(" ".join(species))
     lines.append(" ".join(str(count) for count in counts))
     lines.append(coordinate_mode)
     lines.extend(" ".join(f"{value: .16f}" for value in vector) for vector in positions)
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return ("\n".join(lines) + "\n").encode()
 
 
-def write_distortion_magmom(
-    path: Path,
+def distortion_magmom(
     vectors: list[tuple[float, float, float]],
     normalize_output: bool,
-) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+) -> bytes:
     rows = []
     for vector in vectors:
         output = normalize(vector) if normalize_output else vector
         rows.append(" ".join(f"{value: .10f}" for value in output))
-    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    return ("\n".join(rows) + "\n").encode()
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv=None) -> int:
+    args = parse_args(argv)
     source = Path(args.source).resolve()
     output_dir = Path(args.output_dir).resolve()
     outcars = discover_outcars(source, args.pattern)
+    require(not output_dir.exists(), 'use a new output directory; preserve earlier attempts')
+    require(args.primitive_cells is None or args.primitive_cells > 0, 'primitive cell count must be positive')
     energy_rows: list[tuple[str, float]] = []
+    files, samples = {}, []
 
     if args.poscar_reference:
         poscar_reference = Path(args.poscar_reference).resolve()
         comment, species, counts, natoms = parse_poscar_reference(poscar_reference)
     else:
-        _first_sample_id, first_outcar = outcars[0]
-        comment, species, counts, natoms = parse_outcar_species_counts(first_outcar)
+        comment = species = counts = natoms = None
 
     for sample_id, outcar in outcars:
-        lines = read_lines(outcar)
+        raw = outcar.read_bytes()
+        lines = raw.decode('utf-8').splitlines()
+        out_comment, out_species, out_counts, out_natoms = parse_outcar_species_counts(outcar, lines)
+        if species is None:
+            comment, species, counts, natoms = out_comment, out_species, out_counts, out_natoms
+        require((species, counts) == (out_species, out_counts), f'species/order/count changed: {outcar}')
         lattice = parse_last_lattice(lines, outcar)
+        invert_3x3(lattice)
         cart_positions = parse_last_positions(lines, outcar, natoms)
         positions = (
             to_direct_positions(lattice, cart_positions)
@@ -325,9 +372,7 @@ def main() -> int:
             else cart_positions
         )
 
-        sample_dir = output_dir / sample_id
-        write_distortion_pos(
-            sample_dir / "distortion.pos",
+        pos = distortion_pos(
             comment,
             sample_id,
             species,
@@ -337,27 +382,37 @@ def main() -> int:
             args.coordinate_mode,
         )
 
-        magmoms, _mode = parse_outcar_magmoms(outcar)
-        if len(magmoms) != natoms:
-            raise ValueError(
-                f"{outcar} yielded {len(magmoms)} magnetic vectors but reference POSCAR expects {natoms}"
-            )
-        write_distortion_magmom(
-            sample_dir / "distortion.MAGMOM",
-            magmoms,
-            args.normalize_magmoms,
-        )
+        magmoms, mode = final_moments(lines, natoms)
+        mag = distortion_magmom(magmoms, args.normalize_magmoms)
+        energy = parse_last_toten(lines, outcar)
+        prefix = sample_id + '/'
+        files[prefix + 'distortion.pos'] = pos
+        files[prefix + 'distortion.MAGMOM'] = mag
+        original_id = int(sample_id) if sample_id.isdigit() else sample_id
+        ledger = {'original_id': original_id,
+                  'outcar': os.path.relpath(outcar.resolve(), output_dir / sample_id),
+                  'outcar_sha256': digest(raw), 'structure': 'distortion.pos',
+                  'magnetic_state': 'distortion.MAGMOM'}
+        files[prefix + 'source_identity.json'] = json_bytes(ledger)
+        samples.append({'id': original_id, 'source_identity': prefix + 'source_identity.json',
+                        'energy_ev': energy, 'atom_count': natoms, 'magnetic_format': mode})
 
         if args.primitive_cells is not None:
-            energy_rows.append((sample_id, parse_last_toten(lines, outcar)))
+            require(sample_id.isdigit(), 'legacy Energy.dat needs integer IDs')
+            energy_rows.append((sample_id, energy))
 
     if args.primitive_cells is not None:
-        energy_path = output_dir / args.energy_out
-        energy_path.parent.mkdir(parents=True, exist_ok=True)
-        with energy_path.open("w", encoding="utf-8") as handle:
-            handle.write(f"{args.primitive_cells}\n")
-            for sample_id, energy in energy_rows:
-                handle.write(f"{sample_id} {energy: .8f}\n")
+        require(args.energy_out not in files and args.energy_out != 'manifest.json', 'energy output collides with package')
+        files[args.energy_out] = (f'{args.primitive_cells}\n' + ''.join(
+            f'{sid} {energy:.16g}\n' for sid, energy in energy_rows)).encode()
+
+    write_package(output_dir, files, 'manifest.json', {
+        'scope': 'OUTCAR ID inventory and final-block extraction; not DFT convergence or scientific acceptance',
+        'samples': samples, 'sample_count': len(samples), 'species': species, 'counts': counts,
+        'coordinate_mode': args.coordinate_mode, 'normalized_moments': args.normalize_magmoms,
+        'primitive_cells': args.primitive_cells,
+        'unresolved': ['DFT convergence', 'energy-table reconciliation', 'primitive mapping',
+                       'basis suitability', 'direction uncertainty near zero moments']})
 
     print(
         f"Prepared {len(outcars)} path-B sample packages under {output_dir}"

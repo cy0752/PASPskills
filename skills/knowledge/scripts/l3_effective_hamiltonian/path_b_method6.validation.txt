@@ -1,0 +1,36 @@
+Local validation, 2026-10-02
+
+Command:
+python3 -B -m unittest discover -s candidate/knowledge/scripts/l3_effective_hamiltonian -p 'test_*.py' -v
+
+Observed result: exit 0; Ran 83 tests in 2.148s; OK.
+The suite contains 22 new Path-B/method-6 tests and 61 existing L3 tests.
+
+New tests: test_prepare_path_b_inputs.py and test_method6.py.
+Positive coverage: mixed prefix/suffix/numbered inputs with original gapped IDs,
+skew-cell extraction, effective FDF include precedence, preservation of unrelated
+fields/dependencies, controller-only staging/collection, portable CLI/wrapper,
+same-native-basis identity, full source-aware conversion, explicit rebuild policy.
+Negative coverage: ambiguous/reused/missing sources, incomplete final states,
+invalid species/counts/numbers/lattices, stale drafts and source hashes, zero modes
+or feature width despite graceful completion, mismatched native basis, runtime
+input/dependency mutation, failed launcher, warnings/errors, incomplete IDs,
+probe failure stopping every dependent ID, timeout terminating child processes.
+
+Existing regression coverage retained: final DFT spin/source/encoding identity,
+same-basis conversion, full split/row/units checks, test isolation, physical-ID and
+intercept mapping, full prediction round-trips, supported periodic-alias checks,
+receipt identity and publication dependencies. All 61 existing tests passed.
+
+An earlier local implementation attempt treated a template directory as a file
+through study_contract.source(); it failed validation and was corrected to explicit
+directory resolution before the passing result above. No failure was suppressed.
+
+Tests use temporary synthetic files and subprocesses; they do not launch PASP.
+No calculations, dependencies, external APIs or execution agents were launched.
+No candidate evaluation in claude_glm or codex_deepseek has occurred here.
+Python standard-library tests establish only the named mechanical scopes, not
+scientific accuracy, installed-executable equivalence or cross-material validity.
+Actual runtime/build warnings, convergence, mapping, basis suitability, residuals
+and scientific acceptance require retained evidence and the controller's real runs.
+No speed improvement is measured by these tests.

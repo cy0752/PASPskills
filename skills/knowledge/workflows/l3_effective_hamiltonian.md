@@ -31,104 +31,40 @@
 
 运行时解释当前 workflow 时，应优先使用本文件中的稳定契约；不要把 run-notes 中的历史实例值直接当成用户当前 workspace 的实时结果。
 
-## 运行状态机（优先级最高）
-运行时不要先通读本长文档来“完成整个流程”。必须先读并执行短门禁文件：
-- `./l3_effective_hamiltonian_state_machine.md`
+## Execution policy and stage references
 
-本文件只补充当前状态所需的文件、字段和检查细节。任何后文步骤、模板、脚本说明或历史 run-notes 都不能绕过短门禁文件中的 STOP 条件：
-- S2 shared-basis 参数确认。
-- S3 代表点位确认。
-- S5 stage preflight。
-- S7 output validation。
+`l3_effective_hamiltonian_state_machine.md` owns L3 execution and verification.
+This document supplies stage-specific scientific/file details. Start with the state
+machine, then read only the relevant stage below. Authorization, helper delegation,
+preparation before grouped questions, runtime ownership, check caching and completion
+follow that file, not historical server procedures.
 
-## 阶段输入包与运行目录契约
-L3 workflow 不应只说“新建 run 目录”。每个阶段都要同时维护两个层次：
+Use separate candidate, input baseline and run directories. Before a dependent run,
+check effective fields/includes, structures, modes and upstream provenance. After it,
+check actual logs, expected outputs and every failed/missing sample. Persist the
+check scopes and hashes. The full-study contract covers conversion/publication;
+`prepare_l3.py` adds bounded spin-mode/SOC and fitting-data preparation checks (see
+scripts README). Neither certifies general FDF syntax or scientific claims.
+Uncovered checks retain reference-backed and bounded independent review as specified
+in the state machine.
 
-- `input/`：当前阶段的干净输入基线。凡是本阶段 `PASP.input` 或入口文件直接 `%include` / 读取的文件，都应在 `input/` 中齐全；如果某个文件来自上游或由运行时生成，必须在本 workflow 中明确说明。
-- `runs/<run-id>/`：实际执行目录。每次运行前，先完整复制当前阶段 `input/`，再把上游阶段产物接入或覆盖到这个 run 目录中，最后只在 run 目录里运行 PASP、VASP 或辅助脚本。
+For model-selection studies use `study_contract.py` (scripts README, “Full-study
+contract”) with explicit full IDs and a frozen train/selection/test design. The old
+`convert_info.txt` two-set examples below describe only the legacy converter; they
+are not a default split or an isolated test design. Keep selection in PASP's prediction
+file and test separate until the model is frozen.
 
-这样做的目的不是形式上多建一个目录，而是保证：
-- 阶段 `input/` 自洽，可作为稳定基线反复派生；
-- run 目录记录本次真实使用的完整输入、上游产物、输出和日志；
-- 下游任务消费明确的上游产物或某个 run 的输出，而不是隐式依赖被污染的 baseline `input/`；
-- subagent 盘点目录时可以区分“基线输入缺失”“run 没接入上游产物”和“运行后输出缺失”这三类问题。
+For source identity, periodic identifiability, coefficient interpretation and L3 to
+MC/MD export, read `l3_model_integrity.md`. Use the bundled identity/round-trip checks
+for supported formats; a matching filename, parameter range or R2 is insufficient.
 
-### 全阶段 Stage Preflight
-L3 任意阶段的候选输入包在提升为正式 `<stage>/input/`、覆盖已有 input、派生 `<stage>/runs/<run-id>/` 或提交运行前，都必须先做只读 stage preflight。
-
-如果当前运行环境要求用户授权 subagent，主 agent 必须先问用户是否允许。一旦用户已授权，必须按 `skills/subskills/pasp-verifier/skill.md` 的 `mode: input-preflight` 契约执行 read-only subagent preflight；这是 L3 运行前硬依赖，主 agent 本地检查不能替代。若 subagent 工具不可用、授权失效或无法完成检查，应 blocked 并说明缺少 `READ_ONLY_SUBAGENT_PREFLIGHT_DONE=true`；只有用户明确豁免 L3 subagent preflight 硬门禁时，才可改由主 agent 本地按同一 checklist 检查并继续。
-
-stage preflight 只检查事实和自洽性，不替用户决定物理参数、拟合策略或 workflow 路由。检查结论只能是 pass / fail / blocked，并列出证据路径。
-
-用户说“可以使用 subagent”只表示允许 read-only fact collection，不等于确认 shared-basis 参数，不等于授权提交，也不等于允许 agent 代填 `Spin_values`、`fig.maxk`、`fig.mdist`、`Invariant.*` 或 SOC 策略。
-
-shared-basis 输入尤其要机械执行这些前置 flag：
-- `USER_CONFIRMED_L3_SHARED_BASIS_PARAMS=true`
-- `REPRESENTATIVE_SITES_CONFIRMED=true`
-- `STAGE_PREFLIGHT_PASS=true`
-- `READ_ONLY_SUBAGENT_PREFLIGHT_DONE=true`
-
-缺任一项时，不得提升正式 `<stage>/input/`，不得创建 `<stage>/runs/<run-id>/`，不得生成提交脚本、提交命令、外部任务配置或提交准备说明；只能列出缺失确认项、写 `notes/` / `drafts/` / `*.draft`，或保存明确标注 candidate 的待 preflight 文件。
-
-目录盘点或 VASP `results/` 清点不算 L3 stage preflight。preflight 必须点名本次检查的候选 PASP / workflow 输入文件，例如 `PASP.input`、`cell.str`、`unit_cell.str`、`distortion.pos`、`distortion.MAGMOM`、`Fitting_Settings.txt` 或拟合数据文件，并按对应 stage checklist 逐项给出结论。只说“subagent 已盘点 results/”不能作为提交 PASP、执行运行探测或提升正式 input 的依据。
-
-通用必查项：
-- 当前阶段入口文件直接 `%include` / 读取的文件是否在候选输入包中齐全，或明确标注为运行时由上游接入。
-- 高风险参数、结构转换、编号规则、keep/skip、lambda 扫描、SOC / DMI / 各向异性等选择是否已有用户确认或明确来源。
-- 上游产物是否来自预期 stage / run / 数据链；不能来自未说明来源的 sibling example、旧 run 或缓存目录。
-- README、提交脚本、目录名是否把仍有待确认项的候选输入包装成可提交正式输入。
-- 作业脚本、批处理脚本和转换脚本的期望工作目录、相对路径和输出位置是否与当前 stage 目录契约一致。
-- 当前阶段的 stage-specific checklist 是否全部通过。
-
-L3 stage-specific checklist：
-- `0.shared_basis/`：除通用项外，必须通过下文 `Shared-Basis Preflight`；重点检查用户确认记录、`Spin_values`、`fig.maxk`、`fig.mdist`、`Invariant.*`、SOC 策略、代表点位分析、`unit_cell.str` 格式和轴向一致性。
-- `1.method6_template/` 或路径 B 样本编码阶段：检查 `local_mode_PM.dat` 是否来自当前材料、当前 shared-basis 的成功 run；`PASP.input` 是否只切换运行控制项而没有改变 shared-basis 定义；每个样本的 `distortion.pos` 和条件性的 `distortion.MAGMOM` 是否存在、编号是否和 `Energy.dat` / `status.tsv` 对齐。
-- `3.get_fitting_data/`：检查 `ene_symbol/<id>.ene_symbol`、`Energy.dat`、`convert_info.txt`、样本编号起点、训练/预测切分范围是否一致；不得混用不同 shared-basis、不同截断或不同 SOC 设置下生成的数据。
-- `4.fit/`：检查 `Fitting_Dataset.txt`、`Fitting_Data_for_prediction.txt`、`Fitting_Settings.txt`、`Fitting_Set_Lambda.txt` 是否来自同一数据链；启用 `I_HAVE_KEEP_TERM` 或 `I_HAVE_SKIP_TERM` 前必须有用户确认；不应把模板里的 keep/skip 文件自动当成当前 run 启用项。
-
-任何一项 fail 或 blocked，都不得把候选包提升为正式 `<stage>/input/`，不得派生 run 目录，不得执行运行探测、外部任务创建、提交 PASP / DFT / 转换脚本；只能输出缺失确认项、证据路径和修正建议。
-
-### 全阶段 Output Validation
-stage preflight 只说明“输入能不能进入运行”，不说明“输出能不能交给下游”。每个 stage 的 run 完成后、结果交给下游前，必须单独做 output validation。
-
-优先让 `pasp-verifier` `mode: output-validation` 做 output validation；如果当前运行环境要求用户授权 subagent，主 agent 必须先问用户是否允许。若不能使用 subagent，主 agent 按同一清单本地检查，并记录“本次未使用 subagent”。
-
-output validation 至少检查：
-- 目标 run / 输出目录是否明确，输出是否来自同一 run / 数据链。
-- 程序是否正常结束，日志中是否有关键 error / warning。
-- 当前 stage 的预期输出和下游 handoff 文件是否齐全。
-- 批量样本是否存在失败样本、缺失输出、编号不连续或汇总表错位。
-- 拟合输出是否和当前 `Fitting_Dataset.txt`、lambda、keep/skip 设置对应。
-
-output validation 不能反向授权提交、覆盖 input、提升正式输入包，或替用户接受某组物理 / 拟合结果。它只说明运行后事实是否足够支撑下一步 handoff。
-
-任何一项 fail 或 blocked，都不得把输出交给下游 MC / MD / fitting / analysis；只能输出阻断原因、证据路径和需要重跑或人工确认的项。
-
-如果某一步是批量样本运行，还要额外遵守一个收尾原则：
-- 运行结束后，默认只保留下游真正要消费的产物、批处理状态汇总和失败排错所需的最小日志；
-- 那些只是为运行临时复制进去的重复输入，如每个样本目录里的 `PASP.input`、`cell.str`、`unit_cell.str`、`distortion.*`、`subpasp1.sh`，如果下游不再需要，就不应长期保留；
-- 对已经成功、且结果已被提取汇总的样本，也不要默认长期保留整套中间文件和冗余日志；
-- workflow README 应明确写出“哪些要留、哪些可删”，避免批量 run 结束后目录长期膨胀成缓存堆。
-
-除目录本体外，还应把目录说明一并落盘：
-- workflow 根目录应有 `README.md`，说明整体阶段划分、当前路径（Path A / Path B）、关键产物和推荐运行顺序；
-- 每个关键阶段目录也应有自己的 `README.md`，说明这个目录负责什么、`input/` 里放什么、`runs/` 里放什么、上游依赖哪个文件、下游应消费哪个输出；
-- 如果存在 `path_b_inputs/` 这类批量样本池目录，也应单独写 README，说明编号规则、每个样本子目录的用途，以及它与正式 run 目录的关系。
-
-不要把这件事视为可选整理项。对 L3 这种多阶段、会反复提交服务器任务的 workflow，README 是目录契约的一部分。README 至少要包含当前 `Status`、`File Roles`、`Upstream` / `Downstream`、`Gate Evidence`、`Blocked / TODO`；如果这些字段缺失，目录不能被描述成 submit-ready、formal input、validated output 或 handoff-ready。
-
-以 Step 6 拟合为例，推荐流程是：
-1. 先保证 `4.fit/input/` 中有完整拟合输入包，包括 `PASP.input` 直接引用的真实 `cell.str`、`Fitting_Settings.txt`、`Fitting_Set_Lambda.txt`、`Fitting_Set_Term_Keep.txt`，以及数据集占位或说明。
-2. 新建 `4.fit/runs/<run-id>/`，从 `4.fit/input/` 完整复制。
-3. 从 Step 5 的 `3.get_fitting_data/` 或其 run 输出复制 `Fitting_Dataset.txt` 和 `Fitting_Data_for_prediction.txt` 到拟合 run 目录。
-4. 在拟合 run 目录中提交作业。若作业脚本在更外层，必须确认它的期望工作目录和相对路径。
-
-这里要单独加一条拟合护栏：
-- `Fitting_Set_Term_Keep.txt` 和 `Fitting_Set_Term_Skip.txt` 不能因为模板里存在，就默认视为当前 run 要启用；
-- 只要准备启用 `I_HAVE_KEEP_TERM` 或 `I_HAVE_SKIP_TERM`，agent 必须先问用户；
-- 若用户没有明确要求，agent 不能直接替用户决定“不启用 keep/skip 项”并进入正式 run；应先把“禁用 keep / 禁用 skip”作为拟合设置表的一部分给用户确认。
-- 用户确认后记录 `USER_CONFIRMED_L3_FIT_SETTINGS=true`；没有这个确认，不得创建或覆盖正式 `4.fit/input/`，不得派生 `4.fit/runs/<run-id>/`，不得准备提交或提交。
-- 拟合阶段真正要复制进 `4.fit/input/` / `runs/<run-id>/` 的，是已经转换好的 `Fitting_Dataset.txt` 和 `Fitting_Data_for_prediction.txt`；`Energy.dat`、`ene_symbol/`、`status.tsv` 属于上游整理上下文，除非用户明确要求完整归档，否则不必作为拟合运行硬依赖重复复制。
+The runtime owner is supplied by the task. With TASK RUNTIME, the controller runs
+the preflighted stage via the maintained local launcher and returns results; do not
+submit scheduler jobs or run a competing calculation. Where execution is explicitly
+assigned to a helper, use that launcher directly, single process. Preserve all raw
+results/failure evidence until delivery; cleanup is not an automatic workflow step.
+Publish task-required files at the agreed consumer root before final review. Store
+verdicts outside the reviewed report and finish after covered checks pass.
 
 ## 示例驱动的阶段目录
 Lecture 3 的 examples 更接近一个分阶段流水线，而不是单个目录一次完成全部工作。一个典型组织方式是：
@@ -234,85 +170,30 @@ project/
 
 不能因为 readiness 还没满足，就把已经明显属于 Path B 起点的目录重新解释成“其实这是拟合步骤”。
 
-### 如果起点是 `OUTCAR + POSCAR`
-这是 L3 里很常见、但也最容易误把“已有 DFT 数据”等同于“共享基底已经定义好”的起点。
+### Starting from completed DFT results
 
-在这种起点下，第一轮不应直接开始写正式 `0.shared_basis/input/PASP.input`、`4.fit/input/PASP.input` 或准备提交，而应先完成下面这组确认：
-
-1. 目标范围
-- 当前确实是在做 L3 effective Hamiltonian，而不是别的 workflow
-- 当前目标是 smoke test 跑通，还是直接按正式科研参数建模
-
-2. 结构角色
-- 当前 `POSCAR` 是原胞还是超胞
-- 是否还需要单独准备 `unit_cell.str` / `POSCAR_UC`
-- 当前 `POSCAR` 与这些 `OUTCAR` 是否对应同一套结构基准
-
-3. 共享基底的物理定义
-- 哪些元素参与磁性或 `local_mode.mode_definition`
-- 对参与自旋建模的元素，是否已经完成对称不等价代表点位分析
-- 是否只做纯自旋，还是还包含 strain / phonon / 其他自由度
-- 是否考虑 SOC
-- 保留体数：`fig.maxk`
-- 各体数截断半径：`fig.mdist`，单位 Bohr
-- `Invariant.power`
-- `Invariant.strain_power`
-- `Invariant.pure_strain_power`
-
-4. 现有 `OUTCAR` 在数据链中的角色
-- 哪些样本只需要提取 `Energy.dat`
-- 能量必须从每个 `OUTCAR` 最后一条 converged `free energy TOTEN` 提取，不能取第一条 `TOTEN`；精确规则见 `skills/knowledge/reference/files/OUTCAR.md`
-- 哪些样本还需要提取最终逐原子磁矩
-- 哪些样本可以继续留在路径 A
-- 哪些样本应切到路径 B，并重建 `distortion.pos` / `distortion.MAGMOM`
-
-在这组问题没有确认前：
-- 可以先盘点 `OUTCAR`、提取能量、提取最终磁矩、检查样本编号；
-- 可以先起草一版待确认的共享基底 `PASP.input` 骨架；
-- 但不要把模板默认值写成正式共享基底并继续准备提交。
-
-这里要把一个常见误判单独拎出来：
-- 用户说“继续做”“你去构建模型”，不等于用户已经接受 agent 自己代填共享基底参数
-- 用户说“implement the plan”“按计划执行”“你来定”也不等于确认共享基底参数；plan 里的默认值、假设值、smoke-test 值和 agent 自己提出的候选值，都不能自动升级成用户确认
-- 如果用户没有逐项给出值，也没有明确接受一份逐项设置清单，agent 的下一条回复应只做缺失设置确认，不得同时创建正式输入文件或提交脚本
-- 只要 `Spin_values`、`fig.maxk`、`fig.mdist`、`Invariant.power`、`Invariant.strain_power`、`Invariant.pure_strain_power`、纯自旋/含 strain / phonon 边界、SOC 保留策略里有任何一项尚未明确，agent 就必须先提问确认
-- 对 Path A，如果目标是让 PASP 生成后续 DFT 样本结构 / POSCAR，还必须确认目标 DFT 超胞矩阵、目标原子数或目标 POSCAR 规模；不能因为 `cell.str` 和 `unit_cell.str` 相同，或用户只提供这两个文件，就默认无需 `%block SuperCell`
-- 对 Path A，如果本轮要用 `local_mode.cal_para_method = 1` 正向生成样本，还必须确认 `local_mode.nstr_random` 或等价样本数；不要先跑一个只为得到 `local_mode_PM.dat` 的预运行，再回头问样本数
-- 只要还没有完成参与自旋元素的对称不等价代表点位分析，agent 就不能生成正式 `%block local_mode.mode_definition`
-- `OUTCAR` 中的最终磁矩、reference 中的常见值、模板中的常见值，都只能作为**待确认候选信息**，不能直接升级成正式共享基底参数
-
-#### 必须先问的问题模板
-如果上面任一项缺失，agent 应直接停在确认问题，不要继续写正式输入。推荐问题块：
-- 请确认参与自旋建模的元素，以及非磁性元素是否固定为 0。
-- 请确认 `Spin_values` 的元素顺序和值。
-- 请确认 `fig.maxk` 保留到几体。
-- 请确认 `%block fig.mdist` 每个体数的 Bohr 截断半径。
-- 请确认 `Invariant.power`、`Invariant.strain_power`、`Invariant.pure_strain_power`。
-- 请确认是否只做纯自旋模型，还是包含 strain / phonon / 其他自由度。
-- 请确认是否考虑 SOC；如果考虑，SOC / DMI / 各向异性项保留策略是什么。
-- 请确认 `local_mode.mode_definition` 的代表点位来源：用户提供、PASP `find_J_path_sym`、还是 agent 先做等价点位分析后再给你确认。
-- 请确认当前 `POSCAR` / `cell.str` 是用于定义模式的原胞/primitive，还是需要另行生成 `POSCAR_UC` / `unit_cell.str`。
-- 如果包含铁电/声子/局域位移模式，请确认 mode definition 的多原子格式、位置单位和位移向量来源；写入前必须参考 `params/local_mode.mode_definition.md`，运行后用 `def_local_modes.dat` / `local_mode-*.xsf` 校核 reduced mode 比例。
-- 如果走 Path A 并需要生成后续 DFT 样本结构，请确认目标 DFT 超胞：`cell.str` 是否已经是目标超胞；若不是，`%block SuperCell` 应写什么矩阵，或目标 POSCAR 应有多少原子。
-- 如果走 Path A 正向生成样本，请确认本轮希望生成多少个随机构型，即 `local_mode.nstr_random` 应写多少。
-- 如果 Path A 正向生成局域位移/软模样本，请确认 `local_mode.mode_range` 的估算依据；不能默认使用 `0.04`，应由目标物理位移、`def_local_modes.dat` reduced displacement component 和最小原子间距 smoke-test 共同约束。
-
-只有用户回答这些问题，或明确接受一份逐项列出并标注来源的设置表后，才能继续生成正式 shared-basis 输入。
+Use Path B for existing final structures/magnetic states without a forward-generated
+feature chain. Inspect all sample IDs and final converged energies/moments. Prepare
+supported candidate inputs first. S1-S3 of the state machine define primitive/site
+mapping and the parameter provenance table. Use user-authorized model selection for
+supported candidates; group unresolved validity questions after independent work.
+Do not invent missing conventions or treat template values as user-confirmed facts.
 
 #### Shared-Basis Preflight
-把候选 shared-basis 输入包提升为正式 `0.shared_basis/input/`、覆盖现有正式 input、派生 `runs/<run-id>/`、准备提交脚本或提交运行前，必须进行一次独立 read-only subagent preflight 检查，使用 `pasp-verifier` `mode: input-preflight`。若当前运行环境要求用户授权 subagent，主 agent 必须先问用户是否允许；一旦用户已经授权，subagent preflight 就是 L3 运行前硬依赖，主 agent 的本地检查不能替代它。若 subagent 工具不可用或授权失效，应 blocked 并说明缺少 `READ_ONLY_SUBAGENT_PREFLIGHT_DONE=true`；只有用户明确豁免这条 L3 硬门禁时，才可改成本地检查并继续，否则不得提升正式 input、派生 run、准备提交或提交任务。
-
-preflight 的职责是检查事实和自洽性，不替用户决定物理设置。检查结论只能是 pass / fail / blocked，并列出证据路径。
+Perform the S4/S5 check from the state machine on the actual candidate files. Record
+the scope, input/dependency hashes, source evidence, reviewer and result. Bundle
+uncovered format/semantic or scientific questions for a bounded read-only verifier;
+receipt-covered preparation/conversion/publication checks need no duplicate verifier gate.
 
 preflight 必查项：
 - 是否有完整的 `PASP.input` 字段清单；每一个显式 keyword、block、`%include`、依赖文件格式和编号规则是否都有 reference 路径或用户给定权威来源。缺任何一项都不能把输入包装成正式可运行输入。
 - 输入文件之间是否自洽：`PASP.input` 的 `%include` 文件是否存在且来自同一结构基准；`cell.str`、`unit_cell.str`、`POSCAR_UC` 是否满足同一 primitive-supercell 映射和轴向约定；PASP `%block SuperCell` 若出现，是否确实表示在 `cell.str` 基础上继续扩胞，而不是误写成 `unit_cell.str -> cell.str` 的关系矩阵；`local_mode.mode_definition` 坐标、mode 数、species id 是否与当前结构、`Z_values`、`Spin_values` 一致；若存在或用户请求 `local_mode.special_SOC`，其限制策略和编号是否来自用户确认或同基底来源；后续阶段输入是否与上游输出属于同一数据链。像 `unit_cell.str` 坐标轴顺序写错这类跨文件不一致必须在 preflight 阶段 fail / blocked。
 - 对 `cell.str` / `unit_cell.str` 的 primitive-supercell 映射验证，可使用 `skills/knowledge/scripts/l3_effective_hamiltonian/rebase_unit_cell.py` 的 `--relation` 参数。该 relation 只用于验证 `unit_cell.str` 与 `cell.str` 的关系，不等同于 PASP `%block SuperCell`。如果需要旋转或重排轴向，必须同步变换 lattice 和 atomic coordinates；如果候选文件已经出现“lattice 是目标轴向但 atom 坐标仍是旧轴序”的错误，只能在映射已确认后用该脚本的 atom-coordinate-only 修复模式生成候选文件，再重新 preflight。
-- 是否存在用户回答或逐项设置表，证明 `Spin_values`、`fig.maxk`、`fig.mdist`、`Invariant.*`、SOC / DMI / 各向异性策略不是 agent 自己代填。
+- 是否记录每个模型参数的值、来源、影响及未决项；区分用户给定、可复核推导和获授权的 agent 候选选择。
 - 对 Path A，是否存在用户回答或逐项设置表确认目标 DFT / 样本超胞。若候选输入省略 `%block SuperCell`，必须确认用户明确接受 1×1×1，而不是 agent 从 `cell.str = unit_cell.str` 自动推断。
 - 对 Path A `local_mode.cal_para_method = 1`，是否存在用户回答或逐项设置表确认 `local_mode.nstr_random` / 样本数；不得把“先拿 `local_mode_PM.dat`”包装成 Path A 首跑目标来跳过样本数确认。
 - `Spin_values` 的数值个数是否等于 `number_of_species` / `Z_values` 元素数；三元素体系中非磁性 O 也必须显式写 `0`，不能省略。
-- 是否所有 shared-basis 设置都有来源：用户确认、用户给定文件、reference 规则、或明确标注为待确认草稿。
+- 是否所有 shared-basis 设置都有来源：用户给定文件、可复核推导、reference 规则或获授权的模型候选选择；未解决项明确标注为待确认草稿。
 - `local_mode.mode_definition` 是否基于用户提供或对称性分析得到的不等价代表点位，而不是无证据地遍历所有磁性原子。
 - `local_mode.mode_definition` 的单原子自旋模式是否使用 `1 spin`，并把 species id 写在下一行；不得把 Mn 这类 species 2 误写成 `2 spin`。
 - 若是多原子位移 / 声子 mode，是否按 `N_atom`、独立 species-id 列表行、逐原子 `x y z dx dy dz` 行的格式写入；位移向量不得当成 fractional / lattice-vector 坐标。
@@ -321,7 +202,7 @@ preflight 必查项：
 - `cell.str`、`unit_cell.str`、`POSCAR_UC` 和 `SuperCell` 是否处在同一轴向约定；`unit_cell.str` 是否使用 `unit_cell.na` / `%block unit_cell_in_Ang` / `%block Atoms_in_unit_cell_Ang` 格式。
 - `0.shared_basis/input/README.md`、提交脚本和目录命名是否把当前输入包装成可提交正式输入；若还有待确认项，应判 fail。
 
-任何一项 fail 或 blocked，都不得把候选包提升为正式 `0.shared_basis/input/`，不得创建可提交的正式 `PASP.input`，不得写提交脚本，不得提交 PASP；只能输出缺失确认项或修正建议。
+任何一项 fail 或 blocked，都不得把候选包提升为正式 `0.shared_basis/input/`，不得创建可提交的正式 `PASP.input`，不得写提交脚本，不得提交 PASP；应修复失败项并完成不依赖它的准备，不能放行依赖失败项的运行。
 
 如果当前目录表现为：
 - 一批已经算好的 `OUTCAR`
@@ -357,13 +238,13 @@ preflight 必查项：
 则主 agent 的正确动作不是继续闷头查很多轮，而是：
 - 先给出当前暂定判断；
 - 明确指出还缺哪个关键前提；
-- 立即请用户确认方案。
+- 在已有数据能判定时直接记录路线；不能判定时集中询问缺失的科学前提。
 
-在用户确认前，只允许做轻量盘点、能量/磁矩提取、缺失文件检查和问题清单整理；不要继续生成正式共享基底输入、正式样本输入或提交脚本。
+先完成不依赖未决项的候选输入准备；缺失且影响有效性的科学约定阻止依赖它的正式运行。
 
 ### `0.shared_basis/input/` 的阻断式检查清单
-如果当前正在准备 `0.shared_basis/input/`，而且以下任一问题还没有得到用户明确确认：
-- 是否已经有用户回答或逐项设置表，证明 shared-basis 参数不是 agent 自己代填
+如果当前正在准备 `0.shared_basis/input/`，而且以下任一问题尚无可复核依据：
+- 是否已有带来源和影响的逐项参数表，区分用户给定、结构推导、获授权的模型候选选择和未决项
 - 是否已经完成 shared-basis preflight，且结论为 pass
 - `POSCAR` 的角色：原胞还是超胞
 - 是否继续沿用示例式的 `cell.str` / `unit_cell.str` 路线
@@ -396,23 +277,25 @@ preflight 必查项：
 - 不得在没有不等价代表点位清单时生成看起来可提交的 `%block local_mode.mode_definition`
 - 不得把“先搭技术骨架”表述成“当前输入已经准备完成”
 
-#### 未确认前允许动作
+#### 未解决前允许动作
 - 生成结构摘要、目录盘点、样本清单
 - 从 `OUTCAR` 提取能量、最终磁矩、路径 A / B 切换线索
 - 对 `POSCAR` / `POSCAR_UC` / `cell.str` / `unit_cell.str` 之间的关系做对照分析
 - 在用户已确认参与自旋元素后，对这些元素做不等价代表点位分析，并把代表点位、multiplicity、tolerance 和元素编号作为待确认结果列出
 - 输出待确认问题列表
-- 在文件必须落盘时，只能保存明确标注“待确认 / 不可提交”的分析记录，不能伪装成正式共享基底输入
+- 保存有依据的完整候选包；未解决项明确标记，不能伪装成已确认正式输入
 
-### `Spin_values` 的待确认语境
-对于 L3 纯自旋 effective Hamiltonian，`Spin_values` 至少有两种常见而且物理语义不同的写法：
-- 归一化自旋模型：磁性元素常写成 `2`
-- 近似按 DFT 磁矩尺度写
+### Spin convention
+Use the user's specified convention. For a direction-only unit-vector Hamiltonian,
+record the normalization and model spin scale explicitly; do not infer it from DFT
+moment magnitudes or adopt a template's scale. Preserve raw norms as diagnostics.
+Magnitude variation by itself is not evidence that this model is invalid. Undefined
+active directions, atom/mode mapping errors and residuals need concrete investigation.
+If the convention is missing and changes validity, ask once with the prepared
+candidate table. Check `reference/params/Spin_values.md` and field/energy units.
 
-workflow 文档应明确告诉 agent：
-- 可以先从 `OUTCAR` 整理出各磁性元素的最终磁矩范围，作为给用户确认的背景信息
-- 也可以提醒用户 reference 中常见归一化写法是 `2`
-- 但不能由 agent 自己决定最终采用哪一种，并写进正式共享基底输入
+### 脚本优先纪律（硬规则）
+本 skill 在 `knowledge/scripts/l3_effective_hamiltonian/` 下提供了经验证的现成脚本（`extract_magmoms.py`、`prepare_path_b_inputs.py`、`study_contract.py`、`rebase_unit_cell.py` 等）。运行时 agent 在做对应数据处理（逐原子磁矩提取、distortion 包生成、拟合数据转换、原胞映射校验）时**必须优先使用这些脚本**，禁止重新手搓实现。只有脚本完全未覆盖的场景才可自行编写，且自行实现的解析代码必须先抽取至少 3 个样本与原始数据逐点核对（数值、方向、符号），核对通过后才能批量使用。历史上两类事故均源于手搓解析：把 (x) 块的 s/p/d 列当作 (mx,my,mz)（方向全错）；只用 x 投影当三维向量（拟合 R² 从 0.81 崩到 0.11）。
 
 ## 本地已知的模板与脚本映射
 
@@ -620,7 +503,7 @@ workflow 文档应明确告诉 agent：
 - 建模参数：参与磁性元素、`fig.maxk` 保留到几体、`fig.mdist` 中每个体数的 Bohr 截断半径、`Invariant.power`、`Invariant.strain_power`、`Invariant.pure_strain_power`、是否包含 strain / phonon、是否考虑 SOC，以及是否需要显式限制 SOC 项。若用户要求限制 / 优先保留 SOC 项，该策略必须由用户或明确来源先确认，至少包括保留哪些几体、每个几体 / interaction type 的 SOC 最高阶数、保留全部枚举类型还是只保留特定类型；结构分析和脚本只能把已确认策略映射到 PASP 编号，不能替用户决定保留哪些 SOC 项。
 - 自旋代表点位：对参与自旋建模的元素，先按 `skills/knowledge/reference/topics/symmetry_representative_sites.md` 做对称不等价代表点位分析，可使用 PASP `Model find_J_path_sym` 或等价对称分析工具；得到代表位点坐标、元素编号、multiplicity 和 tolerance 后，再为每个代表点位写 x/y/z 三个 spin mode。
 
-如果这两类信息还没有确认，agent 可以生成问题清单、代表点位分析报告或明确标注“待确认 / 不可提交”的草稿，但不能把 smoke-test 参数、plan 假设值或遍历所有磁性原子的 mode block 写成正式 `0.shared_basis/input/PASP.input`。如果用户只说“implement the plan”或“按你说的做”，而没有逐项确认这些设置，这一步仍然停在提问阶段。
+若缺少模型约定或代表点位证据，先生成有依据的候选包并集中列出未决项。已有自主建模授权允许有来源、有影响说明的候选选择；模板值与假设不得冒充用户确认。正式运行仍须通过 preflight。
 
 在 L3 这条 workflow 里，结构输入路线也应保持稳定：
 - 如果当前模板和示例已经明确使用 `%include cell.str`、`%include unit_cell.str`，默认应继续沿用这条 `str` 文件路线；
@@ -631,8 +514,8 @@ workflow 文档应明确告诉 agent：
 如果当前起点是“已有一批 `OUTCAR` + 一个 `POSCAR`”，这里尤其要注意：
 - 现有 `OUTCAR` 只能帮助你确认已有 DFT 样本能提供哪些能量和最终磁矩信息；
 - 它们不能自动替你决定共享基底里的磁性元素、截断半径、体数、展开阶数或 SOC 范围；
-- 因此在 Step 2 真正落盘 `PASP.input` 前，主 agent 应先把这些共享基底问题和用户确认清楚，而不是直接把模板默认值当正式设置写进 `input/`。
-- 如果 `unit_cell.str` 还是由自动 primitive reduction 临时生成，且轴向还没和用户确认，就连这个文件本身也只能算候选结果，不能和正式 `PASP.input` 一起被当作“input 已准备完成”。
+- 因此在 Step 2 真正落盘 `PASP.input` 前，主 agent 应记录模型选择的授权、参数来源和未决项；不能把模板默认值当作已确认物理事实。
+- 如果 `unit_cell.str` 还是由自动 primitive reduction 临时生成，且轴向及原子映射还没核实，就连这个文件本身也只能算候选结果，不能和正式 `PASP.input` 一起被当作“input 已准备完成”。
 
 #### 当前阶段输入文件
 - `PASP.input`
@@ -842,7 +725,7 @@ workflow 文档应明确告诉 agent：
 - 路径 B 不是“只要有一批 `OUTCAR` + 一个 `POSCAR` 就能立刻开始”的无前置分支；
 - 它仍然要求当前材料、当前共享基底下已经存在可复用的 `local_mode_PM.dat`；
 - 这份文件通常来自一次更早的成功 Invariant / shared-basis 运行，最常见就是路径 A 首轮自然产出；
-- 如果当前目录什么都还没做，也没有用户提供这份文件，agent 应先明确指出“路径 B 的共享相互作用基底还没准备好”，然后请用户确认是先补这一步，还是另有现成文件可复用。
+- 如果当前目录什么都还没做，也没有用户提供这份文件，agent 应先明确指出“路径 B 的共享相互作用基底还没准备好”，然后根据已有任务授权准备缺失的共享基底输入；仅当上游来源或物理约定无法确定时集中询问。
 
 建议先用一小批数据把这一步打通，确认编号、目录和后处理脚本行为都稳定，再扩大规模或切换到更复杂的构型集合。
 
@@ -897,7 +780,7 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 
 这里要把两个常见误判单独拎出来：
 - `distortion.ene_symbol` 才是 Path B 当前批跑直接产生的特征文件，不应一边跑出 `distortion.ene_symbol`，一边还要求用户手工改名后才算进入下游
-- 当样本编号从 `0` 开始时，转换阶段应直接使用 `convert_data.py --start-id 0`；不要把“模板常见从 1 开始”误讲成必须重编号
+- 当样本编号从 `0` 开始时，full-study manifest 保留原编号；仅 legacy 二集转换使用 `convert_data.py --start-id 0`；不要把“模板常见从 1 开始”误讲成必须重编号
 
 `convert_info.txt` 的第三行也应在 workflow 里写成“自动推导项”，不是自由提问项：
 - 它表示每个 DFT 超胞 / `cell.str` 中包含多少个 `unit_cell.str` 原胞，用作能量归一化除数
@@ -996,6 +879,15 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 ### Step 4：整理 DFT 数据
 这一阶段的核心不是再讨论模型，而是把外部计算结果转成可拟合的数据表。
 
+For newly generated prescribed-spin magnetic datasets, apply
+[the direction-constraint contract](./l3_model_integrity.md#prescribed-spin-dataset-construction)
+before handing off DFT inputs: constrain target directions using supported project
+settings, verify effective activation and atom/frame consistency, and check final
+direction agreement separately from electronic convergence. `MAGMOM` is an initial
+guess and `M_CONSTR` alone is insufficient. Direction constraints do not mandate
+fixed moment magnitudes. Existing-data ingestion and explicit magnetic relaxation
+remain distinct study objectives.
+
 通常需要确认：
 - 能量是否来自一致的计算设置
 - 能量是否来自每个 `OUTCAR` 最后一条 converged `free energy TOTEN`，并记录收敛 / 正常结束证据
@@ -1011,6 +903,12 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - 当前 `Energy.dat` 对应的是哪个最终收敛态
 - 如果 VASP 最终逐原子磁矩方向已经偏离路径 A 的输入磁态，则必须先回到路径 B，重新生成与最终收敛态一致的 `ene_symbol`
 - 不能把“路径 A 输入磁态对应的旧 `ene_symbol`”直接和“VASP 最终收敛态能量”强行配对
+
+Re-encoding is required for final-state identity after drift, but is not sufficient
+acceptance for new prescribed-spin samples. Investigate/fix the constraint setup
+and recalculate affected samples as needed to retain the intended configurations;
+do not silently substitute relaxed states by switching routes. Review legitimate
+existing unconstrained Path B data for suitability under the linked contract.
 
 这里最关键的不是脚本名字，而是编号映射必须保持严格一致：
 - 样本目录编号
@@ -1064,6 +962,9 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
   - 输出：`INCAR_all/INCAR_*` 或等价结果
   - 假设：样本编号与目录命名一致
   - 边界：它只能把 PASP 生成的 `MAGMOM` / `M_CONSTR` 类约束追加到用户提供或用户确认过的基础 `INCAR`；不能替用户发明生产用 `ENCUT`、电子步收敛、smearing、SOC/NCL、KPOINTS 或 POTCAR 策略
+  - Agent obligation: inspect the resulting effective constraint settings; this
+    adapter does not validate activation, constraint mode/strength or atom/frame
+    consistency. An output INCAR file is not proof that directions are constrained.
   - 历史实跑中暴露出的脚本修正记录见 `./l3_effective_hamiltonian_run_notes.md`
 - `skills/knowledge/scripts/l3_effective_hamiltonian/get_ene.sh`
   - 作用：从样本目录中的 `OUTCAR` 提取总能并生成 `Energy.dat`
@@ -1099,7 +1000,7 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - `INCAR` / `KPOINTS` / `POTCAR` 是 DFT 端科学设置，必须来自用户、既有项目输入或用户明确接受的设置表；PASP workflow 只提供样本结构和磁约束 handoff，不负责替用户选择生产 DFT 参数
 
 这里要补一个通用护栏：
-- `convert_info.txt` 的前两行是训练/测试或预测切分；如果用户没有指定，默认按 90/10 拆分当前可用连续样本：`Ntrain=floor(0.9*N)`，`Ntest=N-Ntrain`
+- `convert_info.txt` 的前两行是训练/测试或预测切分；如果用户没有指定，旧式二集示例按 90/10 拆分当前可用连续样本：`Ntrain=floor(0.9*N)`，`Ntest=N-Ntrain`
 - 例如 800 个样本默认写成 `720` 训练、`80` 测试 / 预测；不要默认写成 `800/0`
 - 只有用户明确要求全量训练或无人值守 smoke test 时，才允许测试 / 预测样本数为 0
 - `Energy.dat` 的样本编号可以是 0-based 或 1-based，但必须与 `ene_symbol/<id>.ene_symbol` 和转换脚本起点一致，且当前转换范围内编号连续。当前数据从 0 开始时，优先用 `convert_data.py --start-id 0`；不要只因为旧 `convert_data.f90` 或 example 从 1 开始就重编号。
@@ -1133,6 +1034,8 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - 基础 VASP `INCAR` / `KPOINTS` / `POTCAR` 是否已有用户确认；脚本生成的 `INCAR_all/INCAR_*` 是否只是向确认过的 `INCAR` 追加 PASP 磁约束
 - 如果只保留了部分样本，确认当前 `Energy.dat` 的样本编号范围与后续数据集切分仍一致
 - 如果样本原本来自路径 A，再检查 VASP 最终逐原子磁矩方向是否仍与输入磁态逐原子近似平行；若不平行，应先切到路径 B 再谈能量配对
+- For new prescribed-spin samples, also enforce the linked direction/drift rule;
+  changing feature encoding alone cannot accept a failed sampling constraint.
 
 #### 服务器实跑后应补录的信息
 - 实际样本目录格式与脚本假设是否完全一致
@@ -1141,6 +1044,13 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - workflow 验证用 `KPOINTS` 与正式总能比较所需 `KPOINTS` 的差距
 
 ### Step 5：生成拟合数据集
+
+Full-study/model-selection route: use `study_contract.py convert` with the frozen
+full-ID split and explicit per-sample source paths; see the scripts README. It
+supports headerless energies and nonconsecutive IDs without renaming source files.
+The legacy two-set `convert_info.txt` recipes below apply only when that different
+design is explicitly chosen; they cannot replace an isolated test set. Full requested
+coverage remains mandatory regardless of converter. Record absent samples as failures.
 在这一步，目标是形成两类信息：
 - 特征项（如 `ene_symbol`）
 - 目标值（如 DFT 能量）
@@ -1219,11 +1129,11 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - `convert_info.txt` 控制数据转换与切分元信息
 - 训练/测试集划分控制拟合使用的数据范围
 - 数据集入口组织方式决定 Step 6 是否能稳定读取数据
-- 默认切分是 90/10；测试 / 预测集不应因为模板为空而被省略
+- 旧式二集示例切分是 90/10；测试 / 预测集不应因为模板为空而被省略
 
 #### 任务目标 -> 推荐调整方向
 - 如果目标是**先完成一个可拟合最小数据集**：先减少样本集，保证 `ene_symbol` 与 `Energy.dat` 严格对齐
-- 如果用户没有指定切分：按 90/10 生成 `Fitting_Dataset.txt` 和 `Fitting_Data_for_prediction.txt`
+- 仅使用 legacy 二集转换器且已记录这种设计时：按所选比例（示例 90/10）生成 `Fitting_Dataset.txt` 和 `Fitting_Data_for_prediction.txt`
 - 如果目标是**准备验证集或预测集**：保持或扩大 `Fitting_Data_for_prediction.txt` 对应的数据入口，而不是写成空文件
 - 如果目标是**定位拟合失真原因**：优先回头检查数据对齐，而不是直接修改拟合策略文件
 - 如果目标是**在 DFT 尚未全部结束时继续整理 workflow**：可以先保留完整 `ene_symbol`，只同步当前已经得到能量的 `Energy.dat`，后续再扩展覆盖范围
@@ -1262,24 +1172,20 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - `Fitting_Set_Lambda.txt`：正则化参数或扫描列表
 - `Fitting_Data_for_prediction.txt`：可选的预测集输入
 
-第一次拟合建议先追求流程打通，再逐步优化参数，而不是一开始就追求最优模型。
+Use PASP `Model Fitting_one_order` for the fit. Python is permitted for independent
+prediction/metric checks, not as a replacement fitting engine. Freeze the study split
+before every fitting trial, including rehearsals; never introduce a sequential or
+subset trial split that touches held-out IDs. `prepare_l3.py fit-data` stages full
+train/selection matrices and a chosen lambda schedule from a pinned conversion
+receipt. Complete the remaining positional-settings and structure preflight below.
 
-#### 拟合提交前的用户确认关卡
-拟合阶段不要默认“文件齐了就直接提交”。除非用户明确说这是无人值守 smoke test，并且接受使用模板默认设置，否则在创建正式 `4.fit/input/`、创建 `4.fit/runs/<run-id>/` 或提交 PASP 前，应先把拟合选项摘要给用户确认。
-
-至少确认：
-- 当前目标是只打通流程、做正式拟合、筛选更稀疏模型，还是为后续 MC / MD 准备可解释模型
-- 训练 / 测试 / 预测切分；用户未指定时采用默认 90/10，并在摘要中写明具体行数和样本编号范围
-- 是否使用 `Fitting_Set_Term_Keep.txt` 强制保留某些项；如果启用，需要确认这些项来自哪份报告、映射文件或物理先验
-- 是否使用 `Fitting_Set_Term_Skip.txt` 强制跳过某些项；如果启用，需要确认跳过依据，避免把必要项或常数项误排除
-- 如果不启用 keep / skip，也必须把 `I_HAVE_KEEP_TERM=0`、`I_HAVE_SKIP_TERM=0` 作为明确选择写进确认摘要；不能把“用户没提供 keep/skip”自动解释成已确认禁用
-- 是否沿用当前 `Fitting_Set_Lambda.txt` 的 lambda 扫描范围，还是为了省时减少轮数或调整最大参数数
-- 是否需要 `Fitting_Data_for_prediction.txt` 参与预测输出；默认 90/10 切分产生非空测试 / 预测集时，`Fitting_Data_for_prediction.txt` 应参与，`I_GIVE_PREDICT` 通常应为 1
-- 是否启用 `I_CHECK_DATA`，以及是否接受 PASP 在运行目录中重写数据文件
-
-确认后应记录 `USER_CONFIRMED_L3_FIT_SETTINGS=true`。如果用户只是在 agent 完整列出拟合设置表后说“ok 去提交”，可以视为接受该表；如果 agent 尚未列出训练 / 测试切分、keep/skip、lambda、数据链和 `I_CHECK_DATA` 摘要，则“ok / 继续 / 去提交”不能补齐确认。
-
-确认时应保持 workflow 级别，不要在这里解释每一行精确语义。只要用户准备修改 `Fitting_Settings.txt`、`Fitting_Set_Term_Keep.txt`、`Fitting_Set_Term_Skip.txt` 或 `Fitting_Set_Lambda.txt` 的具体格式，就先查 `skills/knowledge/reference/files/` 中对应文件说明；reference 仍不够时再询问用户或回到运行日志/映射文件确认。
+#### Fitting preflight
+Follow S3b/S5: record dataset provenance, the frozen train/selection/test split,
+lambda schedule, I_CHECK_DATA, prediction use and active keep/skip strategy. Supported
+agent-selected choices under user authorization are labeled as such, not as user
+confirmation. Only genuinely missing scientific conventions need a grouped question.
+Check positional file formats against the fitting reference cards; template files
+are inactive unless their flags enable them. Keep test out of model selection.
 
 #### 当前阶段输入文件
 - 拟合阶段的 `PASP.input`
@@ -1498,6 +1404,22 @@ L3 不提供或不自动证明：
 ### 5. 拟合结果能跑，但不适合后续模拟
 如果目标是后续 MC / MD，还要检查模型是否足够稳定、是否保留了关键相互作用，而不只是看表面误差。
 
+
+### 6. fig.mdist 逐体配对误读
+`%block fig.mdist` 是位置语义（旗标、两体截断、三体截断、……），不是"体数:截断值"配对记法。把"两体 15 Bohr"写成 `1 8.0` / `2 15.0` 会被解析为两体截断 8 Bohr，物理内容静默改变。写前必读 `reference/params/fig.mdist.md` 的位置语义表，写后按位置逐个复核；preflight 应把该 block 的解析值逐位列出核对。
+
+
+### Basis selection under autonomous modeling authorization
+Choose a defensible candidate from the scientific target, geometry, sampled degrees
+of freedom and available compute. Record why the body order, cutoff and powers can
+represent the requested interactions. Neither a fixed maximal basis nor a fixed
+small basis is a universal default. Compare any alternatives on selection only and
+preserve full sample coverage for each reported comparison. Check rank/redundancy,
+residuals and parameter stability; a workflow pass is not scientific accuracy.
+Do not infer enumeration/encoding cost from feature count alone or claim that its
+marginal cost is zero. Lambda schedules must follow the current fitting reference;
+record the actual schedule and observed behavior, not an unexplored optimum.
+
 ## 什么时候算成功进入下一步
 满足以下条件时，可以认为建模与拟合阶段已经基本完成：
 - 已有成体系的样本与 DFT 数据对应关系
@@ -1505,7 +1427,7 @@ L3 不提供或不自动证明：
 - 已得到可读、可解释的拟合结果
 - 拟合输出能继续提供给后续模拟步骤使用
 
-如果你第一次做这条流程，最稳妥的成功标准不是“大样本高精度”，而是先用一小批样本把 `生成样本 → 提取能量 → 组织数据集 → 拟合` 这条链完整闭环跑通。
+A small smoke test may diagnose a format problem but never replaces full requested coverage or independent scientific accuracy checks.
 
 ## 当前步骤常见 reference 入口
 - `modules/effective_hamiltonian.md`

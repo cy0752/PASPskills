@@ -104,6 +104,8 @@ L4 判据：
 L4 preflight checklist 至少包括：
 - 文件齐备：`PASP.input`、`MC.input`、结构文件、`local_mode_PM.dat`、`J_best.dat`、所有 direct include files。
 - 上游一致性：模型基底、结构、模式定义、参数编号、`Z_values` / `Spin_values`、SOC / cutoff / powers 等未被无说明地混用。
+- L3 拟合交接必须按 `l3_model_integrity.md` 检查原生 LM 导出、常数排除，以及实际候选 J_best 对全部 train/selection 预测的数值回算；支持格式使用 `fit_handoff.py`。验证范围/字节相同不能替代参数语义校验；未解决的训练超胞别名需记录物理假设与目标超胞适用范围。
+- 即使 `local_mode.read_interaction T`，也检查必需 mode definition、`fig.maxk`/`fig.mdist`、展开/SOC 设置和 include 的有效值；不能只检查已写 block 的语法。stage-specific 差异须有当前 reader/reference 依据。
 - `PT.M` 与 planned MPI ranks 的整数倍关系；若 submission ranks 未知，结论至少应标为 blocked 或需要提交前复查。
 - 若候选提交 helper 使用 `mpirun -np $SLURM_NTASKS` 或等价命令，preflight 必须把 scheduler task count 当作 planned MPI ranks 来检查。
 - `nbeg_blk`、`nblk`、`PT.nblk_T`、`PT.niter` 是否留下统计采样空间；smoke-test 设置不得被描述成 production。
@@ -112,6 +114,7 @@ L4 preflight checklist 至少包括：
 - `local_mode.MC_mode_range`、`local_mode.mode_definition` 或 split include 的行数 / mode 数有 reference-backed 检查。
 - CG / relax 开启时，relax flag、`opt.*`、输出验证计划和 wall-time 风险已经确认。
 - README / 脚本 / 目录名没有把 candidate 写成 submit-ready。
+- launcher 保留 PASP 退出码，必需写盘探针失败时停止，并检查正常结束与任务产物；无条件 `exit 0` 不能作为成功证据。
 
 通过后记录：
 - `READ_ONLY_SUBAGENT_PREFLIGHT_DONE=true`

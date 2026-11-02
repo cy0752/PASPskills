@@ -3,7 +3,7 @@ name: workflow-l2-spin-models
 description: Route between three independent L2 PASP spin-model workflows — find_J_path_sym (inequivalent magnetic pair search + four-state DFT input handoff), Spin_lattice_interaction (PTMC + CG ground-state search), and magnon (linear spin-wave dispersion) — and guide each through its workflow doc.
 ---
 
-This subskill covers three independent L2 spin-model PASP `Model` values that share a common structural input layer (`cell.str`, `unit_cell.str`) and a common downstream data contract (`spin_exchange.dat` for the latter two), but otherwise have completely different stage chains, STOP gates, and outputs.
+This subskill covers three L2 PASP `Model` values that share a structural input layer (`cell.str`, `unit_cell.str`). `find_J_path_sym` has both a pair-discovery/DFT-preparation branch and, with `cal_spin_exchange T`, a native four-state J extraction branch that writes `spin_exchange.dat`.
 
 Do not collapse the three Models into one workflow. Each has its own workflow doc; this subskill only routes intent and enforces cross-Model contracts.
 
@@ -23,6 +23,14 @@ If the user's intent is ambiguous (e.g., "I want to study magnetism in this mate
 
 If the user's request spans more than one Model (e.g., "I want to fit J and then run MC"), route to the **earliest** Model first. Cross-Model handoffs are documented in each workflow doc's `下游去向` section, not in this subskill.
 
+If the supplied four-state DFT calculations are already complete, start at
+extraction/mapping, not DFT input preparation. Read
+`../../knowledge/workflows/l2_four_state_delivery.md` for the preparation and
+delivery contract, then the magnon gate when inputs are ready. This route retains
+native `pasp-helper` writer delegation; the script receipts replace only their
+specified mechanical verifier scope. Scientific mapping, exchange normalization,
+reference state and spin scale remain subject to bounded scientific review.
+
 ## Routing Targets
 
 - `find_J_path_sym` → `../../knowledge/workflows/l2_find_J_path_sym.md` *(full 9-section workflow; Iter 1 delivered)*
@@ -33,6 +41,14 @@ For all three Models, after dispatching, the agent should also review:
 - The relevant section of `../../knowledge/reference/` for any field about to be written
 - `../pasp-verifier/skill.md` when a mandatory read-only `mode: input-preflight` gate is required
 - Per-Model run notes (`l2_*_run_notes.md`) only as historical observations, not current-workspace evidence
+
+For an L2 input package, run `../../knowledge/scripts/l2_validate_inputs.py`
+once before verifier delegation or run-directory creation, with
+`--workflow magnon` or `--workflow spin-lattice`. It covers deterministic
+shape/count/dependency checks but cannot certify pair provenance, symmetry
+mapping, magnetic ground state, spin scale, or scientific validity. Keep the
+native `pasp-helper` and bounded verifier delegation for those uncovered facts;
+do not repeat this same check after cosmetic repairs unless the package changed.
 
 ## Responsibilities
 
@@ -49,23 +65,23 @@ These rules apply across all three Models and cannot be overridden by any single
 - The structural input layer (`cell.str`, `unit_cell.str`) is shared. Changes there propagate; do not edit it without re-checking the consequences for whichever Model is currently active.
 - The `spin_exchange.dat` data contract is shared between `Spin_lattice_interaction` and `magnon`, but **not identical**: this L2 `magnon` workflow does not support fourth-order pure spin-spin interactions. Do not silently inject a `Spin_lattice_interaction`-style `spin_exchange.dat` with non-zero fourth-order count into a `magnon` run. Verify the trailing fourth-order count is 0 and consult `topics/magnon_collinear_vs_spiral.md` plus `files/spin_exchange.dat.md` before writing or borrowing the file.
 - The four-state method described in `topics/four_state_method.md` is the canonical handoff between `find_J_path_sym` and `Spin_lattice_interaction` (or `magnon`). It is also the reference for any `MAGMOM` / `M_CONSTR` writing the agent does. Do not write VASP `MAGMOM` / `M_CONSTR` from memory or templates without consulting that topic.
-- `find_J_path_sym` produces `J.POS`, `pair_POS.NNN`, and optional `atat.NNN_Y` files; these are not interchangeable. The default four-state DFT handoff uses `J.POS` as the POSCAR and appends the matching `log.out` `MAGMOM` / `M_CONSTR` line to a user-confirmed INCAR. `pair_POS.NNN` is only for visualizing which two atoms form the pair. `atat.NNN_Y` is an advanced / internal Sc-placeholder POSCAR path and should only feed VASP when the user explicitly accepts the Sc placeholder and POTCAR strategy (see `files/atat.NNN_Y.md`).
-- L2 verifier preflight hard gate: before promoting any candidate package to formal `input/`, overwriting formal input, deriving `runs/<run-id>/`, creating or editing submission artifacts / scripts, preparing external task configuration, or submitting PASP / DFT jobs for any of the three Models, run `pasp-verifier` `mode: input-preflight` as a read-only subagent check. Record `READ_ONLY_SUBAGENT_PREFLIGHT_DONE=true` and `STAGE_PREFLIGHT_PASS=true` before proceeding.
+- In pair-discovery mode, `find_J_path_sym` produces `J.POS`, `pair_POS.NNN`, and optional `atat.NNN_Y`; these are not interchangeable. With completed DFT, `cal_spin_exchange T` instead reads the audited `Jn` quartet OSZICARs and writes native `spin_exchange.dat`. The default DFT handoff uses `J.POS` as POSCAR and appends the matching `log.out` `MAGMOM` / `M_CONSTR` line to a user-confirmed INCAR. `pair_POS.NNN` only visualizes the pair. `atat.NNN_Y` is an advanced Sc-placeholder route (see `files/atat.NNN_Y.md`).
+- L2 verifier preflight gate: for magnon, follow the deterministic-plus-bounded-scientific gate in `l2_magnon_state_machine.md`; completed-four-state deliveries additionally follow `l2_four_state_delivery.md`. For other L2 paths, before promoting candidate input, overwriting formal input, deriving runs, preparing submission artifacts / external task configuration, or submitting jobs, run `pasp-verifier` `mode: input-preflight`. Record `READ_ONLY_SUBAGENT_PREFLIGHT_DONE=true` only for an actual native verifier check, and `STAGE_PREFLIGHT_PASS=true` only after the required scope passes.
 - Subagent authorization: when the runtime requires user authorization to use subagents, ask before delegation. Authorization is only for read-only fact collection; it does not confirm physical parameters, promote inputs, create run directories, prepare submission artifacts, configure external tasks, or authorize submission.
-- If the verifier / subagent is unavailable after authorization, the L2 preflight gate is blocked unless the user explicitly waives the L2 hard gate. If waived, the main agent must run the same checklist locally and record the waiver, `LOCAL_PREFLIGHT_DONE=true`, and local evidence paths before any formal / run / submission action.
+- If a required scientific verifier is unavailable, keep its uncovered scope blocked unless the user explicitly waives that independent review and the same checklist is completed locally with evidence. A tested deterministic replacement within the two routes above needs no verifier waiver; it is not a subagent verdict. Other L2 preflight gates retain their existing waiver rules.
 
 ## find_J_path_sym Specific Rules
 
 These apply only when the user's task has been routed to `find_J_path_sym`.
 
-- The workflow has three stages: structural & modeling preparation → run + supercell convergence → four-state DFT handoff. Identify the stage before suggesting any change.
+- For new DFT the stages are structural/model preparation, pair discovery and convergence, then four-state DFT handoff. For completed DFT, audit state/pair mapping and run the separate native J extraction branch before downstream magnon. See `../../knowledge/workflows/l2_four_state_delivery.md`.
 - Before writing any field of `PASP.input`, `cell.str`, or `unit_cell.str`, consult the corresponding reference card. The reference index for this workflow is in `../../knowledge/workflows/l2_find_J_path_sym.md` § "Reference index for this workflow."
 - `Z_values`, `Spin_values`, and `magnetic_or_ligand` must each have exactly `number_of_species` entries. Non-magnetic species **must** explicitly take `0` in `Spin_values`; do not omit them.
 - `cell.str` element first-occurrence order must match `Z_values` order. If the user's `cell.str` is auto-generated from POSCAR or pymatgen, verify this after generation.
 - `find_J_path_sym` requires `cell.str` `%block AtomicCoordinatesAndAtomicSpecies` to be grouped by fourth-column `species_id` in nondecreasing order. The checked value is the fourth-column species id loaded into `isa`, not the optional sixth-column atom index. When expanding a primitive / unit-cell structure into a supercell-style `cell.str`, do not emit tile-by-tile interleaved atoms such as `Ni I I Ni I I ...`; group all species 1 atoms first, then species 2, and so on, while preserving correct coordinates, species ids, symbols, and valid atom indices / mapping.
 - For multi-species `find_J_path_sym`, do not rely on PASP non-identity `%block SuperCell` auto-expansion from a primitive or interleaved `cell.str` unless the expanded global `isa` order is proven nondecreasing. `coor.F` expands species by cell copy, so a primitive order like `1,2,2` can become `1,2,2,1,2,2...` and fail the `find_J_path_sym` entry check. The safe route is a complete target-supercell `cell.str`, grouped by fourth-column species id, with identity `SuperCell` when that file already is the intended analysis supercell.
 - The `find_J_path_sym` stage does not need its own state-machine file. Its mandatory gates are captured directly in Stage 2 of the workflow doc: read-only verifier input-preflight before run / submission actions, then the supercell convergence check after outputs exist.
-- `find_J_path_sym` does **not** consume `spin_exchange.dat` and does **not** write `spin3.in`. If the user mentions either file in connection with `find_J_path_sym`, they may actually be asking about the next Model (`Spin_lattice_interaction` or `magnon`); ask for clarification.
+- `find_J_path_sym` does **not** consume `spin_exchange.dat` or write `spin3.in`; its `cal_spin_exchange T` branch **writes** scalar `spin_exchange.dat`. Distinguish an output J file from a downstream input J file.
 - Output filenames (`J.POS`, `pair_POS.NNN`, optional `atat.NNN_Y`) and the `#@upup` / `#@updn` / `#@dnup` / `#@dndn` / `#@DM_*` log markers are confirmed against PASP source `Latticemodel/src/J_path_sym.f90` lines 194-350. Treat the contract as static unless a runtime observation contradicts it; in that case, record the discrepancy in `l2_find_J_path_sym_run_notes.md`.
 
 ## Spin_lattice_interaction Specific Rules
@@ -98,7 +114,7 @@ These apply only when the user's task has been routed to `magnon`. Read the stat
   - **`spin_wave_E.dat`** — core physical output: each line `iq` + `na_spin` eigenvalues. Format `(I3, na_spin × f20.12)`. `na_spin = N_magnetic × det(SuperCell)`.
   - `spin_wave_H_wf.dat` — H-matrix + wavefunction details, only if `lwrite_detail=T`.
   - magnon does **not** rewrite `spin3.in`.
-- The `inputs/magnon/{FM,spiral}/run.sh` template runs PASP three times (Γ→M, M→X, X→Γ), uses `sed` to rewrite `%block qpoints.magnon` between runs, then concatenates `spin_wave_E.dat` segments into `spin_wave_E_all.dat` (with `sed -i '$d'` to remove duplicate boundary points). The agent should preserve this multi-segment pattern when the user's path has more than one segment.
+- The `inputs/magnon/{FM,spiral}/run.sh` template demonstrates segmented runs. For a delivered full path, one frozen final `PASP.input` must reproduce the complete claimed q sequence. Use source-verified `spinw.use_block_BandLines T` with explicit points for a multi-leg path; do not deliver concatenated spectra with only the final segment's input.
 - Cross-Model contracts:
   - **Fourth-order spin-spin interactions are unsupported by this L2 `magnon` workflow.** Any `spin_exchange.dat` written or borrowed for a `magnon` run must have its trailing fourth-order count = 0. Verify with `tail -n 1 spin_exchange.dat` or by reading the full structure.
   - **`spin3.in` row count must equal `det(SuperCell) × NumberOfAtoms_in_cell.str`.** Count nonempty rows, because PASP-generated spin files may contain a trailing blank line. Mismatch causes silent wrong results, not necessarily a crash.

@@ -1,0 +1,14 @@
+PYTHONPATH=candidate/knowledge/scripts python candidate/knowledge/scripts/test_geometry_mapping.py
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+OK
+
+PYTHONPATH=candidate/knowledge/scripts python -m unittest candidate/knowledge/scripts/test_four_state_native.py
+spglib emitted a DeprecationWarning from spglib/cell.py:152 before test progress.
+..........
+----------------------------------------------------------------------
+Ran 10 tests in 0.116s
+
+OK

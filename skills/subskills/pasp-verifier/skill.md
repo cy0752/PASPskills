@@ -10,8 +10,91 @@ This file is a local instruction file. Do not invoke it through a colon-qualifie
 ## Main-Agent Responsibilities
 - The main agent keeps the user goal, workflow / stage state, final routing decision, risk judgment, and final user-facing response.
 - The main agent must ask for subagent authorization first when the current runtime requires explicit user authorization for subagents.
-- User authorization for subagents only permits read-only fact collection. It does not confirm PASP parameters, choose a workflow branch, promote files, create run directories, prepare submission artifacts, or authorize submission.
-- If authorization is declined, missing, or the verifier is unavailable, use the workflow-specific fallback rule. General fact collection may be done locally and recorded as no subagent used. L3 hard-gate preflight must remain blocked unless the user explicitly waives that hard gate.
+- This verifier role permits only read-only fact collection; a separately authorized native pasp-helper may implement inputs under its work order. It does not confirm PASP parameters, choose a workflow branch, promote files, create run directories, prepare submission artifacts, or authorize submission.
+- If authorization is declined, missing, or the verifier is unavailable, use the workflow-specific fallback rule. General fact collection may be done locally and recorded as no subagent used. L3 uses its state-machine coverage policy: tested conversion/publication checks need no duplicate verifier; uncovered required checks must still be performed and reported honestly.
+
+## Bounded handoff and termination
+A task must include a real work-order payload with stage, named files, review scope
+and return destination. If missing, return a handoff error to the parent. Do not
+invent a task, adopt coordinator duties, launch children or find a writer to repair it.
+Use only the named review scope. For L3 read the state-machine coverage policy;
+check the uncovered items against evidence, not merely the helper's assertions.
+A deterministic receipt does not validate scientific claims or coefficient mapping.
+For an automatic L3 fitting review, inspect the actual `Fitting_Set_Lambda.txt`
+and native execution evidence. Every per-round `Nc_p_s(I)` must be at most
+`min(candidate_feature_count, 150, floor(1.5 * actual_training_rows))` and
+every `LAMBDAS(I)` must be finite and greater than 1. These are successive
+multiplicative search-threshold factors, not additive ridge penalties. A factor
+of 1 does not grow the threshold. A compliant final parameter count cannot excuse
+an earlier oversized search cap. Missing or inconsistent actual input/receipt/log
+evidence is a fail or blocked result, never inferred compliance.
+
+When the named scope includes L3 magnetic DFT sampling, use
+[the prescribed-spin contract](../../knowledge/workflows/l3_model_integrity.md#prescribed-spin-dataset-construction).
+For new prescribed configurations, check actual effective constraint activation
+and target/site/frame consistency before DFT, then electronic convergence and
+final per-site direction agreement after DFT. `MAGMOM`, `M_CONSTR` presence or
+successful adapter output alone cannot pass that gate. Report missing evidence
+without choosing production constraint settings. Method-6 re-encoding establishes
+state/feature identity, not acceptance of lost intended configurations; assess
+existing unconstrained Path B data under their stated purpose instead of applying
+a blanket rejection. Keep the review bounded to the supplied inputs/outputs.
+
+For final review require a frozen report/artifact list and hashes at the consumer
+paths. Return the verdict, evidence and minimum necessary corrections to the parent;
+the parent saves it outside the reviewed report. Do not require another full review
+because the parent saves your verdict, fixes cosmetic wording, or copies identical
+bytes to a consumer location. Scientific changes invalidate only the affected checks.
+Do not mutate the report to include your own verdict or require a fresh helper to
+acknowledge a pass. After the bounded review, return control and stop.
+
+For a completed four-state-to-magnon delivery, use the saved receipt from
+`knowledge/scripts/check_four_state_native.py` for its tested mechanical scope
+only. Independently review the actual flipped atoms and state signs behind each
+`quartet_map`, source-cell/pair periodic images, symmetry-equivalent class
+membership and multiplicities, class J spread and representative selection,
+normalization including spin scale, and the source-to-primitive site/bond/spin/q
+maps. Check whether the reference magnetic order fits the required chemical
+primitive cell; disclose any larger magnetic period and unresolved instability.
+Confirm both final structures are actually read and primitive, and that one
+frozen final input describes the reported whole q path. Native J receipt and
+independent PASP replay establish provenance and reproducibility, not those
+scientific conclusions. Do not accept a script-J fallback or a native run that
+only discovered pairs. The controller, not a draft-only executor, supplies local
+PASP runtime evidence; do not invent it from an input package.
+
+For this delivery, also require the deterministic geometry receipt produced by
+`knowledge/scripts/geometry_mapping.py`. Check that its input covers every
+quartet endpoint and the proposed final primitive, that endpoint species and site
+ids agree, equal-distance pairs remain separated by full orbit signatures, and
+that each source endpoint maps uniquely with an explicit integer image and a
+residual within the declared tolerance. Compare reconstructed final endpoints
+and `source_bond_cartesian` against `final_bond_cartesian`; require the recorded
+`bond_residual_angstrom` to respect the declared tolerance. A missing receipt, collapsed long-bond
+image, ambiguous match, or source/final lattice residual is a mechanical fail
+that must be repaired before scientific review. This receipt is only a mapping
+and provenance gate; it neither supplies J nor proves physical equivalence,
+normalization, or magnetic stability.
+
+Consume both geometry receipts as a delta review: confirm the native-stage
+receipt covers all source quartets and the final-stage receipt covers every
+promoted endpoint, then compare their source/final bond vectors, integer images
+and residuals. Do not repeat unchanged path, byte, type or count checks already
+represented by these receipts and the native checker. A changed endpoint,
+lattice, image, spin order or exchange row invalidates the final-stage receipt;
+route only that delta back through the geometry gate and scientific mapping
+review before runtime.
+
+The native delivery checker now also reconciles the actual final exchange file
+with `primitive_cell_report.exchange_map`: complete unique row coverage, unique
+same-species site/image matches at coordinate reconstruction precision, and exact
+report site/image agreement. Reuse a current pass for those tested checks; do not
+repeat them in a fresh verifier session. A fixture-only geometry pass is not this
+check. The source-to-final physical transport, validity/completeness of supplied
+space-group operations and native-row orbit assignment still need independent
+review. Even matching actual endpoints and report fields cannot establish that
+both were derived from the correct source bond. Group uncovered findings into
+one correction; a report-only repair must preserve successful physical artifacts.
 
 ## Universal Read-Only Boundary
 The verifier may:

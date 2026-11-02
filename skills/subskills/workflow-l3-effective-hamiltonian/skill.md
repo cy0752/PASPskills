@@ -1,101 +1,279 @@
 ---
 name: workflow-l3-effective-hamiltonian
-description: Guide effective Hamiltonian construction and fitting workflows.
+description: Prepare and validate effective Hamiltonian construction and fitting workflows.
 ---
 
-Read `../../knowledge/workflows/l3_effective_hamiltonian_state_machine.md` first. Only read the relevant section of `../../knowledge/workflows/l3_effective_hamiltonian.md` when the current state needs details.
+Read `../../knowledge/workflows/l3_effective_hamiltonian_state_machine.md` first.
+It owns L3 execution, authorization, preflight and completion. Read only the
+current-stage sections of `../../knowledge/workflows/l3_effective_hamiltonian.md`
+for scientific/file details, and only the needed reference cards. Cache a short
+field-to-source inventory with input hashes; unchanged fields need no repeat lookup.
+Its mandatory automatic SOC and launch policy takes precedence over generic
+full/off examples in script README files, templates and older workflow sections.
+Such examples require the separately recorded manual-study authorization.
 
-## State Machine First
-Always classify the current state using S0-S7 from the state-machine file first. The long workflow, templates, scripts, and run-notes can only add details for the current state; they cannot bypass:
-- S2 shared-basis parameter confirmation STOP.
-- S3 representative-site confirmation STOP.
-- S3b fitting settings confirmation STOP.
-- S5 stage preflight STOP ON FAIL.
-- S7 output validation STOP ON FAIL.
+## Route from the actual data
+- Path A: generate configurations/features in PASP from a shared basis, then pair
+  external DFT energies with those configurations. The first method-1 run generates
+  the requested samples and naturally writes `local_mode_PM.dat`; do not add a run
+  solely to obtain that file.
+- Path B: encode existing final DFT structures/magnetic states with method 6.
+  Completed OUTCAR/OSZICAR files without a prior generation chain are this route.
+  A missing primitive or shared basis is a prerequisite to prepare, not a reason
+  to rename the route Path A. A separate POSCAR is useful but not mandatory if
+  OUTCAR establishes the structure/species.
+- Fitting-only: require existing, provenance-linked same-basis features and targets.
+- Routing post-mortem questions require an explanation, not automatic execution.
 
-## Responsibilities
-- Identify the user's current stage in the L3 effective Hamiltonian modeling and fitting workflow.
-- Decide whether the current path is Path A (forward generation path) or Path B (method-6 encoding path).
-- Explain which data, files, or checks are needed next.
-- When the user, Claude, or Codex is modifying current-stage inputs, identify the stage first, then list settings that are normally adjustable at that stage.
-- Explain each adjustable item only at the workflow-control level; do not expand into a full field dictionary.
-- If a change depends on exact syntax, defaults, numbering rules, file format, or advanced semantics, require reference lookup first.
-- Route to reference only when the current step needs field or file details.
+For newly generated magnetic-Hamiltonian datasets, constrain the prescribed spin
+directions during DFT, whether random or symmetry-generated. `MAGMOM` is an initial
+guess; `M_CONSTR` alone does not establish active constraints. Follow
+[the prescribed-spin contract](../../knowledge/workflows/l3_model_integrity.md#prescribed-spin-dataset-construction)
+before DFT handoff and final-state acceptance. Direction constraints do not mandate
+fixed magnitudes. Re-encoding drifted states does not by itself preserve the
+sampling plan; existing Path B data remain subject to suitability review.
 
-## Reading The Long Workflow
-Run the state machine first. Only then read the relevant part of `../../knowledge/workflows/l3_effective_hamiltonian.md`, such as:
-- target-directory-first Path A / Path B judgment
-- first confirmation questions when starting from `OUTCAR + POSCAR`
-- blocking checklist for `0.shared_basis/input/`
-- shared-basis confirmation items such as `Spin_values`, `fig.maxk`, `fig.mdist`, and `Invariant.*`
-- `cell.str` / `unit_cell.str` route vs `READ_POSCAR` / `READ_POSCAR_UC` route
-- relationship between `cell.str` and `%block SuperCell`
-- Path B / method 6 handoff: `distortion.pos`, `distortion.MAGMOM`, `local_mode_PM.dat`, `distortion.ene_symbol`
-- transition from method-6 batch runs to `3.get_fitting_data`: `status.tsv`, `ene_symbol/<id>.ene_symbol`, numbering start, and `convert_info.txt`
-- `4.fit` keep/skip settings, lambda scan, dataset handoff, and fitting confirmation before submission
-- L3 run directories, stage `input/`, `runs/<run-id>/`, README-style directory contracts, and run-notes boundaries
+## Prepare first, communicate together
+Use the user's existing facts and authorization. Prepare everything supported by
+those facts in a clearly marked candidate package. Record values, source, effect,
+and whether each is user-provided, derived, or an agent-selected modeling choice.
+When the user authorizes model selection, choose and document a defensible bounded
+candidate; do not pretend the chosen values were user-confirmed. Group unresolved
+choices that affect validity into one question after independent preparation.
+Missing physical quantities, unproved primitive mappings and upstream outputs
+cannot be invented. Explicit task constraints always control.
 
-## Path A / Path B Naming Rules
-- Path A means PASP-forward sample generation from a confirmed shared basis, typically with `local_mode.cal_para_method = 1`, PASP-generated `ene_symbol`, and later external DFT energies paired back to those generated samples.
-- Path B means encoding already-existing final structures / magnetic states through method 6, typically with `local_mode.cal_para_method = 6`, per-sample `distortion.pos`, conditional `distortion.MAGMOM`, and a reusable same-basis `local_mode_PM.dat`.
-- If the target directory starts from a flat or external set of completed NCL-DFT results such as many `OUTCAR` / `OSZICAR` / `log` files, with no current-directory `0.generaterandomspin/`, `1.vaspncl/`, `ene_symbol/`, `vasp_MAGMOM/`, `3.get_fitting_data/`, or `4.fit/` chain, classify it as a Path B starting point, not Path A. Readiness may still be blocked until shared-basis inputs and `local_mode_PM.dat` exist, but do not rename the path to Path A because those prerequisites are missing.
-- Do not call a complete end-to-end L3 workflow "Path A" merely because it begins early at S0/S1. Path labels describe the sample / feature-generation branch, not how many stages remain.
-- Do not inspect server submission tooling, `subpasp*.sh`, `inspire`, or PASP executable paths before resolving S0 path classification. Submission readiness is later than path classification and cannot determine Path A vs Path B.
+## Implementation and handoff
+The coordinator delegates actual L3 implementation to the native `pasp-helper`
+(same execution provider/model and effort when configured). The helper is a writer,
+not a read-only verifier; it must not spawn children. Persist the work order before
+dispatch, including absolute workspace, stage, source files, known facts, unresolved
+choices, runtime owner, output filenames and **consumer root**, return path, and
+bounded completion criterion. Pass that file's absolute path in the actual native
+tool payload. Save the returned child/session identifier and completion result.
 
-## Meta Questions About Prior Routing
-- If the user asks why a previous answer classified the path as A/B, says the prior classification was wrong, or asks for a routing post-mortem, answer only the classification error and the corrected rule. Do not automatically proceed to S1, launch subagents, inspect files, or ask to continue the workflow unless the user explicitly requests execution after the explanation.
-- In such post-mortem answers, state the corrected path, the evidence that should have been used, the mistaken inference to avoid, and the next step only as an optional suggestion.
+Use foreground native Agent execution in Claude Code for dependent work when
+available. In Codex use the native spawn/follow-up/wait tools actually exposed.
+Do not use fabricated tool names, shell-launched replacement agents, or a background
+launch followed by a final answer while work is pending. Reuse an available helper
+for material repairs; do not require a fresh helper merely to acknowledge a verdict.
+Prefer bounded stage handoffs (prepare basis, consume returned encoding results,
+fit and publish) over an unobserved whole-workflow background job. Checkpoint before
+runtime handoff and return to the same saved state when results arrive.
 
-## Include When Useful
-- current stage
-- current path (Path A / Path B)
-- settings adjustable at the current stage
-- what each setting controls
-- which items require reference before editing
-- what to check after editing
+## Required scientific checks
+The state machine gives the stage checklist. In particular:
+- At `S3b` freeze the active keep/skip strategy only after checking the complete
+  feature matrix produced from `ene_symbol` for exact duplicate, proportional,
+  or affine-linearly dependent columns. Run this before `Model Fitting_one_order`
+  and even when `I_CHECK_DATA=1` is enabled. Include all train and selection
+  rows, exclude the final energy column, and record the source basis, feature
+  count, fitted slope/intercept, correlation, residual tolerance, and the
+  feature source/basis used for the check.
+  Prefer the portable `knowledge/scripts/l3_effective_hamiltonian/check_dependencies.py`
+  for this mechanical audit. It records train/selection counts, original feature
+  numbers, and generated skip text; retain independent review of physical meaning
+  and the native mapping.
+- In free exploration or any authorized automatic evolution, enforce a hard
+  cap of 150 retained fitting terms before entering PASP fitting. This cap is
+  additional to the parameter-count guard `parameter_count <= 1.5 *
+  fitting_data_point_count`, so the effective limit is the smaller of 150 and
+  `floor(1.5 * fitting_data_point_count)`. If a candidate exceeds the limit,
+  reduce it using the documented model-selection criteria before fitting;
+  never fit an oversized candidate and truncate it afterward. Record the
+  retained count, both limits, and the reduction rationale in the candidate
+  provenance. This automatic cap does not silently alter a user-directed
+  manual search, which must still stop for confirmation under the rule below.
+- Before term selection can reach PASP, enforce the same size rule on the full
+  candidate feature matrix: `candidate_feature_count <= floor(1.5 *
+  fitting_data_point_count)`. Candidate width is the number of columns in the
+  complete `ene_symbol`-derived matrix, excluding the final energy column; it
+  is not the number of terms retained after fitting. A 700-row fit with 1857
+  candidate columns must be rejected before PASP is launched, even if a later
+  fit would retain fewer than 150 terms. Record the candidate width, fitting
+  row count, integer limit, and pre-fit rejection in the provenance receipt.
+- For automatic exploration, set every `Nc_p_s(I)` in `Fitting_Set_Lambda.txt`
+  to at most `min(candidate_feature_count, 150, floor(1.5 * fitting_data_point_count))`.
+  This is the per-round retained-parameter cap, not the candidate feature width.
+  Enforce it before runtime, including probes and rehearsal fits; never search
+  with a larger cap and truncate the final result afterward.
+- Each `LAMBDAS(I)` is a successive multiplication factor for the growing
+  regularization/search threshold, not an additive ridge penalty. Every factor
+  must be finite and strictly greater than 1 in automatic exploration. A factor
+  below 1 decreases the threshold and 1 leaves it unchanged. Factors themselves
+  need not increase between rows. Before each fitting invocation, run
+  `prepare_l3.py check-fit --input <actual-fit-directory>/PASP.input`, persist
+  the receipt and stop on failure. Independent verification must inspect actual
+  caps, factors and logs, not accept a written promise or staging receipt alone.
+- At `S4/S5` derive skip-term numbers from the current run's
+  `Data_Special_Properties_*` and `Data_Variables_Mapping_*` files; raw dataset
+  column numbers are not skip-term numbers and must not be reused across runs,
+  bases, or splits. Validate that train/selection widths and mappings remain
+  consistent after the decision.
+- In an authorized automatic run, preserve the original `ene_symbol` and
+  dataset files, keep the first representative of each dependent feature
+  group, generate `Fitting_Set_Term_Skip.txt` for later redundant terms, enable
+  `I_HAVE_SKIP_TERM=1`, and record the detected relation and skip list in the
+  fit provenance. Skipping a term addresses fitting identifiability; it does
+  not establish that the physical interaction is zero.
+- In a user-directed manual run, stop before changing the fit search space.
+  Show the dependent feature pairs, numerical evidence, proposed representative
+  and skipped terms, and the exact proposed `Fitting_Set_Term_Skip.txt` and
+  `Fitting_Settings.txt` changes. Ask the user to confirm. If declined, retain
+  the original data and continue only with an explicitly acknowledged
+  ill-conditioned fit. Never delete or rewrite upstream `ene_symbol` files.
+- Before full-study conversion, interpreting interactions or MC/MD transfer, read
+  `../../knowledge/workflows/l3_model_integrity.md` for original-ID/final-state
+  evidence, periodic identifiability and native parameter export/round-trip checks.
+- Establish species, primitive/supercell mapping, representative sites and units
+  before generating modes; use `reference/topics/symmetry_representative_sites.md`.
+  Do not enumerate every supercell magnetic atom as an inequivalent site without evidence.
+  Once those facts are established, `prepare_geometry.py` can render repeated
+  cell/unit-cell/mode files deterministically. Its manifest is evidence supplied
+  by the caller, not a symmetry or primitive-cell discovery tool.
+- `Spin_values` contains one value per species, including zeros. Preserve the user's
+  unit-direction convention. Variation of DFT moment magnitudes alone does not
+  invalidate a direction-only model. Check undefined/poorly determined directions,
+  actual mapping errors and model residuals; report limitations without inventing
+  amplitude degrees of freedom.
+- Automatic source-SOC-on exploration **must use restricted SOC**. Inspect explicit
+  `LSORBIT` in every source OUTCAR; `LNONCOLLINEAR` is insufficient. Mixed, missing
+  or contradictory evidence blocks preparation. SOC-off sources stay off. Do not
+  authorize automatic full/off as an alternative for SOC-on data in helper work
+  orders, probes, rehearsals, copied templates or hand-prepared inputs.
+- For single-atom spin modes, use `prepare_l3.py spin --input ... --request ...
+  --root ...`, followed by `check-spin --input ... --request <policy.json>`.
+  Requests declare representatives, `soc`, complete `source_outcars`, flat `files`
+  (actual cell/unit-cell and every dependency), and `soc_mapping` for restricted
+  SOC. The state machine below defines the mapping/launch schemas. Restriction
+  tuples come from compatible completed SOC=T native enumeration, never species,
+  representative or fitted-column numbers. The initial automatic candidate must
+  select approximately ten REAL eligible single/pair types TOTAL, covering suitable
+  single-ion environments and near-range pair anisotropy, at maximum SOC order TWO.
+  Default min(10, available single/pair types); count deviations need actual mapping,
+  width and symmetry evidence, never silent reduction to only two singles. Twelve
+  suitable types are not intrinsically wrong. Pin physical identities before first
+  launch and remap native IDs for each changed basis. Execute representative body/
+  radius comparisons before higher SOC orders: 15-Bohr pairs first, progressively
+  smaller three/four starts, selected radius comparisons up to 15 Bohr each. Fourth-
+  order pairs remain two-body. Stop after qualifying success and disclose controls
+  untested. Higher SOC needs executed low-order comparisons with actual native
+  train/selection residuals and physical motivation. Missing maps block explicitly.
+- Before every helper-owned basis execution, including copied/manual packages,
+  use `search_inputs.py --launch-request <launch.json>` with the supplied launcher
+  argv and bounded timeout. It invokes the mandatory actual-input gate, records
+  immutable resolved input/package/policy hashes and the process/output receipt.
+  Automatic first cutoff is the positional pair `1 15`; a smaller radius requires
+  an execution-backed larger-radius predecessor ledger with documented outcome,
+  reason and intact input/gate/process/log hashes and initial-15 lineage. Merely
+  generating a larger input or writing `status=executed` cannot authorize reduction.
+  Included controls resolve before the check; duplicates/shadows of cutoff and SOC
+  controls fail. Three/four starts are smaller than 15; all radii are at most 15
+  Bohr and body/expansion at most four. Gates and snapshots must predate execution;
+  post-hoc mirror receipts cannot authorize an earlier launch.
+- TASK RUNTIME remains controller-owned: preflight the **actual handoff package**
+  with `--check-launch-input ... --policy-request ... --receipt ...`, then hand it
+  off without a competing run. Uninstrumented controller/raw-shell execution is
+  not supported as automatic predecessor or method-6 provenance; report the
+  missing same-run execution protocol precisely rather than fabricating receipts
+  or bypassing the gate. Do not modify the controller to implement this skill.
+- `Invariant.SOC T` plus the restriction must appear in the **same basis run**.
+  `method6.py prepare` defaults to automatic enforcement, requires that run's
+  `basis_execution_receipt`, compatible mapping, complete source corpus and exact
+  declared dependencies. Its template and per-ID identities pin the SOC policy
+  hash/tuples and native basis. Changes require a fresh basis and all encodings;
+  native reconstruction still uses that hash-pinned basis and original mapping.
+  Omitted types follow the source-confirmed non-SOC path; no appended zero rows.
+- Explicitly authorized manual studies use a separate `manual_study` JSON record
+  with mode, SOC, authorization and reason. This is not a default exploration
+  escape; `automatic:false` alone fails. They also require actual externally
+  supplied read-only PASP_MANUAL_AUTHORITY outside the study root as described in
+  the state machine. Never create that authority in automatic work. Bare `check-spin --soc full|off` checks
+  format only and never authorizes an automatic launch.
+- `cell.str` is the configuration cell; PASP `SuperCell` expands that cell and is
+  not the unit-cell-to-configuration relation. Check the entire transformed atom map.
+- For conversion/publication read `../../knowledge/scripts/l3_effective_hamiltonian/README.md`
+  under “Full-study contract”. Use `study_contract.py` for explicit full-ID splits,
+  indexed features, units, runtime record checks and publication. The automatic
+  isolated-test route is defined in the state machine S7: convert emits only
+  train/selection, then prepare_l3.py fit-data stages those matrices with an
+  explicit growing lambda schedule. Before each native fit persist check-fit and
+  dependency/skip receipts. Use PASP Model Fitting_one_order; Python does not fit.
+  Rehearsals obey the same split and gates. Work orders must name conversion.json,
+  the native handoff JSON, frozen and evaluated output directories, and mandate
+  study_contract.py freeze-native then evaluate-frozen only after train/selection
+  selection ends. Publish with native_freeze/final_evaluation references and all
+  required consumer-root artifacts. Never score raw test data in probes, OLS
+  diagnostics or SOC selection. Prior contamination is disclosed, never undone.
+  A native rewrite warning alone is not fatal: retain the reduction mapping and
+  original physical model/reconstruction evidence; if the existing handoff parser
+  cannot handle it, report unsupported automation rather than refitting solely to
+  suppress the warning. Preserve helper delegation and controller-owned runtime.
 
-## Runtime Hard Rules
-- When the user gives a target directory, path judgment must be grounded in that directory's own files and layout. Do not use sibling directories, other examples, or historical samples to override the target directory.
-- User authorization to use subagents only permits read-only fact collection. It does not confirm `Spin_values`, `fig.maxk`, `fig.mdist`, `Invariant.*`, SOC strategy, representative sites, or external task submission.
-- If Path A / Path B, the structure input route, or shared-basis prerequisites are not confirmed and the choice changes downstream file flow, state one tentative interpretation and immediately ask a short confirmation question. Do not first spend a long time checking, scripting, or generating formal inputs.
-- If the user only provides `POSCAR`, you may draft a clearly marked unconfirmed shared-basis `PASP.input` skeleton. Do not package it as confirmed formal input.
-- Before preparing a formal L3 shared-basis input, ask for and receive user confirmation for: magnetic elements, body order (`fig.maxk`), cutoff radius for each body order (`fig.mdist`, Bohr), `Invariant.power`, whether strain / phonon are included, whether SOC is included, any explicit SOC retention / restriction strategy, and for Path A the sample generation plan (`local_mode.cal_para_method = 1` and `local_mode.nstr_random` or an equivalent sample-count choice). Do not use smoke-test values, template values, `OUTCAR` moments, or agent guesses as formal modeling parameters.
-- For a first Path A run with `local_mode.cal_para_method = 1`, do not insert a separate preliminary run whose only purpose is to obtain `local_mode_PM.dat`. Ask for the desired number of random configurations up front and prepare the single preflighted Path A run to generate samples / `ene_symbol` while naturally producing `local_mode_PM.dat` as a reusable output.
-- `Invariant.SOC T` does not by itself require `%block local_mode.special_SOC`. Treat `local_mode.special_SOC` as optional, source-supported restriction / prioritization input: require it only when the user explicitly wants to keep selected SOC terms, cap SOC order by interaction type, or another confirmed workflow condition requires a restricted SOC basis. If the user wants full default SOC enumeration, do not block a first shared-basis run solely because `local_mode.special_SOC` is absent.
-- If an explicit SOC retention strategy is requested but not yet explicit, ask the user before formal input generation. The strategy includes which body orders to retain, the maximum SOC order for each retained body order / interaction type, and whether to retain all enumerated types or only selected types. Structure analysis may help map an already confirmed strategy to PASP indices, but it must not decide the strategy for the user.
-- In `%block local_mode.special_SOC`, the second column is the PASP-enumerated interaction-type / atom-pair / atom-cluster index within the given body order. It is not an element id, species id, magnetic-element index, or `Z_values` order. Never reject rows such as `1 3 2`, `1 4 2`, or `1 5 2` merely because the structure has only two magnetic elements.
-- For body order `1`, the second column is still the PASP-enumerated one-body interaction-type index; it is not an element id and not a representative-site index from `local_mode.mode_definition`. If the user or a verified case says "keep the first 5 one-body second-order SOC terms", interpret that as `1 1 2` through `1 5 2`; do not ask whether it means two elements or five representative sites.
-- Do not switch `Invariant.SOC T` to `Invariant.SOC F` for a preliminary run just to enumerate `local_mode.special_SOC` indices. When a restricted SOC strategy truly requires explicit `local_mode.special_SOC` indices and they are unknown, use user-provided indices, existing same-basis SOC outputs, verified examples, or other checkable sources; otherwise stop before writing that restricted block.
-- Before preparing or submitting a `Model Invariant` shared-basis / interaction-basis run, check the requested process count. Default to single-process execution, or block / warn on MPI use until the exact PASP build and workflow path are known to be MPI-safe. If `%block local_mode.special_SOC` is present, treat MPI as unsafe unless that special-SOC MPI path has been explicitly validated; do not prepare an MPI submission for that case by default.
-- For VASP NCL / SOC handoff, require user-provided or user-confirmed production `INCAR`, `KPOINTS`, and `POTCAR` settings. The workflow may append PASP-generated `MAGMOM` / `M_CONSTR` lines to a confirmed base `INCAR`, but must not invent `ENCUT`, smearing, k-mesh, POTCAR choice, or other production DFT settings.
-- Phrases such as "continue", "implement the plan", "follow the plan", or "you decide" do not confirm shared-basis parameters. Unless the user has given all values explicitly or accepted a fully enumerated setting table, list the missing settings and wait; do not write formal input while asking.
-- Before writing, overwriting, promoting, or deriving a formal L3 `PASP.input`, verify every explicit field, block, `%include`, and dependent file format in that input against `../../knowledge/reference/` or a user-provided authoritative source. Keep a short field inventory with the reference used for each item. This is required for all fields, not only high-risk fields. If any item has no reference coverage, the input may only be a draft / candidate and must not enter formal `<stage>/input/`, `runs/<run-id>/`, or submission preparation.
-- Before writing `%block local_mode.mode_definition`, use `../../knowledge/reference/topics/symmetry_representative_sites.md` to identify symmetry-inequivalent representative sites for participating spin elements. Write x/y/z spin modes for each representative site. Do not directly enumerate all Gd/Mn magnetic atoms in `cell.str`, `POSCAR`, or a half cell.
-- If representative-site analysis is not complete, only output confirmation questions, a structure/symmetry analysis plan, or draft notes. Do not generate a `local_mode.mode_definition` that looks runnable.
-- Before promoting any L3 candidate input package to formal `<stage>/input/`, overwriting input, deriving `<stage>/runs/<run-id>/`, creating or editing submission scripts, preparing external task configuration, or submitting a job, run a read-only subagent stage preflight using `../pasp-verifier/skill.md` with `mode: input-preflight`. For L3, this is a hard dependency when subagent use has been authorized: the main agent must not replace it with local-only checking. If no read-only subagent is available despite authorization, the stage is blocked until the user explicitly waives this L3 hard gate. Preflight only returns pass / fail / blocked and evidence paths. It does not edit files or decide parameters.
-- The read-only subagent preflight must check both layers: (1) every explicit field, block, `%include`, dependent file format, and numbering rule in the candidate inputs matches `../../knowledge/reference/` or a user-provided authoritative source; (2) cross-file consistency is correct, including `PASP.input` includes, `cell.str` / `unit_cell.str` / `POSCAR_UC` axis and primitive/supercell relation, whether PASP `%block SuperCell` is absent or correctly used to expand `cell.str` rather than to map `unit_cell.str` to `cell.str`, Path A sample count / `local_mode.nstr_random` confirmation when `local_mode.cal_para_method = 1`, `Z_values` / species ids / `Spin_values`, `local_mode.mode_definition` coordinates and mode count, optional `local_mode.special_SOC` strategy and indices when present or requested, `Model Invariant` process-count / MPI guard status, and upstream-output provenance for later stages.
-- Formal shared-basis `PASP.input`, formal `<stage>/input/`, `<stage>/runs/<run-id>/`, submission scripts, submission commands, or external task configuration may only be generated after all of these exist: `USER_CONFIRMED_L3_SHARED_BASIS_PARAMS=true`, `REPRESENTATIVE_SITES_CONFIRMED=true`, `READ_ONLY_SUBAGENT_PREFLIGHT_DONE=true`, and `STAGE_PREFLIGHT_PASS=true`. `NO_SUBAGENT_PREFLIGHT_AVAILABLE=true` is not sufficient for L3 formal promotion, run derivation, or submission after the user has authorized subagents; it may only justify draft / candidate notes or a blocked report. If any required marker is missing, only ask for missing items or write draft / candidate files; do not proceed.
-- Before creating formal `4.fit/input/`, deriving `4.fit/runs/<run-id>/`, preparing submission, or submitting a fitting run, ask for and receive fitting-strategy confirmation. Record `USER_CONFIRMED_L3_FIT_SETTINGS=true`. The confirmation must cover dataset source/range, train/test/prediction split, lambda scan, `I_CHECK_DATA`, prediction data use, and keep/skip strategy. If the user does not specify a split, default to 90/10 over the available consecutive samples: `Ntrain=floor(0.9*N)`, `Ntest=N-Ntrain` (for 800 samples, use 720/80). A 0-row test/prediction set is still a user-confirmed fitting choice; do not decide it from templates, empty files, or silence. Disabling keep/skip (`I_HAVE_KEEP_TERM=0`, `I_HAVE_SKIP_TERM=0`) is also a user-confirmed fitting choice.
-- When summarizing `convert_info.txt`, describe line 3 as the primitive-cell multiplicity / energy normalization divisor for each DFT supercell, not as the primitive atom count. For a 32-atom `unit_cell.str` and 64-atom DFT `cell.str` / POSCAR, line 3 should be `2`, not `32`.
-- If `Fitting_Set_Term_Keep.txt` or `Fitting_Set_Term_Skip.txt` exists but the corresponding `I_HAVE_*` flag is 0, describe the file as inactive template residue or inactive context, not as a confirmed active setting.
-- After any L3 stage run completes and before outputs flow downstream, run output validation. If subagents are allowed or already authorized, prefer `pasp-verifier` `mode: output-validation` to check outputs, logs, failed samples, and handoff files; otherwise the main agent must run the same checklist locally and state that no subagent was used.
-- Directory inventory, VASP `results/` inventory, or script checks are not PASP input preflight. Preflight must name candidate input files and target stage, then check the relevant stage checklist. "A subagent inventoried the directory" cannot replace input-file review.
-- Runtime probes, external task creation, submission scripts, and submission preparation all happen after stage preflight pass. They are not substitutes for input preflight.
-- For method-6 batch scripts, do not apply generic Bash strict mode by default. Avoid global `set -u`, `set -euo pipefail`, or defensive shell frameworks unless the user explicitly asks for them and the environment scripts are known to support them. PASP/HPC environment setup often reads unset variables such as `LD_LIBRARY_PATH`; strict mode can stop before the sample loop and leave no useful per-sample evidence. Prefer a simple `for` loop with explicit required-file checks, `log.out`, `batch.log`, and `status.tsv`.
-- `0.shared_basis/input/` may only contain a formal input package that passed shared-basis readiness. If parameters or representative sites are not confirmed, do not put `PASP.input`, `subpasp*.sh`, or a README saying "Submit this directory" there. Drafts must go under `notes/`, `drafts/`, or explicitly named `*.draft` files.
-- `runs/<run-id>/` must be derived only from a preflighted formal `<stage>/input/`. Do not create a run directory "just to build the skeleton" when shared-basis parameters, representative sites, or preflight are missing.
-- Keep README / PROGRESS files current as stage gates, not as optional cleanup. The workflow root, each formal `<stage>/input/`, each `<stage>/runs/<run-id>/`, and batch sample-pool directories such as `path_b_inputs/` need concise documentation of `Status`, `File Roles`, `Upstream` / `Downstream`, `Gate Evidence`, and `Blocked / TODO`. Do not label a directory submit-ready, formal-input, validated-output, or handoff-ready unless the required gates have passed and the README / PROGRESS records that evidence.
-- After generation, self-check `%block local_mode.mode_definition`: the mode count must equal "number of symmetry-inequivalent representative sites x 3", and the line after the mode count must be the first mode definition with no blank line. If the mode count equals all participating magnetic atoms in `cell.str` / `POSCAR` x 3, that is not automatically wrong; however, there must be evidence that the structure is the primitive structure for mode definition and that all participating magnetic sites are inequivalent. Without this evidence, treat representative-site analysis as incomplete and stop formal input generation.
-- Before promoting a candidate shared-basis input package to formal `0.shared_basis/input/` or submission, run an independent read-only subagent shared-basis preflight through `pasp-verifier` `mode: input-preflight`. If subagent use has been authorized, this is mandatory and cannot be replaced by main-agent-only checking unless the user explicitly waives the L3 hard gate. Preflight does not decide physical parameters; it only checks confirmation records, reference-backed file formats, and cross-file input consistency.
-- Before creating, overwriting, or converting `cell.str`, `unit_cell.str`, or `POSCAR_UC`, check reference first: `topics/structure_from_poscar.md`, `files/cell.str.md`, `files/unit_cell.str.md`. Do not infer `unit_cell.str` from `cell.str`, and do not copy a supercell `POSCAR` or `cell.str` directly into `unit_cell.str`.
-- Before generating `POSCAR_UC`, `unit_cell.str`, a primitive cell, or axis reordering, use `pasp-verifier` `mode: structure-analysis` when subagent use has been authorized. The main agent must review the result before writing candidate files, and candidate files still require the mandatory read-only subagent stage preflight before any formal promotion, run derivation, or submission.
-- If automatic primitive reduction gives `POSCAR_UC` / `unit_cell.str` with axes inconsistent with current `POSCAR`, `cellabc`, or expected `SuperCell`, do not discard it solely because the axes differ. First attempt a rebase / mapping: report the primitive transform `T`, the supercell integer matrix `M`, determinant / volume ratio, species counts, and atom-mapping tolerance. Reorder lattice vectors and all atomic coordinates to the current workflow axes according to reference only when the mapping is unique. Do not invent an axis-preserving split such as "split along x/y/z" unless the mapping or the user confirms it; otherwise stop.
-- If an L3 workflow answer needs actual lookup in `skills/knowledge/reference/`, it is still a reference verification task. If the runtime requires explicit user authorization for subagents, ask before delegating this lookup through `pasp-verifier` `mode: reference-check`.
-- `../../knowledge/workflows/l3_effective_hamiltonian_run_notes.md` contains historical run observations only. Do not present its values as current workspace results unless the corresponding files exist in the user's target workspace.
 
-## Route To Reference When
-- The user asks for itemized explanations of `fig.maxk`, `Invariant.power`, or `local_mode.mode_definition`.
-- The user asks for fields or formats of `Fitting_Settings.txt`, `Fitting_Set_Lambda.txt`, `Fitting_Set_Term_Keep.txt`, or `Fitting_Set_Term_Skip.txt`.
-- The user asks module-definition questions about `effective_hamiltonian`.
-- The user asks for exact definitions of `Invariant.strain_power` or `Invariant.pure_strain_power`.
-- The user asks for exact formats of `Fitting_Dataset.txt` or `Fitting_Data_for_prediction.txt`.
+## Runtime and final delivery
+Follow the runtime owner and launcher supplied by the task. TASK RUNTIME means
+prepare preflighted inputs and hand them to the controller, then inspect its actual
+logs/results and repair in the same workspace. A local launcher uses no scheduler;
+invoke it directly only when execution is assigned to the helper. Use the supplied
+single-process environment; do not add mpirun or TCP/OFI overrides. MPI transport
+initialization failure is an environment failure, not evidence of bad scientific input.
+Draft-only tasks stop at checked inputs and never claim an executed calculation.
+
+For an accuracy search, make termination and delivery observable before starting a
+long PASP run. Persist one checkpoint per basis/encode/fit attempt with the exact
+command, positive timeout, expected IDs, output root and status (`planned`,
+`running`, `succeeded`, `failed`, or `abandoned`). Poll a foreground process or the
+supported batch wrapper; never background a command and then leave the workspace
+without a resumable status record. After each completed probe, stop candidates that
+fail the required feature width, basis identity, finite-data or train/selection
+screen. Stop the search at the first candidate that meets the authorized accuracy
+and native handoff checks, or return a bounded failure with the best recorded result;
+do not spend the remaining budget on unbounded retries or verifier loops.
+
+Close the handoff at the declared consumer root in either termination state. For a
+qualifying candidate, publish the frozen model, predictions, report, split and
+full-ID `fgt-coverage.json`, then run `study_contract.py verify` and re-read its
+receipt. For a bounded scientific failure, publish and verify every coverage or
+prediction artifact that is actually complete and permitted by the task contract,
+with an explicit nonqualifying status and the failed gate; never invent a model,
+prediction, or coverage count. If the schema requires a qualifying model before
+publication, preserve the verified coverage receipt and return an explicit `no
+qualifying model` handoff instead of weakening the accuracy gate. Dispatch a
+verifier only after the applicable consumer-root `publish` and `verify` receipts
+exist. Missing coverage or a missing receipt is a coordinator handoff failure to
+repair, not a verifier task and not evidence that the model physics failed.
+
+Before requesting any read-only review, the coordinator must write and re-read the
+consumer-root handoff: full-ID `fgt-coverage.json`, all split predictions, the
+native LM/report/log, the pristine feature matrix, source/basis hashes and the
+machine-readable fit handoff receipt. Run `study_contract.py publish` and
+`fit_handoff.py` against those consumer-root paths first. If any artifact or
+coverage record is missing, return a handoff failure with the exact path and resume
+from the last checkpoint; a verifier must not reconstruct the model or assume the
+coordinator's role. When candidate manifests provide
+`coefficient_abs_limit`, pass it to `fit_handoff.py` so large cancelling retained
+coefficients are rejected before publication. Freeze the bytes and persist the
+review verdict separately; cosmetic receipt rechecks do not trigger another full
+search.
+
+Run `knowledge/scripts/l3_effective_hamiltonian/final_handoff.py --root <consumer-root>`
+after publication and after `fit_handoff.py`; re-read its `final-handoff.json`.
+This deterministic check covers only consumer-root paths, regular-file/directory
+and symlink safety, model-manifest references, prediction-table shape, and an
+explicit `qualifying` or `nonqualifying` coverage status. It does not replace
+physical review, native output checks, or accuracy gates. A nonqualifying native
+model is still a valid completed handoff when all mechanically complete artifacts
+are present and the failed gate or limitation is preserved in `fgt-coverage.json`.
+Return workflow completion separately from scientific qualification. Use `blocked`
+only for a missing/incomplete handoff, interrupted runtime, or unresolved required
+work; never turn a submitted model into an absent-model failure solely because an
+independent accuracy gate failed.
+
+Freeze predictions, model, manifests and report at the requested consumer paths
+before final review. Store the review verdict in a separate notes file, outside the
+reviewed report. After the requested checks pass, report the evidence and finish.
+Cosmetic corrections, external verdict bookkeeping and byte-identical publication
+need only the relevant diff/hash checks, not another full review. Scientific changes
+invalidate the affected checks. Never treat a verifier pass, workflow completion or
+local script tests as independent scientific acceptance.

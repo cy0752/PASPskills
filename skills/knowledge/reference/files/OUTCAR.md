@@ -26,10 +26,20 @@ grep "free  energy   TOTEN" OUTCAR | tail -1
 - 每个状态的 `OUTCAR` 应有收敛证据；如果最后一条 `TOTEN` 来自未收敛或异常终止的 run，不能直接进入 J 拟合。
 - 计算出的 four-state J 若要写入归一化 spin 的 PASP effective-H 模型，还要按 `topics/four_state_method.md` 中的模型自旋尺度规则换算，不能直接把物理自旋尺度下的 J 写进 `J_best.dat`。
 
+
+## 非共线逐原子磁矩提取规则
+非共线（LNONCOLLINEAR）OUTCAR 的逐原子磁矩分三个独立块：`magnetization (x)`、`magnetization (y)`、`magnetization (z)`。每块内每行格式为 `原子序数 s p d tot`，四列都是**该分量**的轨道分解（例如 (x) 块的 `s p d tot` 都是 m_x 的 s/p/d/总贡献）。
+- 提取三维磁矩向量必须取**三个块各自的 `tot` 列**按 (x,y,z) 拼接。
+- **严禁把单个块内的 `s p d` 三列当作 (m_x, m_y, m_z)**：s/p 分量天然近零，这样得到的"方向"几乎全部塌向该分量轴，数值完全错误。
+- 三个块的原子数必须一致，否则解析失败应报错而非截断。
+- 优先使用现成脚本 `knowledge/scripts/l3_effective_hamiltonian/extract_magmoms.py`（已正确实现三块解析与校验），禁止重新手搓解析。
+- `OSZICAR` 的 `mag=` 是全体系总磁矩（各原子求和），不能与逐原子磁矩混用。
+
 ## 常见误区
 - 读取第一条 `TOTEN`，得到的是初始 SCF 迭代附近的能量，可能与最终能量相差几个数量级。
 - 只保存 `OSZICAR` 或脚本摘要，却没有保留足够证据说明每个 `OUTCAR` 的最终能量和收敛状态。
 - 把 `OUTCAR` 最终磁矩大小直接当成 `Spin_values` 正式设置；它只能作为给用户确认的候选信息。
+- 把单个 `magnetization (x)` 块内的 `s/p/d` 列当作 `(m_x,m_y,m_z)` 方向分量；或只读取一个分量块就当成三维向量。
 
 ## 相关条目
 - `topics/four_state_method.md`

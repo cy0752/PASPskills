@@ -19,10 +19,10 @@
 这份 workflow 文档是在 authoring 阶段基于讲义思路、现有模板、辅助脚本说明和原始 examples 的整理结果。
 
 但运行时应只依赖：
-- `skills/knowledge/workflows/`
-- `skills/knowledge/reference/`
-- `skills/knowledge/templates/`
-- `skills/knowledge/scripts/`
+- `knowledge/workflows/`
+- `knowledge/reference/`
+- `knowledge/templates/`
+- `knowledge/scripts/`
 
 如果某些依赖只有真实跑过服务器任务后才能确认，会在各阶段标记为“待运行验证的依赖”，而不是假装已经完全确定。
 
@@ -80,22 +80,22 @@ project/
 ```
 
 如果你不想从 0 开始组织输入，可以直接参考：
-- `skills/knowledge/templates/l3_invariant/PASP.input`
-- `skills/knowledge/templates/l3_invariant/cell.str`
-- `skills/knowledge/templates/l3_invariant/unit_cell.str`
-- `skills/knowledge/templates/l3_fit/PASP.input`
-- `skills/knowledge/templates/l3_fit/Fitting_Settings.txt`
-- `skills/knowledge/templates/l3_fit/Fitting_Set_Lambda.txt`
-- `skills/knowledge/templates/l3_fit/Fitting_Set_Term_Keep.txt`
-- `skills/knowledge/templates/l3_fit/Fitting_Dataset.txt`
-- `skills/knowledge/templates/l3_fit/Fitting_Data_for_prediction.txt`
-- `skills/knowledge/templates/l3_fit/convert_info.txt`
-- `skills/knowledge/scripts/l3_effective_hamiltonian/postprocess.sh`
-- `skills/knowledge/scripts/l3_effective_hamiltonian/createINCAR.sh`
-- `skills/knowledge/scripts/l3_effective_hamiltonian/get_ene.sh`
-- `skills/knowledge/scripts/l3_effective_hamiltonian/run_method6_batch.sh`
-- `skills/knowledge/scripts/l3_effective_hamiltonian/convert_data.py`
-- `skills/knowledge/scripts/l3_effective_hamiltonian/convert_data.f90`
+- `knowledge/templates/l3_invariant/PASP.input`
+- `knowledge/templates/l3_invariant/cell.str`
+- `knowledge/templates/l3_invariant/unit_cell.str`
+- `knowledge/templates/l3_fit/PASP.input`
+- `knowledge/templates/l3_fit/Fitting_Settings.txt`
+- `knowledge/templates/l3_fit/Fitting_Set_Lambda.txt`
+- `knowledge/templates/l3_fit/Fitting_Set_Term_Keep.txt`
+- `knowledge/templates/l3_fit/Fitting_Dataset.txt`
+- `knowledge/templates/l3_fit/Fitting_Data_for_prediction.txt`
+- `knowledge/templates/l3_fit/convert_info.txt`
+- `knowledge/scripts/l3_effective_hamiltonian/postprocess.sh`
+- `knowledge/scripts/l3_effective_hamiltonian/createINCAR.sh`
+- `knowledge/scripts/l3_effective_hamiltonian/get_ene.sh`
+- `knowledge/scripts/l3_effective_hamiltonian/run_method6_batch.sh`
+- `knowledge/scripts/l3_effective_hamiltonian/convert_data.py`
+- `knowledge/scripts/l3_effective_hamiltonian/convert_data.f90`
 
 常见含义是：
 - `0.generaterandomspin/`：用 `Model Invariant` 生成样本、符号项、局域模式或自旋相关信息
@@ -188,7 +188,7 @@ receipt-covered preparation/conversion/publication checks need no duplicate veri
 preflight 必查项：
 - 是否有完整的 `PASP.input` 字段清单；每一个显式 keyword、block、`%include`、依赖文件格式和编号规则是否都有 reference 路径或用户给定权威来源。缺任何一项都不能把输入包装成正式可运行输入。
 - 输入文件之间是否自洽：`PASP.input` 的 `%include` 文件是否存在且来自同一结构基准；`cell.str`、`unit_cell.str`、`POSCAR_UC` 是否满足同一 primitive-supercell 映射和轴向约定；PASP `%block SuperCell` 若出现，是否确实表示在 `cell.str` 基础上继续扩胞，而不是误写成 `unit_cell.str -> cell.str` 的关系矩阵；`local_mode.mode_definition` 坐标、mode 数、species id 是否与当前结构、`Z_values`、`Spin_values` 一致；若存在或用户请求 `local_mode.special_SOC`，其限制策略和编号是否来自用户确认或同基底来源；后续阶段输入是否与上游输出属于同一数据链。像 `unit_cell.str` 坐标轴顺序写错这类跨文件不一致必须在 preflight 阶段 fail / blocked。
-- 对 `cell.str` / `unit_cell.str` 的 primitive-supercell 映射验证，可使用 `skills/knowledge/scripts/l3_effective_hamiltonian/rebase_unit_cell.py` 的 `--relation` 参数。该 relation 只用于验证 `unit_cell.str` 与 `cell.str` 的关系，不等同于 PASP `%block SuperCell`。如果需要旋转或重排轴向，必须同步变换 lattice 和 atomic coordinates；如果候选文件已经出现“lattice 是目标轴向但 atom 坐标仍是旧轴序”的错误，只能在映射已确认后用该脚本的 atom-coordinate-only 修复模式生成候选文件，再重新 preflight。
+- 对 `cell.str` / `unit_cell.str` 的 primitive-supercell 映射验证，可使用 `knowledge/scripts/l3_effective_hamiltonian/rebase_unit_cell.py` 的 `--relation` 参数。该 relation 只用于验证 `unit_cell.str` 与 `cell.str` 的关系，不等同于 PASP `%block SuperCell`。如果需要旋转或重排轴向，必须同步变换 lattice 和 atomic coordinates；如果候选文件已经出现“lattice 是目标轴向但 atom 坐标仍是旧轴序”的错误，只能在映射已确认后用该脚本的 atom-coordinate-only 修复模式生成候选文件，再重新 preflight。
 - 是否记录每个模型参数的值、来源、影响及未决项；区分用户给定、可复核推导和获授权的 agent 候选选择。
 - 对 Path A，是否存在用户回答或逐项设置表确认目标 DFT / 样本超胞。若候选输入省略 `%block SuperCell`，必须确认用户明确接受 1×1×1，而不是 agent 从 `cell.str = unit_cell.str` 自动推断。
 - 对 Path A `local_mode.cal_para_method = 1`，是否存在用户回答或逐项设置表确认 `local_mode.nstr_random` / 样本数；不得把“先拿 `local_mode_PM.dat`”包装成 Path A 首跑目标来跳过样本数确认。
@@ -301,30 +301,30 @@ candidate table. Check `reference/params/Spin_values.md` and field/energy units.
 
 ### 模板 -> 对应步骤
 - Step 2（准备模型生成输入）
-  - `skills/knowledge/templates/l3_invariant/PASP.input`
-  - `skills/knowledge/templates/l3_invariant/cell.str`
-  - `skills/knowledge/templates/l3_invariant/unit_cell.str`
+  - `knowledge/templates/l3_invariant/PASP.input`
+  - `knowledge/templates/l3_invariant/cell.str`
+  - `knowledge/templates/l3_invariant/unit_cell.str`
 - Step 5 / Step 6（生成拟合数据集 / 配置并执行拟合）
-  - `skills/knowledge/templates/l3_fit/PASP.input`
-  - `skills/knowledge/templates/l3_fit/Fitting_Settings.txt`
-  - `skills/knowledge/templates/l3_fit/Fitting_Set_Lambda.txt`
-  - `skills/knowledge/templates/l3_fit/Fitting_Set_Term_Keep.txt`
-  - `skills/knowledge/templates/l3_fit/Fitting_Dataset.txt`
-  - `skills/knowledge/templates/l3_fit/Fitting_Data_for_prediction.txt`
-  - `skills/knowledge/templates/l3_fit/convert_info.txt`
+  - `knowledge/templates/l3_fit/PASP.input`
+  - `knowledge/templates/l3_fit/Fitting_Settings.txt`
+  - `knowledge/templates/l3_fit/Fitting_Set_Lambda.txt`
+  - `knowledge/templates/l3_fit/Fitting_Set_Term_Keep.txt`
+  - `knowledge/templates/l3_fit/Fitting_Dataset.txt`
+  - `knowledge/templates/l3_fit/Fitting_Data_for_prediction.txt`
+  - `knowledge/templates/l3_fit/convert_info.txt`
 
 ### 脚本 / 模板 -> 对应步骤
-- `skills/knowledge/scripts/l3_effective_hamiltonian/postprocess.sh`
+- `knowledge/scripts/l3_effective_hamiltonian/postprocess.sh`
   - 主要服务于 Step 3，并把结果交给 Step 4 / Step 5
-- `skills/knowledge/scripts/l3_effective_hamiltonian/createINCAR.sh`
+- `knowledge/scripts/l3_effective_hamiltonian/createINCAR.sh`
   - 主要服务于 Step 4 的 VASP 输入整理
-- `skills/knowledge/scripts/l3_effective_hamiltonian/get_ene.sh`
+- `knowledge/scripts/l3_effective_hamiltonian/get_ene.sh`
   - 主要服务于 Step 4 到 Step 5 的能量提取
-- `skills/knowledge/scripts/l3_effective_hamiltonian/convert_data.py`
+- `knowledge/scripts/l3_effective_hamiltonian/convert_data.py`
   - 主要服务于 Step 5，免编译地把 `ene_symbol/` 与 `Energy.dat` 转换成拟合入口数据
-- `skills/knowledge/scripts/l3_effective_hamiltonian/convert_data.f90`
+- `knowledge/scripts/l3_effective_hamiltonian/convert_data.f90`
   - 主要服务于 Step 5，保留原始 example 的 Fortran 转换逻辑作为参考
-- `skills/knowledge/templates/l3_fit/slurmpasp.sh`
+- `knowledge/templates/l3_fit/slurmpasp.sh`
   - 仅作为 Step 6 的**环境相关作业脚本模板**
   - 它不是 workflow 的必需契约，部署到不同服务器时通常需要替换或重写
 
@@ -380,7 +380,7 @@ candidate table. Check `reference/params/Spin_values.md` and field/energy units.
 - Step 6：拟合阶段不再区分路径 A / B；它只消费已经对齐好的 `Fitting_Dataset.txt` / `Fitting_Data_for_prediction.txt`
 
 如果用户起点是“批量 `OUTCAR`”，这套映射通常应从下面的现实动作开始：
-- Step 2：基于 `skills/knowledge/templates/l3_invariant/PASP.input` 起草共享基底骨架
+- Step 2：基于 `knowledge/templates/l3_invariant/PASP.input` 起草共享基底骨架
 - Step 4 前置整理：从每个 `OUTCAR` 提取最终能量、最终结构和最终逐原子磁矩
 - 如果这些 `OUTCAR` 来自 L2 four-state exchange bridge，还必须记录每个状态取的是最后一条 `TOTEN`、四态线性组合公式、物理自旋 `S`、目标模型自旋幅值和换算因子；写入 `J_best.dat` 前按 `topics/four_state_method.md` / `files/J_best.dat.md` 检查格式与归一化
 - Step 3（路径 B）：把这些最终态逐样本整理为 `distortion.pos` / `distortion.MAGMOM`
@@ -501,7 +501,7 @@ candidate table. Check `reference/params/Spin_values.md` and field/energy units.
 
 正式写入 shared-basis `PASP.input` 前，必须先把两类信息分开确认：
 - 建模参数：参与磁性元素、`fig.maxk` 保留到几体、`fig.mdist` 中每个体数的 Bohr 截断半径、`Invariant.power`、`Invariant.strain_power`、`Invariant.pure_strain_power`、是否包含 strain / phonon、是否考虑 SOC，以及是否需要显式限制 SOC 项。若用户要求限制 / 优先保留 SOC 项，该策略必须由用户或明确来源先确认，至少包括保留哪些几体、每个几体 / interaction type 的 SOC 最高阶数、保留全部枚举类型还是只保留特定类型；结构分析和脚本只能把已确认策略映射到 PASP 编号，不能替用户决定保留哪些 SOC 项。
-- 自旋代表点位：对参与自旋建模的元素，先按 `skills/knowledge/reference/topics/symmetry_representative_sites.md` 做对称不等价代表点位分析，可使用 PASP `Model find_J_path_sym` 或等价对称分析工具；得到代表位点坐标、元素编号、multiplicity 和 tolerance 后，再为每个代表点位写 x/y/z 三个 spin mode。
+- 自旋代表点位：对参与自旋建模的元素，先按 `knowledge/reference/topics/symmetry_representative_sites.md` 做对称不等价代表点位分析，可使用 PASP `Model find_J_path_sym` 或等价对称分析工具；得到代表位点坐标、元素编号、multiplicity 和 tolerance 后，再为每个代表点位写 x/y/z 三个 spin mode。
 
 若缺少模型约定或代表点位证据，先生成有依据的候选包并集中列出未决项。已有自主建模授权允许有来源、有影响说明的候选选择；模板值与假设不得冒充用户确认。正式运行仍须通过 preflight。
 
@@ -524,14 +524,14 @@ candidate table. Check `reference/params/Spin_values.md` and field/energy units.
 - 可能还需要与局域模式定义相关的辅助输入片段
 
 其中：
-- `PASP.input` 通常是手写或从 `skills/knowledge/templates/l3_invariant/PASP.input` 派生
+- `PASP.input` 通常是手写或从 `knowledge/templates/l3_invariant/PASP.input` 派生
 - `cell.str`、`unit_cell.str` 可从对应模板起步
 - 某些 block 内容可能来自上一步的模型边界决定
 
 写入或转换结构文件前必须先查 reference，而不是从另一个结构文件格式类推：
-- `skills/knowledge/reference/topics/structure_from_poscar.md`
-- `skills/knowledge/reference/files/cell.str.md`
-- `skills/knowledge/reference/files/unit_cell.str.md`
+- `knowledge/reference/topics/structure_from_poscar.md`
+- `knowledge/reference/files/cell.str.md`
+- `knowledge/reference/files/unit_cell.str.md`
 
 尤其注意：`cell.str` 与 `unit_cell.str` 不是同一种格式。`unit_cell.str` 应使用 `unit_cell.na`、`%block unit_cell_in_Ang` 和 `%block Atoms_in_unit_cell_Ang`；不能把 `cell.str` 的 `NumberOfAtoms`、`%block LatticeVectors` 和 `%block AtomicCoordinatesAndAtomicSpecies` 原样复制过去。若当前只有超胞 `POSCAR` 或超胞 `cell.str`，必须先按 reference 判断 primitive / `POSCAR_UC` 来源和轴向约定；在确认前只能保存候选结构，不能把它当成正式共享基底输入。
 
@@ -799,7 +799,7 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 
 如需看历史实跑时某次输入具体生成了哪些样本文件、local mode 文件和辅助产物，请查 `./l3_effective_hamiltonian_run_notes.md`。
 
-`def_local_modes.dat` 的 `disp` 列应按 Cartesian local-mode displacement vector components 理解，不是 fractional displacement；具体说明见 `skills/knowledge/reference/files/def_local_modes.dat.md`。
+`def_local_modes.dat` 的 `disp` 列应按 Cartesian local-mode displacement vector components 理解，不是 fractional displacement；具体说明见 `knowledge/reference/files/def_local_modes.dat.md`。
 
 #### 待运行验证的依赖
 - PASP 原始运行还会不会产生未记录的中间文件
@@ -822,7 +822,7 @@ method-6 批量运行完成后，Path B 进入 `3.get_fitting_data` 时还应按
 - 样本编号会贯穿 Step 4、Step 5、Step 6
 
 #### 本阶段使用的脚本
-- `skills/knowledge/scripts/l3_effective_hamiltonian/postprocess.sh`
+- `knowledge/scripts/l3_effective_hamiltonian/postprocess.sh`
   - 作用：整理 PASP 生成结果为 `ene_symbol/` 与 `vasp_MAGMOM/`
   - 关键输入：本阶段运行目录中的原始 `*.ene_symbol` 与 `*.vasp_MAGMOM`
   - 关键输出：`ene_symbol/`、`vasp_MAGMOM/`
@@ -956,7 +956,7 @@ existing unconstrained Path B data for suitability under the linked contract.
 - 本阶段的编号对齐结果以及路径 A / 路径 B 的选择是否正确，决定 Step 6 的拟合是否有物理意义
 
 #### 本阶段使用的脚本
-- `skills/knowledge/scripts/l3_effective_hamiltonian/createINCAR.sh`
+- `knowledge/scripts/l3_effective_hamiltonian/createINCAR.sh`
   - 作用：把 `vasp_MAGMOM` 约束拼接进 VASP `INCAR`
   - 输入：`vasp_MAGMOM/` 与基础 `INCAR`
   - 输出：`INCAR_all/INCAR_*` 或等价结果
@@ -966,19 +966,19 @@ existing unconstrained Path B data for suitability under the linked contract.
     adapter does not validate activation, constraint mode/strength or atom/frame
     consistency. An output INCAR file is not proof that directions are constrained.
   - 历史实跑中暴露出的脚本修正记录见 `./l3_effective_hamiltonian_run_notes.md`
-- `skills/knowledge/scripts/l3_effective_hamiltonian/get_ene.sh`
+- `knowledge/scripts/l3_effective_hamiltonian/get_ene.sh`
   - 作用：从样本目录中的 `OUTCAR` 提取总能并生成 `Energy.dat`
   - 输入：各样本目录的 `OUTCAR`
   - 输出：`Energy.dat`
   - 假设：每个样本目录结构一致且能量文件可解析；当前版本也兼容扁平的 `<id>.OUTCAR` 结果集
-  - 能量规则：必须取最后一条 `free energy TOTEN` / `TOTEN`，而不是第一条；该规则见 `skills/knowledge/reference/files/OUTCAR.md`
+  - 能量规则：必须取最后一条 `free energy TOTEN` / `TOTEN`，而不是第一条；该规则见 `knowledge/reference/files/OUTCAR.md`
   - 历史实跑中暴露出的脚本修正记录见 `./l3_effective_hamiltonian_run_notes.md`
-- `skills/knowledge/scripts/l3_effective_hamiltonian/extract_magmoms.py`
+- `knowledge/scripts/l3_effective_hamiltonian/extract_magmoms.py`
   - 作用：从 `OUTCAR` 提取最终逐原子磁矩，判断是否仍与输入磁矩方向近似平行，并可导出候选 `distortion.MAGMOM`
   - 输入：样本 `OUTCAR`，以及可选的 `vasp_MAGMOM` 或已有 `distortion.MAGMOM` 参考
   - 输出：方向一致性判断结果，以及可选的 `distortion.MAGMOM`
   - 使用边界：它解决的是“最终磁矩方向是否提示应切换到路径 B”以及“如何导出 method 6 所需的磁矩方向文件”，并不自动解决 `distortion.pos` 的最终来源
-- `skills/knowledge/scripts/l3_effective_hamiltonian/prepare_path_b_inputs.py`
+- `knowledge/scripts/l3_effective_hamiltonian/prepare_path_b_inputs.py`
   - 作用：从一个 `OUTCAR` 或一批 `OUTCAR` 中逐样本整理路径 B 所需的 `distortion.pos` / `distortion.MAGMOM`，并可选写出共享 `Energy.dat`
   - 输入：单个 `OUTCAR`，或扁平 `<id>.OUTCAR` 目录，或编号子目录 `id/OUTCAR`；可选提供共享 `POSCAR` 作为物种顺序与原子数参考
   - 输出：逐样本的 method-6 输入包，例如 `path_b_inputs/<id>/distortion.pos` 与 `path_b_inputs/<id>/distortion.MAGMOM`
@@ -1109,14 +1109,14 @@ coverage remains mandatory regardless of converter. Record absent samples as fai
 - 如果这里错位，拟合即使能跑也会失真
 
 #### 本阶段使用的脚本
-- `skills/knowledge/scripts/l3_effective_hamiltonian/convert_data.py`
+- `knowledge/scripts/l3_effective_hamiltonian/convert_data.py`
   - 作用：读取 `ene_symbol/`、`Energy.dat`、`convert_info.txt`，生成 `Fitting_Dataset.txt` 和 `Fitting_Data_for_prediction.txt`
   - 输入：连续编号的 `ene_symbol/<id>.ene_symbol`、同编号顺序的 `Energy.dat`、三行 `convert_info.txt`
   - 输出：`Fitting_Dataset.txt` 和 `Fitting_Data_for_prediction.txt`
   - 假设：训练集默认从编号 `1` 开始，预测/测试集紧接训练集之后；默认不支持任意跳号或乱序样本
-  - 用法：在 `3.get_fitting_data/` 目录中运行 `python3 convert_data.py --workdir .`
+  - 用法：在 `3.get_fitting_data/` 目录中运行 `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/convert_data.py" --workdir .`
   - 历史完整样例的切分范围见 `./l3_effective_hamiltonian_run_notes.md`
-- `skills/knowledge/scripts/l3_effective_hamiltonian/convert_data.f90`
+- `knowledge/scripts/l3_effective_hamiltonian/convert_data.f90`
   - 作用：保留原始 example 的转换逻辑来源
   - 注意：复制来的 `convert_data` 二进制依赖 Intel MPI 运行库，通用本地 shell 不一定能直接运行
 
@@ -1198,8 +1198,8 @@ are inactive unless their flags enable them. Keep test out of model selection.
 - 可选的 `Fitting_Data_for_prediction.txt`
 - 可选的环境相关作业脚本
 
-其中大部分文件都可以从 `skills/knowledge/templates/l3_fit/` 起步，但通常需要按你自己的数据组织方式修改。这里要特别区分三类文件：
-- `skills/knowledge/templates/l3_fit/` 故意不提供占位 `cell.str`；正式 `4.fit/input/` 必须从共享基底或上游已验证目录复制真实结构文件。
+其中大部分文件都可以从 `knowledge/templates/l3_fit/` 起步，但通常需要按你自己的数据组织方式修改。这里要特别区分三类文件：
+- `knowledge/templates/l3_fit/` 故意不提供占位 `cell.str`；正式 `4.fit/input/` 必须从共享基底或上游已验证目录复制真实结构文件。
 - `Fitting_Dataset.txt`、`Fitting_Data_for_prediction.txt` 这类数据集入口文件可以先保留占位模板，随后再用 Step 5 的真实数据覆盖；
 - `cell.str` 这类被 `PASP.input` 直接 `%include` 的结构文件不是占位入口，而是运行时硬依赖。只要当前拟合模板仍然 `%include cell.str`，就必须在 `4.fit/input/` 和实际 `4.fit/runs/<run-id>/` 中放入与上游 `ene_symbol`、`Fitting_Dataset.txt` 和共享基底一致的真实结构内容。不要为了补齐文件列表创建注释型、零体积或空结构的 `cell.str`。
 
@@ -1234,7 +1234,7 @@ are inactive unless their flags enable them. Keep test out of model selection.
 
 #### 本阶段使用的脚本
 - 无固定必需脚本
-- 如需提交拟合作业，可以参考环境相关模板，例如 `skills/knowledge/templates/l3_fit/slurmpasp.sh`
+- 如需提交拟合作业，可以参考环境相关模板，例如 `knowledge/templates/l3_fit/slurmpasp.sh`
   - 这类脚本只表示“可能的提交方式”，不是 workflow 固定契约
   - 在不同服务器上通常需要替换或重写
   - 如果脚本位于阶段目录外或项目根目录，提交前必须确认工作目录、相对路径和它是否会在当前 run 目录中读取输入
@@ -1261,7 +1261,7 @@ are inactive unless their flags enable them. Keep test out of model selection.
 - 如果目标是**为后续 MC / MD 做准备**：除了看误差，还要看保留下来的项是否具有可解释性和后续可用性
 
 #### 什么时候必须先查 reference
-- 遇到不确定的拟合设置时，先查 `skills/knowledge/reference/`，不要只根据 example 文件名或当前目录文件猜测语义
+- 遇到不确定的拟合设置时，先查 `knowledge/reference/`，不要只根据 example 文件名或当前目录文件猜测语义
 - 如果 reference 中没有覆盖对应设置、行含义或文件格式，再和用户讨论确认，不要把推断写成 workflow 契约
 - 你不确定某一行是布尔开关、计数、阈值还是策略编号时，必须先查 reference
 - 你打算修改 `Fitting_Settings.txt`、`Fitting_Set_Lambda.txt`、`Fitting_Set_Term_Keep.txt`、`Fitting_Set_Term_Skip.txt` 或数据集文件格式时，必须先查 reference

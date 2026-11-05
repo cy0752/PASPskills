@@ -10,7 +10,7 @@
 - `继续`、`ok`、`按例子来`、`去提交` 不等于确认 dynamics 设置、`amp_local_mode` handoff 来源、运行环境或提交授权。
 - Lecture-5 examples 和 run notes 只提供历史观察；其中的温度、阻尼、时间步、总时长、超胞、mode 数、Slurm 设置、PASP 路径都不是 production default。
 - `可以使用 subagent` 只表示允许委派只读事实检查，不等于确认科学设置、不等于允许提交、不等于允许 agent 代填物理参数。
-- read-only verifier 任务统一使用 `skills/subskills/pasp-verifier/skill.md` 的契约；subagent 不能改文件、不能创建 run、不能准备提交、不能提交任务、不能决定科学参数。
+- read-only verifier 任务统一使用 `subskills/pasp-verifier/skill.md` 的契约；subagent 不能改文件、不能创建 run、不能准备提交、不能提交任务、不能决定科学参数。
 - input preflight 不是 output validation。运行前用 preflight 判断输入能否进入 run；运行后用 output validation 判断输出能否 handoff。
 - `notes/`、`drafts/`、`*.draft` 是草稿区；candidate 目录是待 preflight 候选区；`input/` 是正式输入基线；`runs/<run-id>/` 是实际运行目录。这四类不能混用。
 - 不要把 `complete/` 历史快照、旧 `PASP.used_info`、旧 `*_used.dat`、旧日志、旧 `temperature.dat`、旧 `energy.dat` 复制进新 run。
@@ -93,7 +93,7 @@ Generic / new-material branch 判据：
 - `PASP.input`：模型、结构 include、`MD.input` include、local-mode / interaction-reuse 控制、stage-stable model settings。
 - `MD.input`：`atom_Heff.MD`、`SLD.mode`、time-step / run length、LLG and MD damping、temperature / initial velocity、output cadence。
 - 结构和上游模型文件：`cell.str`、`unit_cell.str` 或等价结构输入，`local_mode_PM.dat`、`J_best.dat`。
-- local-mode definition / mass files：凡是 `PASP.input` 直接 `%include` 的 split files 都要进入候选包；`mode_def.input` / `mode_mass.input` 的文件角色见 `skills/knowledge/reference/files/mode_def.input.md` 和 `skills/knowledge/reference/files/mode_mass.input.md`，exact block syntax 仍由 param reference 确认。
+- local-mode definition / mass files：凡是 `PASP.input` 直接 `%include` 的 split files 都要进入候选包；`mode_def.input` / `mode_mass.input` 的文件角色见 `knowledge/reference/files/mode_def.input.md` 和 `knowledge/reference/files/mode_mass.input.md`，exact block syntax 仍由 param reference 确认。
 - `amp_local_mode.in`：stage initial state；stage 2 / 3 必须记录 upstream completed run identity and output-validation evidence。
 - README：说明文件角色、上游来源、待确认设置、reference inventory 状态、为什么当前还不能提交。
 
@@ -149,9 +149,9 @@ Generic new-material `atomic_effective_H` candidate package should cover:
 候选输入包提升为正式 `input/`、覆盖 input、派生 `runs/<run-id>/`、创建或编辑 submission artifacts、准备外部任务配置、提交任务前，必须先做 read-only input preflight。
 
 执行方式：
-- 使用 `skills/subskills/pasp-verifier/skill.md`，`mode: input-preflight`。
+- 使用 `subskills/pasp-verifier/skill.md`，`mode: input-preflight`。
 - preflight 必须点名 workflow、target stage、候选输入文件 / 目录、stage-specific checklist、用户确认记录、reference inventory。
-- 对 PASP 输入文件，preflight 必须检查每个显式 keyword、block、`%include`、依赖文件格式和编号规则是否有 `skills/knowledge/reference/` 或用户权威来源覆盖。
+- 对 PASP 输入文件，preflight 必须检查每个显式 keyword、block、`%include`、依赖文件格式和编号规则是否有 `knowledge/reference/` 或用户权威来源覆盖。
 - 主 agent 本地检查、目录盘点、模板对比、日志检查不能替代这一步。
 - 若 read-only verifier 无法执行，L5 formal input / run / submission preparation 必须 blocked；`NO_SUBAGENT_PREFLIGHT_AVAILABLE=true` 不足以继续。
 
@@ -300,7 +300,7 @@ Reference inventory: <reference files checked or gaps>
 
 检查：
 - PASP.input、MD.input、结构文件、local_mode_PM.dat、J_best.dat、amp_local_mode.in、所有 direct %include files 是否齐备。
-- 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 skills/knowledge/reference/ 或用户权威来源覆盖。
+- 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 knowledge/reference/ 或用户权威来源覆盖。
 - local_mode_PM.dat、J_best.dat、结构、mode definition、mass definition、Z_values / Spin_values、shared-basis controls (`fig.maxk`, `fig.mdist`, `Invariant.*`, SOC strategy, mode-info blocks) 是否存在无说明混用。
 - 如果 J_best.dat 来自 L2 four-state DFT，是否有最后 TOTEN、spin normalization、parameter id mapping、omitted-zero policy 和文件格式证据。
 - stage 与 SLD.mode 是否一致：stage 1 -> 1，stage 2 -> 2，stage 3 -> 3。
@@ -348,7 +348,7 @@ Reference inventory: <reference files checked or gaps>
 检查：
 - PASP.input、MD.input、cell.str、unit_cell.str、local_mode_PM.dat、J_best.dat、amp_local_mode.in、所有 direct %include files 是否齐备且可解析。
 - Branch 是否为 Model atomic_effective_H + atom_Heff.MD T + electric-field / polarization intent，而不是 Cr2O3 SLD stage sequence。
-- 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 skills/knowledge/reference/ 或用户权威来源覆盖。
+- 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 knowledge/reference/ 或用户权威来源覆盖。
 - atom_Heff.getP / active electric field / Zeff.dat 的一致性；Zeff.dat 是否与 current unit_cell.str、species order、mode basis provenance 对应。
 - local_mode_PM.dat、J_best.dat、结构、mode definition、mass definition、Z_values、shared-basis controls、local_mode.read_interaction、Read_init_spin 是否有 same-basis evidence。
 - SuperCell 与 amp_local_mode.in row count / continuous active-site numbering / current local-mode basis 是否一致；smoke-test reduction 是否同步处理。
@@ -373,7 +373,7 @@ Reference inventory: <reference files checked or gaps>
 检查：
 - PASP.input、MD.input when used、structure files or documented equivalent route、local_mode_PM.dat、J_best.dat、amp_local_mode.in when current settings read an initial state、所有 direct %include files 是否齐备且可解析。
 - Branch 是否为 user-confirmed generic/new-material atomic_effective_H dynamics path，并且 active degrees of freedom、expected outputs、smoke-test/production label 与确认表一致。
-- 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 skills/knowledge/reference/ 或用户权威来源覆盖。
+- 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 knowledge/reference/ 或用户权威来源覆盖。
 - 如果 upstream 是 L3，candidate README / PROGRESS 是否引用当前材料的 L3 output-validation / handoff record；该 record 是否覆盖 local_mode_PM.dat、拟交给 L5 的 J_best.dat 或等价 fitted-parameter selection、structure route、mode / mass definition、species / spin values、fig.maxk、fig.mdist、Invariant.*、SOC strategy、fitting provenance 和 known gaps。
 - local_mode_PM.dat、J_best.dat、structure route、SuperCell、species / spin values、mode definition、mass definition、fig.maxk、fig.mdist、Invariant.*、SOC strategy、mode-info blocks、local_mode.read_interaction、Read_init_spin、amp_local_mode.in when current settings read an initial state 是否有 same-material / same-basis provenance。
 - 如果 J_best.dat 来自 L2 four-state DFT，最后 TOTEN、spin normalization、parameter id mapping、omitted-zero policy、units 和 file format 是否有证据。

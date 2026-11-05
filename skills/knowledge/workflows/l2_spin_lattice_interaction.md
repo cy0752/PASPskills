@@ -41,7 +41,7 @@
 
 ## Reference-before-write
 
-准备写入或修改任何 PASP 字段、block、文件格式、编号规则时，必须先读对应 `skills/knowledge/reference/` 卡片。模板和历史 run notes 只能提供写法参考，不能授权当前任务的物理数值。
+准备写入或修改任何 PASP 字段、block、文件格式、编号规则时，必须先读对应 `knowledge/reference/` 卡片。模板和历史 run notes 只能提供写法参考，不能授权当前任务的物理数值。
 
 高风险字段：
 - 结构与编号：`cell.str`、`unit_cell.str`、`SuperCell`、`Z_values`、`isaAB`、`Spin_values`
@@ -290,7 +290,7 @@ Stage 1 完整输入包。
 - **Params**: `Model` / `SuperCell` / `Z_values` / `isaAB` / `Spin_values` / `fig.maxk` / `fig.mdist` / `MC` / `Parallel_Tempering` / `spin_lat.general_J` / `spin_lat.LJmatSym` / `spin_lat.relax_str` / `Read_init_spin` / `PT.M` / `PT.low_temp` / `PT.high_temp` / `PT.Tmesh` / `PT.nblk_T` / `nbeg_blk` / `nblk` / `opt.NSW` / `opt.EDIFFG` / `ExternalMagneticField`
 - **Topics**: `PASP.input` / `four_state_method`（链回 find_J 拟合）
 
-完整路径：均在 `skills/knowledge/reference/`。若 reference 中缺某个输出家族的专门卡片，以本 workflow 的输出表作为 L2 当前稳定合同，并把缺口记入后续 reference audit。
+完整路径：均在 `knowledge/reference/`。若 reference 中缺某个输出家族的专门卡片，以本 workflow 的输出表作为 L2 当前稳定合同，并把缺口记入后续 reference audit。
 
 ---
 

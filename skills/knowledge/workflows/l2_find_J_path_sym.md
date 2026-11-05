@@ -16,7 +16,7 @@
 > - **拟合**交换参数（这是 Stage 3 完成 DFT 后的下游工作；属于用户和 VASP 的范畴）
 > - 后续 `Spin_lattice_interaction` MC 寻找磁基态（见 `workflows/l2_spin_lattice_interaction.md`）
 > - 自旋波色散（见 `workflows/l2_magnon.md`）
-> - 字段逐项定义、默认值、单位、block 精确语法（这些转给 `skills/knowledge/reference/`）
+> - 字段逐项定义、默认值、单位、block 精确语法（这些转给 `knowledge/reference/`）
 
 ---
 
@@ -375,7 +375,7 @@ PASP **不**附带这部分脚本。用户侧的工作量包括：
 | 把若干 pair 的 J 汇总为 `spin_exchange.dat` | Stage 4（即 `Spin_lattice_interaction` 工作流的输入准备） |
 | 把若干 pair 的 J 映射为 `J_best.dat` | L3/L5 bridge；必须有同一 `local_mode_PM.dat` / interaction list 的 parameter id、最终 `TOTEN` 能量证据、J 归一化换算记录和 `J_best.dat` 格式检查 |
 
-注意：本仓库 `skills/knowledge/scripts/l3_effective_hamiltonian/` 下的脚本面向 L3 effective Hamiltonian fitting，不能直接复用到 `find_J_path_sym` 的四态 DFT 整理。
+注意：本仓库 `knowledge/scripts/l3_effective_hamiltonian/` 下的脚本面向 L3 effective Hamiltonian fitting，不能直接复用到 `find_J_path_sym` 的四态 DFT 整理。
 
 ### 当前阶段可调整项
 
@@ -494,7 +494,7 @@ PASP 会在当前目录写大量 `pair_POS.NNN` / `atat.NNN_Y`，覆盖或夹杂
 - **Params**: `Model` / `SuperCell` / `Z_values` / `isaAB` / `Spin_values` / `magnetic_or_ligand` / `fig.maxk` / `fig.mdist`
 - **Topics**: `PASP.input` / `four_state_method` / `structure_from_poscar` / `symmetry_representative_sites`（如需对称性代表位点辅助）
 
-完整路径：均在 `skills/knowledge/reference/` 下。
+完整路径：均在 `knowledge/reference/` 下。
 
 ---
 

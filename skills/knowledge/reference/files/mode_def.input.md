@@ -3,7 +3,7 @@
 ## 文件作用
 `mode_def.input` 是常见的 split include 文件，用来把 `%block local_mode.mode_definition` 从根 `PASP.input` 中拆出来维护。它定义当前 `Model Invariant` / `Model atomic_effective_H` 数据链使用的 local modes，例如自旋模式、局域位移 / 声子模式，或混合自由度。
 
-本文件卡只说明 `mode_def.input` 作为文件的角色和检查契约。`%block local_mode.mode_definition` 的精确 block 语法、mode 段格式、空行规则和代表位点规则必须继续查 `skills/knowledge/reference/params/local_mode.mode_definition.md`。
+本文件卡只说明 `mode_def.input` 作为文件的角色和检查契约。`%block local_mode.mode_definition` 的精确 block 语法、mode 段格式、空行规则和代表位点规则必须继续查 `knowledge/reference/params/local_mode.mode_definition.md`。
 
 ## 何时需要
 - 当 `PASP.input` 中直接写了 `%include mode_def.input` 时，该文件就是输入包的必需 direct include file。
@@ -35,8 +35,8 @@ N_mode
 ```
 
 不要在本文件卡中按历史 example 复制具体 mode 内容。写入或修改该 block 前，必须先查：
-- `skills/knowledge/reference/params/local_mode.mode_definition.md`
-- 对纯自旋 mode 的代表点位分析，还应查 `skills/knowledge/reference/topics/symmetry_representative_sites.md`
+- `knowledge/reference/params/local_mode.mode_definition.md`
+- 对纯自旋 mode 的代表点位分析，还应查 `knowledge/reference/topics/symmetry_representative_sites.md`
 - 对多原子位移 / 声子 mode，必须确认 `N_atom` 后存在独立 species-id 列表行，后续才是逐原子的 `x y z dx dy dz` 行；不要把 species id 混写进坐标行第一列。
 
 ## Row-count / order 一致性检查

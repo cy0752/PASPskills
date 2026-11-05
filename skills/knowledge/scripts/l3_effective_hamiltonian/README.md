@@ -1,5 +1,13 @@
 # L3 scripts
 
+> 路径约定：本文的 `knowledge/...`、`subskills/...` 以包含顶层
+> `SKILL.md` 的 skill 根目录为基准；源码仓库中是 `skills/`，安装后通常是
+> `.agents/skills/pasp-helper/`。Markdown 链接和显式 `../` 相对当前文档。
+> shell 示例中的 `PASP_SKILL_ROOT` 应绑定为该根目录的绝对路径；例如从目标
+> 项目根目录执行 `PASP_SKILL_ROOT="$(cd .agents/skills/pasp-helper && pwd -P)"`。
+> 用户的计算输入与输出路径仍相对其工作目录。
+
+
 ## Path-B inventory and final-state packages
 
 ### Deterministic geometry package
@@ -41,7 +49,7 @@ that a physical interaction is zero, choose a scientific tolerance, validate
 PASP's internal renumbering, or replace native handoff/output review.
 
 Run it with explicit tolerances, for example
-`python3 check_dependencies.py --conversion /work/convert/conversion.json
+`python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/check_dependencies.py" --conversion /work/convert/conversion.json
 --root /work/dependency-audit --rtol 1e-10 --atol 1e-12`. The conversion receipt
 must hash the train/selection matrices and their original-ID lists; the script
 also checks disjointness from the declared test IDs and never opens a test
@@ -61,7 +69,7 @@ explicit flat-file filter, not an ID-renumbering rule. Single symbolic IDs remai
 supported for extraction; full-study conversion/batching requires integer IDs.
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/prepare_path_b_inputs.py /data/final-dft --output-dir /work/path-b --normalize-magmoms
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/prepare_path_b_inputs.py" /data/final-dft --output-dir /work/path-b --normalize-magmoms
 ```
 
 Choose normalization from the task's spin convention. Moment magnitude variation
@@ -98,7 +106,7 @@ was not captured, it is missing evidence; do not manufacture it from a marker.
 ```
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/method6.py prepare --request /work/method6-request.json --root /work/method6-template
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/method6.py" prepare --request /work/method6-request.json --root /work/method6-template
 ```
 
 SOC is an explicit record of the established basis, not a new modeling choice.
@@ -120,7 +128,7 @@ captures inputs without launching anything. Request shape:
 ```
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/method6.py stage --request /work/stage-request.json
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/method6.py" stage --request /work/stage-request.json
 ```
 
 Save the absolute handoff root, complete IDs, expected files and `batch-plan.json`.
@@ -130,7 +138,7 @@ authorizing the remainder; failure blocks the dependent batch. Then collect the
 returned evidence without running another calculation:
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/method6.py collect --root /work/encodes-attempt-1
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/method6.py" collect --root /work/encodes-attempt-1
 ```
 
 Only when runtime is **explicitly assigned to the helper**, `batch` may run it.
@@ -218,8 +226,8 @@ The request contains only the chosen policy and symmetry representatives, e.g. t
 ```
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/prepare_l3.py spin --input /work/candidate/PASP.input --request /work/spin-request.json --root /work/spin-prepared
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/prepare_l3.py check-spin --input /work/spin-prepared/PASP.input --soc full
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/prepare_l3.py" spin --input /work/candidate/PASP.input --request /work/spin-request.json --root /work/spin-prepared
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/prepare_l3.py" check-spin --input /work/spin-prepared/PASP.input --soc full
 ```
 
 It writes x/y/z modes per representative with the leading method `2`, derived count,
@@ -265,7 +273,7 @@ from a `study_contract.py convert` receipt. Checkpoint that receipt's SHA256 whe
 conversion succeeds, then supply it explicitly. Paths below are illustrative:
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/prepare_l3.py fit-data --conversion /work/conversion/conversion.json --split /work/split.json --receipt-sha256 <saved-sha256> --lambdas /work/lambdas.json --root /work/fit-data
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/prepare_l3.py" fit-data --conversion /work/conversion/conversion.json --split /work/split.json --receipt-sha256 <saved-sha256> --lambdas /work/lambdas.json --root /work/fit-data
 ```
 
 `lambdas.json` is an explicit nonempty JSON list of finite factors greater than 1
@@ -297,7 +305,7 @@ Immediately before each automatic PASP fitting run, check the actual completed
 package (including any edited lambda file), and persist its JSON output:
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/prepare_l3.py check-fit --input /work/fit-run/PASP.input
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/prepare_l3.py" check-fit --input /work/fit-run/PASP.input
 ```
 
 `check-fit` reads the actual train/selection matrices, `Model`, and every lambda
@@ -329,7 +337,7 @@ The scripts require Python 3.10+ and sibling `study_contract.py`, with no source
 compiler or third-party dependency. They do not run PASP or modify upstream inputs.
 
 ```sh
-python3 -B -m unittest discover -s /path/to/skills/knowledge/scripts/l3_effective_hamiltonian -p 'test_*.py' -v
+python3 -B -m unittest discover -s "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian" -p 'test_*.py' -v
 ```
 
 Preparation tests use synthetic valid/invalid files for include precedence and
@@ -351,7 +359,7 @@ portable check prevents an inverted matrix convention from reaching input
 generation; retain its residuals and mapping in the stage ledger.
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/structure_mapping.py \
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/structure_mapping.py" \
   /work/structure-mapping.json > /work/structure-mapping.receipt.json
 ```
 
@@ -386,7 +394,7 @@ split, basis, divisor, and source-identity policy remain explicit arguments; the
 builder does not choose scientific values:
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/make_study_manifest.py \
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/make_study_manifest.py" \
   --batch /work/encodes/full/batch.json --output /work/fit/study.json \
   --energy /work/Energy.dat --split /work/split.json --basis /work/encodes/full/1/local_mode_PM.dat \
   --energy-divisor 9 --require-source-identity --source-energy-atol 1e-6
@@ -417,7 +425,7 @@ header. A numeric first row cannot be silently skipped. Energy rows are exactly
 integer ID and finite energy, in arbitrary order. Fortran D/d exponents are supported.
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/study_contract.py convert --manifest /work/study.json --root /work/conversion
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/study_contract.py" convert --manifest /work/study.json --root /work/conversion
 ```
 
 Outputs: `train.txt`, `selection.txt`, `test.txt`, corresponding `.ids.json` row
@@ -517,7 +525,7 @@ rank-deficient cancelling fits before publication; it is not a universal physica
 threshold, so omitting the field leaves the native-ID and prediction checks intact.
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/fit_handoff.py --manifest /work/handoff.json --root /work/new-mc-candidate
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/fit_handoff.py" --manifest /work/handoff.json --root /work/new-mc-candidate
 ```
 
 Without `--root` the command is read-only. With it, native LM bytes become
@@ -555,7 +563,7 @@ pair multisets up to an overall factor. Example a/2a triangular-shell fixture:
 ```
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/periodic_alias.py --manifest /work/pairs.json
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/periodic_alias.py" --manifest /work/pairs.json
 ```
 
 Exit 2 records unresolved pair aliasing and whether the target distinguishes it;
@@ -610,8 +618,8 @@ consumer file-path fields. Other schema fields, dataset identity and report clai
 need separate checks; publication does not infer the task's acceptance contract.
 
 ```sh
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/study_contract.py publish --manifest /work/publication.json --root /work --receipt notes/delivery-check.json
-python3 /path/to/skills/knowledge/scripts/l3_effective_hamiltonian/study_contract.py verify --root /work --receipt notes/delivery-check.json
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/study_contract.py" publish --manifest /work/publication.json --root /work --receipt notes/delivery-check.json
+python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/study_contract.py" verify --root /work --receipt notes/delivery-check.json
 ```
 
 Use the actual consumer root explicitly, even if helper CWD is a nested run. All
@@ -660,7 +668,7 @@ formats/designs must be reviewed explicitly; do not relabel them as verified.
 Local tests (synthetic fixtures, not scientific acceptance):
 
 ```sh
-python3 -B -m unittest discover -s /path/to/skills/knowledge/scripts/l3_effective_hamiltonian -p test_study_contract.py -v
+python3 -B -m unittest discover -s "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian" -p test_study_contract.py -v
 ```
 
 The tests cover headerless/text-header energies, unordered/nonconsecutive IDs,
@@ -712,7 +720,7 @@ and method-6 re-encoding repair final-state identity, not lost sampling intent.
 - `convert_data.py` 按 `Energy.dat` 第一列的 sample id 建表，因此 `Energy.dat` 行顺序可以乱序，只要没有重复编号且所需编号都存在；但未修改的 `convert_data.f90` 是按文件行位置顺序读取并忽略第一列编号校验，乱序 `Energy.dat` 会造成能量和 `ene_symbol` 错配。
 - 生成 `convert_info.txt` 时，如果用户没有指定切分，默认按 90/10 拆分当前可用连续样本：`Ntrain=floor(0.9*N)`，`Ntest=N-Ntrain`。例如 800 个样本应写为 `720` 和 `80`，不要默认写成 `800` 和 `0`。
 - 如果当前样本编号是从 `0` 开始的连续编号，例如某些扁平 `results/<id>.OUTCAR` 目录，可在 `convert_data.py` 中使用 `--start-id 0`，不必先手工重编号。
-- 优先使用 `convert_data.py`，因为它不依赖 Fortran 编译器或 Intel MPI 运行库。示例：`python3 convert_data.py --workdir .`
+- 优先使用 `convert_data.py`，因为它不依赖 Fortran 编译器或 Intel MPI 运行库。示例：`python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/convert_data.py" --workdir .`
 - `convert_data.f90` 保留为原始 example 逻辑来源；复制来的 `convert_data` 二进制依赖 Intel MPI 运行库（如 `libmpifort.so.12`），通用本地 shell 可能无法直接运行。未修改的 `convert_data.f90` 默认打开 `ene_symbol/1.ene_symbol`，并以 1-based 样本序列读取；若当前数据是 0-based，必须改用 `convert_data.py --start-id 0` 或显式改写 Fortran 起始编号逻辑，不能直接套旧二进制。
 - `convert_data.py` 只负责把全部 `ene_symbol` 特征与能量拼接起来，不应根据某个旧 example 的拟合输入列数主动删除或跳过特征。
 - 如果后续拟合目录中的 `Fitting_Dataset.txt` 在 PASP 运行后列数减少，先检查拟合阶段 `log.out` 是否出现 `NEED TO REWRITE DATA`，以及 `Data_Special_Properties_*.txt` 是否记录成比例或冗余变量；不要把这种 Step 6 数据检查重写误认为 Step 5 转换脚本的问题。
@@ -720,23 +728,23 @@ and method-6 re-encoding repair final-state identity, not lost sampling intent.
 `extract_magmoms.py` 常见用法：
 
 - 比较 VASP 最终磁矩方向是否仍和输入 `vasp_MAGMOM` 逐原子近似平行：
-  - `python3 extract_magmoms.py sample/OUTCAR --reference ../0.generaterandomspin/vasp_MAGMOM/1.vasp_MAGMOM --show-all`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/extract_magmoms.py" sample/OUTCAR --reference ../0.generaterandomspin/vasp_MAGMOM/1.vasp_MAGMOM --show-all`
 - 从 `OUTCAR` 直接导出路径 B 所需的 `distortion.MAGMOM`：
-  - `python3 extract_magmoms.py sample/OUTCAR --distortion-out distortion.MAGMOM`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/extract_magmoms.py" sample/OUTCAR --distortion-out distortion.MAGMOM`
 
 `rebase_unit_cell.py` 常见用法：
 
 - 只验证当前 `unit_cell.str` 是否能通过已确认的 unit-cell → `cell.str` 关系矩阵映射到 `cell.str`：
-  - `python3 rebase_unit_cell.py --cell cell.str --unit unit_cell.str --relation '2 0 0;0 1 0;0 0 1'`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/rebase_unit_cell.py" --cell cell.str --unit unit_cell.str --relation '2 0 0;0 1 0;0 0 1'`
 - 如果已确认需要把 primitive 轴序从旧的 `x,y,z` 改成新的 `y,z,x`，同时重排基矢和原子坐标：
-  - `python3 rebase_unit_cell.py --cell cell.str --unit unit_cell.str --relation '2 0 0;0 1 0;0 0 1' --reorder-axes y,z,x --output unit_cell.rebased.str`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/rebase_unit_cell.py" --cell cell.str --unit unit_cell.str --relation '2 0 0;0 1 0;0 0 1' --reorder-axes y,z,x --output unit_cell.rebased.str`
 - 如果候选 `unit_cell.str` 的基矢已经是目标轴向，但原子坐标仍被错误写成 `y,z,x`，只修复原子坐标分量。例如要把当前 `(y,z,x)` 坐标还原为 `(x,y,z)`，使用 `z,x,y`：
-  - `python3 rebase_unit_cell.py --cell cell.str --unit unit_cell.str --relation '2 0 0;0 1 0;0 0 1' --reorder-atom-coords z,x,y --output unit_cell.fixed.str`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/rebase_unit_cell.py" --cell cell.str --unit unit_cell.str --relation '2 0 0;0 1 0;0 0 1' --reorder-atom-coords z,x,y --output unit_cell.fixed.str`
 - 不要把 `--relation` 的矩阵直接写进 PASP `%block SuperCell`。如果 `cell.str` 已经是目标超胞，PASP `%block SuperCell` 通常应省略或保持单位阵。
 - 这个脚本不负责决定 primitive cell 或物理轴向。使用前必须已有用户确认、read-only structure subagent 结论、PASP 分析结果或其他可核查来源。
 - 通过标准是报告 `PASS: cell.str is compatible with unit_cell.str under the provided relation`。若报告 `FAIL`，不得把候选 `unit_cell.str` 提升为正式 input，也不得派生 run 或提交。
 - 同时做对比并导出，若存在逐原子方向不一致会以非零退出码返回：
-  - `python3 extract_magmoms.py sample/OUTCAR --reference 1.vasp_MAGMOM --distortion-out distortion.MAGMOM`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/extract_magmoms.py" sample/OUTCAR --reference 1.vasp_MAGMOM --distortion-out distortion.MAGMOM`
 
 补充说明：
 - `--reference` 同时支持 `MAGMOM= ...` 形式的 VASP 输入文件，以及逐行 `x y z` 的 `distortion.MAGMOM`
@@ -747,19 +755,19 @@ and method-6 re-encoding repair final-state identity, not lost sampling intent.
 `prepare_path_b_inputs.py` 常见用法：
 
 - 仅凭单个 `OUTCAR` 整理一个路径 B 输入包：
-  - `python3 prepare_path_b_inputs.py sample.OUTCAR --output-dir path_b_inputs`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/prepare_path_b_inputs.py" sample.OUTCAR --output-dir path_b_inputs`
 
 - 如果额外有 `POSCAR`，可把它作为更稳定的物种顺序 / 原子数参考：
-  - `python3 prepare_path_b_inputs.py sample.OUTCAR --poscar-reference POSCAR --output-dir path_b_inputs`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/prepare_path_b_inputs.py" sample.OUTCAR --poscar-reference POSCAR --output-dir path_b_inputs`
 
 - 从扁平 `results/<id>.OUTCAR` 目录批量整理路径 B 输入包：
-  - `python3 prepare_path_b_inputs.py results --poscar-reference results/POSCAR --output-dir path_b_inputs`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/prepare_path_b_inputs.py" results --poscar-reference results/POSCAR --output-dir path_b_inputs`
 
 - 如果只有批量 `OUTCAR`、没有单独保存的 `POSCAR`，也可以直接批量整理：
-  - `python3 prepare_path_b_inputs.py results --output-dir path_b_inputs`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/prepare_path_b_inputs.py" results --output-dir path_b_inputs`
 
 - 同时从批量 `OUTCAR` 生成共享 `Energy.dat`：
-  - `python3 prepare_path_b_inputs.py results --poscar-reference results/POSCAR --output-dir path_b_inputs --primitive-cells 9`
+  - `python3 "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/prepare_path_b_inputs.py" results --poscar-reference results/POSCAR --output-dir path_b_inputs --primitive-cells 9`
 
 补充说明：
 - 该脚本会为每个样本写出独立子目录，例如 `path_b_inputs/17/distortion.pos` 和 `path_b_inputs/17/distortion.MAGMOM`

@@ -49,7 +49,7 @@ The observed `PASP.input` includes:
 - `%include mode_def.input`
 - `%include mode_mass.input`
 
-The split files `mode_def.input` and `mode_mass.input` are example file roles. File-level checks route to `skills/knowledge/reference/files/mode_def.input.md` and `skills/knowledge/reference/files/mode_mass.input.md`; exact block syntax still routes to the relevant param reference before writing.
+The split files `mode_def.input` and `mode_mass.input` are example file roles. File-level checks route to `knowledge/reference/files/mode_def.input.md` and `knowledge/reference/files/mode_mass.input.md`; exact block syntax still routes to the relevant param reference before writing.
 
 ## Historical `MD.input` settings observed
 

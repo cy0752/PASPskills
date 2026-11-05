@@ -106,7 +106,7 @@
 | 问题类型 | 应当查 |
 |---|---|
 | `find_J_path_sym` 的稳定流程契约 | `workflows/l2_find_J_path_sym.md` |
-| 字段定义 / 默认值 / 单位 | `skills/knowledge/reference/` 对应卡 |
+| 字段定义 / 默认值 / 单位 | `knowledge/reference/` 对应卡 |
 | 历史上 NiI₂ 5×5 vs 6×6 第 5 近邻表现 | 本文件 |
 | 当前用户工作区中 PASP 跑出来什么 | 用户实际目录中的文件 |
 

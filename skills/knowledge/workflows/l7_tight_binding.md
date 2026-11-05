@@ -155,7 +155,7 @@ Successful output evidence:
 
 ### S0 / S1：inventory and branch classification
 
-Use the state machine first. Inspect only the user-specified target directory and `skills/knowledge/` unless the user explicitly authorizes cross-example comparison.
+Use the state machine first. Inspect only the user-specified target directory and `knowledge/` unless the user explicitly authorizes cross-example comparison.
 
 Classify:
 - branch: B1-B5, MLWF/advanced, output validation, or uncertain.
@@ -177,7 +177,7 @@ Candidate packages can be drafted, but they are not submit-ready. Before formal 
 
 ### S4：input preflight
 
-Before promoting candidate files, overwriting formal input, deriving a run directory, preparing external submission artifacts, or submitting a job, use `skills/subskills/pasp-verifier/skill.md` with `mode: input-preflight`.
+Before promoting candidate files, overwriting formal input, deriving a run directory, preparing external submission artifacts, or submitting a job, use `subskills/pasp-verifier/skill.md` with `mode: input-preflight`.
 
 Minimum L7 preflight:
 - `PASP.input` parses structurally and explicitly selects `Model TB`.

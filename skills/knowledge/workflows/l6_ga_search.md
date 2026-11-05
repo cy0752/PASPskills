@@ -12,13 +12,13 @@ L6 常见分支包括：
 - restart / saved-structure branch：从历史 `strs_saved.dat`、generation-suffixed `CONTCAR` / `OSZICAR` 等继续。
 - fixed-lattice / constrained-cell / interface branch：用户明确约束晶格、晶胞、二维应变、表面 / 界面等。
 
-本文档不回答单个字段默认值、精确格式、block 行数、编号规则或文件语法。这些必须转到 `skills/knowledge/reference/`，尤其是写入或修改任何 PASP 字段、block、文件格式、编号规则之前。
+本文档不回答单个字段默认值、精确格式、block 行数、编号规则或文件语法。这些必须转到 `knowledge/reference/`，尤其是写入或修改任何 PASP 字段、block、文件格式、编号规则之前。
 
 ## 来源边界
 本 workflow 是基于 Lecture-6 slides / examples、当前 reference cards 和 PASP / Latticemodel source audit 整理出的稳定运行契约。运行时只依赖：
-- `skills/knowledge/workflows/`
-- `skills/knowledge/reference/`
-- `skills/subskills/pasp-verifier/skill.md`
+- `knowledge/workflows/`
+- `knowledge/reference/`
+- `subskills/pasp-verifier/skill.md`
 
 Lecture examples、run notes、helper scripts 和源码路径只能作为 authoring 证据。不要把其中的 `SuperCell`、population size、generation count、VASP INCAR / KPOINTS / POTCAR、Slurm partition、PASP executable path、VASP path、job id、candidate energies 或 symmetry labels 当成当前用户任务的默认值。
 
@@ -139,21 +139,21 @@ Before generating or editing an L6 `PASP.input`, build an inventory of every exp
 
 | Object | Reference path |
 |---|---|
-| Model route | `skills/knowledge/reference/params/Model.md` |
-| PASP.input syntax, `%include`, blocks, duplicate first-wins behavior | `skills/knowledge/reference/topics/PASP.input.md` |
-| GA module overview | `skills/knowledge/reference/modules/ga.md` |
-| Structure files | `skills/knowledge/reference/files/cell.str.md`, `skills/knowledge/reference/files/unit_cell.str.md` |
-| Optional seed | `skills/knowledge/reference/files/seed.in.md` |
-| Species / spin / supercell blocks | `skills/knowledge/reference/params/Z_values.md`, `Spin_values.md`, `SuperCell.md` |
+| Model route | `knowledge/reference/params/Model.md` |
+| PASP.input syntax, `%include`, blocks, duplicate first-wins behavior | `knowledge/reference/topics/PASP.input.md` |
+| GA module overview | `knowledge/reference/modules/ga.md` |
+| Structure files | `knowledge/reference/files/cell.str.md`, `knowledge/reference/files/unit_cell.str.md` |
+| Optional seed | `knowledge/reference/files/seed.in.md` |
+| Species / spin / supercell blocks | `knowledge/reference/params/Z_values.md`, `Spin_values.md`, `SuperCell.md` |
 | Evolution scale | `GA.population_size.md`, `GA.max_generation.md`, `save_str.nsave_str.md` |
 | Genetic operations | `GA.Pher.md`, `GA.Pmut.md`, `GA.perturbation.md`, `GA.lchk_mut.md` |
 | Symmetry / similarity / cutoff | `str.init_sym.md`, `GA.symmetrize_str.md`, `GA.useBCM.md`, `GA.tol_BCM.md`, `rmax_cut.md` |
 | Parallel / pressure | `GA.parallel.md`, `GA.VASPCMD.md`, `GA.pressure.md` |
-| Parallel VASP helper | `skills/knowledge/reference/files/run_pvasp.sh.md` |
+| Parallel VASP helper | `knowledge/reference/files/run_pvasp.sh.md` |
 | Random space group | `GA.gen_ran_str_sym.md`, `GA.spg_front.md`, `GA.spg_rear.md` |
 | Magnetic search | `GA.magnetic.md`, `GA.random_magnetic.md`, `GA.lAFM_GA.md`, `GA.lmut_mag_GA.md`, `GA.flip_spin_rate.md`, `GA.ldiff_str_with_mag_GA.md`, `GA.lread_OUTCAR_mag.md` |
 | Cell / lattice constraints | `GA.fixlattice.md`, `GA.fix_cell.md`, `GA.biaxial_strain.md`, `GA.lat_fix_2D_Ang.md` |
-| Effective settings output | `skills/knowledge/reference/files/PASP.used_info.md` |
+| Effective settings output | `knowledge/reference/files/PASP.used_info.md` |
 
 Known reference gaps: several source-backed or example-observed L6 controls and output artifacts do not yet have dedicated cards, including restart controls, `GA.system`, `GA.surfaces`, `GA.Vcell_init`, `GA.Nadapt`, `GA.Wadapt`, random-spacegroup layer controls, and GA output files such as `Saved_NNN.POS`, `Saved_gen.dat`, `low_ene_strs.dat`, `pc_low_ene_strs.dat`, `strs_saved.dat`, `POSCAR.NNN.GGG`, `CONTCAR.NNN.GGG`, `OSZICAR.NNN.GGG`, `OUTCAR.NNN.GGG`, `MAGMOM.NNN.GGG`, and `vasp_N/`. Do not write those exact settings or claim their file formats as reference-backed unless the user supplies authority or new reference cards are added.
 
@@ -173,7 +173,7 @@ DFT-side recommendations to discuss, not silently apply:
 
 ## Input Preflight Checklist
 
-Use `skills/subskills/pasp-verifier/skill.md`, `mode: input-preflight`, before promoting candidate files to formal `input/`, deriving `runs/<run-id>/`, creating / editing submit-ready helper artifacts, preparing external task configuration, or submitting a job.
+Use `subskills/pasp-verifier/skill.md`, `mode: input-preflight`, before promoting candidate files to formal `input/`, deriving `runs/<run-id>/`, creating / editing submit-ready helper artifacts, preparing external task configuration, or submitting a job.
 
 The L6 preflight must check:
 - root `PASP.input` exists, parses structurally, and explicitly selects `Model GA`;
@@ -195,7 +195,7 @@ The L6 preflight must check:
 
 ## Output Validation Checklist
 
-Use `skills/subskills/pasp-verifier/skill.md`, `mode: output-validation`, after a run completes and before reporting low-energy structures as handoff-ready, launching post-GA optimization, plotting, symmetry reporting, or restart from outputs.
+Use `subskills/pasp-verifier/skill.md`, `mode: output-validation`, after a run completes and before reporting low-energy structures as handoff-ready, launching post-GA optimization, plotting, symmetry reporting, or restart from outputs.
 
 The L6 output validation must check same-run evidence:
 - PASP stdout / scheduler log exists and shows normal completion or the first decisive failure;

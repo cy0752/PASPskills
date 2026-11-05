@@ -5,7 +5,7 @@
 Runtime agents must prioritize:
 - `l6_ga_search_state_machine.md`
 - `l6_ga_search.md`
-- `skills/knowledge/reference/`
+- `knowledge/reference/`
 
 Do not copy this file's `SuperCell`, population size, generation count, probabilities, VASP inputs, Slurm settings, job ids, energies, symmetry labels or helper paths into a current task.
 

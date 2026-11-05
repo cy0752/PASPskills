@@ -3,7 +3,7 @@
 ## 文件作用
 `mode_mass.input` 是常见的 split include 文件，用来把 `%block atom_Heff.MASS_local_mode` 从根 `PASP.input` 或 `MD.input` 相关配置中拆出来维护。它为当前 local-mode basis 中的各个 local modes 提供等效相对质量。
 
-本文件卡只说明 `mode_mass.input` 作为文件的角色和检查契约。`%block atom_Heff.MASS_local_mode` 的精确定义、默认值、取值范围和质量含义必须继续查 `skills/knowledge/reference/params/atom_Heff.MASS_local_mode.md`。
+本文件卡只说明 `mode_mass.input` 作为文件的角色和检查契约。`%block atom_Heff.MASS_local_mode` 的精确定义、默认值、取值范围和质量含义必须继续查 `knowledge/reference/params/atom_Heff.MASS_local_mode.md`。
 
 ## 何时需要
 - 当 `PASP.input` 中直接写了 `%include mode_mass.input` 时，该文件就是输入包的必需 direct include file。
@@ -32,7 +32,7 @@ mass_1 mass_2 ... mass_N
 %endblock atom_Heff.MASS_local_mode
 ```
 
-推荐把所有质量值写在同一数据行，按当前 local-mode 顺序形成一个连续列表。不要在本文件卡中复制具体质量值。写入或修改该 block 前，必须先查 `skills/knowledge/reference/params/atom_Heff.MASS_local_mode.md`。
+推荐把所有质量值写在同一数据行，按当前 local-mode 顺序形成一个连续列表。不要在本文件卡中复制具体质量值。写入或修改该 block 前，必须先查 `knowledge/reference/params/atom_Heff.MASS_local_mode.md`。
 
 ## Row-count / order 一致性检查
 preflight 至少应检查：

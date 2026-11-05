@@ -5,7 +5,7 @@
 Runtime agents must prioritize:
 - `l7_tight_binding_state_machine.md`
 - `l7_tight_binding.md`
-- `skills/knowledge/reference/`
+- `knowledge/reference/`
 
 Do not copy this file's hopping values, orbital energies, `TB.U`, SOC strengths, cutoff radii, target eigenvalues, helper scripts or output examples into a current task.
 

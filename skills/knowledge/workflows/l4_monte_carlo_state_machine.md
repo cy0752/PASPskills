@@ -7,7 +7,7 @@
 - `继续`、`ok`、`按计划执行`、`去提交` 不等于确认温度网格、步数、超胞、初始态、strain / CG、输出覆盖或提交授权。
 - `可以使用 subagent` 只表示允许委派只读事实检查，不等于确认 L4 科学设置，不等于允许提交，不等于允许 agent 代填物理参数。
 - subagent 只能做只读事实检查；不能改文件、不能创建 run、不能准备提交、不能提交任务、不能决定科学参数。
-- read-only subagent 任务统一使用 `skills/subskills/pasp-verifier/skill.md` 的契约；本文件只指定 L4 阶段门禁和 checklist。
+- read-only subagent 任务统一使用 `subskills/pasp-verifier/skill.md` 的契约；本文件只指定 L4 阶段门禁和 checklist。
 - inventory 不是 preflight。目录盘点、模板对比、日志摘要、输出清点都不能替代输入文件 preflight。
 - input preflight 不是 output validation。运行后若要把结果交给下游，必须单独做 output validation。
 - `notes/`、`drafts/`、`*.draft` 是草稿区；candidate 目录是待 preflight 候选区；`input/` 是正式输入基线；`runs/<run-id>/` 是实际运行目录。这四类不能混用。
@@ -95,9 +95,9 @@ L4 判据：
 候选输入包提升为正式 `input/`、覆盖 input、派生 `runs/<run-id>/`、创建或编辑提交 artifacts、准备外部任务配置、提交任务前，必须先做 read-only subagent input preflight。
 
 执行方式：
-- 使用 `skills/subskills/pasp-verifier/skill.md`，`mode: input-preflight`。
+- 使用 `subskills/pasp-verifier/skill.md`，`mode: input-preflight`。
 - preflight 必须点名 workflow、target stage、候选输入文件 / 目录、stage-specific checklist、用户确认记录、reference inventory。
-- 对 PASP 输入文件，preflight 必须检查每个显式 keyword、block、`%include`、依赖文件格式和编号规则是否有 `skills/knowledge/reference/` 或用户权威来源覆盖。
+- 对 PASP 输入文件，preflight 必须检查每个显式 keyword、block、`%include`、依赖文件格式和编号规则是否有 `knowledge/reference/` 或用户权威来源覆盖。
 - 主 agent 本地检查、目录盘点、模板对比、日志检查不能替代这一步。
 - 若 read-only subagent 无法执行，L4 formal input / run / submission preparation 必须 blocked；`NO_SUBAGENT_PREFLIGHT_AVAILABLE=true` 不足以继续。
 
@@ -191,7 +191,7 @@ Reference inventory: <reference files checked or gaps>
 
 检查：
 - PASP.input、MC.input、结构文件、local_mode_PM.dat、J_best.dat、所有 direct %include 和条件输入是否齐备。
-- 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 skills/knowledge/reference/ 或用户权威来源覆盖。
+- 每个显式 keyword、block、文件格式、编号规则和条件依赖是否有 knowledge/reference/ 或用户权威来源覆盖。
 - local_mode_PM.dat、J_best.dat、结构、mode definition、Z_values / Spin_values、SOC / cutoff / powers 是否存在无说明混用。
 - PT.M 与 planned MPI ranks / scheduler task count 是否匹配；unknown ranks 必须 blocked 或提交前复查。
 - nblk、nbeg_blk、PT.nblk_T、PT.niter 是否符合用户确认的 smoke-test / production 意图。

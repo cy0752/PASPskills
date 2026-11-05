@@ -5,7 +5,7 @@
 运行时必须优先使用：
 - `l4_monte_carlo_state_machine.md`
 - `l4_monte_carlo.md`
-- `skills/knowledge/reference/`
+- `knowledge/reference/`
 
 不要把本文件中的 `SuperCell`、`PT.M`、温度、步数、`Spin_values`、`Z_values`、cutoff、power、mode 数或输出全集直接复制到当前任务。
 

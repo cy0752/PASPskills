@@ -1,6 +1,6 @@
 # L5 Dynamics User Checklist
 
-这是给用户快速过一遍的 L5 dynamics checklist，覆盖 generic/new-material `atomic_effective_H` input preparation、Cr2O3 spin-lattice dynamics 和 BaTiO3 electric hysteresis。它不是 `l5_dynamics_state_machine.md` 的替代品，也不能替代 reference-before-write 规则：凡是要写或改 `PASP.input`、`MD.input`、block、文件格式、编号或条件依赖，仍必须先查 `skills/knowledge/reference/`。
+这是给用户快速过一遍的 L5 dynamics checklist，覆盖 generic/new-material `atomic_effective_H` input preparation、Cr2O3 spin-lattice dynamics 和 BaTiO3 electric hysteresis。它不是 `l5_dynamics_state_machine.md` 的替代品，也不能替代 reference-before-write 规则：凡是要写或改 `PASP.input`、`MD.input`、block、文件格式、编号或条件依赖，仍必须先查 `knowledge/reference/`。
 
 BaTiO3 electric hysteresis uses the separate section at the end of this checklist. Do not use the Cr2O3 stage 1 / 2 / 3 handoff rules to validate BaTiO3 `field.dat` / `P_abs.dat` analysis.
 
@@ -46,7 +46,7 @@ Before L5 preflight, confirm that `local_mode_PM.dat`, `J_best.dat`, structure r
 | Stage 2 spin heating | `2` | 加热 spin subsystem | spin relevant，lattice frozen by intent |
 | Stage 3 coupled SLD relaxation | `3` | spin 和 lattice 一起演化 / 弛豫 | both spin and lattice evaluated together |
 
-`SLD.mode` 的精确定义和写法以 `skills/knowledge/reference/params/SLD.mode.md` 为准。
+`SLD.mode` 的精确定义和写法以 `knowledge/reference/params/SLD.mode.md` 为准。
 
 ## 3. Cr2O3: 用户或上游必须给齐的文件
 

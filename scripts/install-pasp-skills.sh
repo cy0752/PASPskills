@@ -2,54 +2,45 @@
 set -euo pipefail
 
 usage() {
-  printf '%s\n' "Usage: $0 [--force] [--copy] [--source <PASPskills-repo-or-skills-dir>] [target-project-dir]"
-  printf '%s\n' ""
-  printf '%s\n' "Install the PASP skills package plus Codex and Claude integration into a target project."
-  printf '%s\n' "If target-project-dir is omitted, install into the current working directory."
-  printf '%s\n' ""
-  printf '%s\n' "Installs:"
-  printf '%s\n' "  <target>/skills/                         PASP runtime skills package"
-  printf '%s\n' "  <target>/.agents/skills/pasp-helper       Codex project skill symlink"
-  printf '%s\n' "  <target>/.agents/skills/pasp-verifier/     Codex verifier skill wrapper"
-  printf '%s\n' "  <target>/.codex/skills/pasp-helper     Codex project skill symlink"
-  printf '%s\n' "  <target>/.codex/skills/pasp-verifier/    Codex verifier skill wrapper"
-  printf '%s\n' "  <target>/.codex/agents/pasp-verifier.toml Read-only Codex agent config"
-  printf '%s\n' "  <target>/.claude/agents/pasp-verifier.md Read-only Claude subagent config"
-  printf '%s\n' "  <target>/.claude/skills/pasp-helper    Claude project skill symlink"
-  printf '%s\n' ""
-  printf '%s\n' "Options:"
-  printf '%s\n' "  --force    overwrite existing installed files"
-  printf '%s\n' "  --copy     copy this repo's skills directory instead of symlinking it"
-  printf '%s\n' "  --source   source PASPskills repo directory, or the skills directory itself"
-  printf '%s\n' ""
-  printf '%s\n' "Source resolution order:"
-  printf '%s\n' "  1. --source argument"
-  printf '%s\n' "  2. PASP_SKILLS_SOURCE environment variable"
-  printf '%s\n' "  3. path relative to this script, when run from the PASPskills repo"
-  printf '%s\n' "  4. ./ relative to the current working directory"
+  cat <<EOF
+Usage: $0 [--force] [--copy | --link] [--source <repo-or-skill-dir>] [target-project-dir]
+
+Install the complete PASP helper directly into a target project:
+  .agents/skills/pasp-helper/             Runtime package (copy by default)
+  .agents/skills/pasp-verifier/           Read-only verifier wrapper
+  .codex/agents/pasp-verifier.toml        Codex agent configuration
+  .claude/skills/pasp-helper             Link to the same project package
+  .claude/agents/pasp-verifier.md         Claude agent configuration
+
+No project-root skills/ directory or .codex/skills/ aliases are created.
+The target defaults to the current directory.
+
+Options:
+  --force   replace managed project entries and migrate recognized old installs
+  --copy    copy the package (default; independent of the source repository)
+  --link    link .agents/skills/pasp-helper directly to the external source
+  --source  source repository, package directory, or installed project
+
+Source resolution: --source, PASP_SKILLS_SOURCE, script location, then ./.
+Old copied root packages are backed up under .agents/pasp-install-backups/.
+User-level skills are left unchanged.
+EOF
 }
 
 force=0
-copy=0
-target="."
+mode=copy
+target=.
+target_set=0
 source_hint="${PASP_SKILLS_SOURCE:-}"
-default_source_root="./"
-
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --force)
-      force=1
-      shift
-      ;;
-    --copy)
-      copy=1
-      shift
-      ;;
+    --force) force=1; shift ;;
+    --copy) mode=copy; shift ;;
+    --link) mode=link; shift ;;
     --source)
       shift
-      if [ "$#" -eq 0 ]; then
+      if [ "$#" -eq 0 ] || [ -z "$1" ]; then
         printf 'Missing value for --source.\n' >&2
-        usage >&2
         exit 2
       fi
       source_hint="$1"
@@ -57,50 +48,38 @@ while [ "$#" -gt 0 ]; do
       ;;
     --source=*)
       source_hint="${1#--source=}"
+      if [ -z "$source_hint" ]; then
+        printf 'Missing value for --source.\n' >&2
+        exit 2
+      fi
       shift
       ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    -*)
-      printf 'Unknown option: %s\n' "$1" >&2
-      usage >&2
-      exit 2
-      ;;
+    -h|--help) usage; exit 0 ;;
+    -*) printf 'Unknown option: %s\n' "$1" >&2; exit 2 ;;
     *)
-      if [ "$target" != "." ]; then
+      if [ "$target_set" -eq 1 ]; then
         printf 'Only one target directory is allowed.\n' >&2
-        usage >&2
         exit 2
       fi
       target="$1"
+      target_set=1
       shift
       ;;
   esac
 done
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-mkdir -p "$target"
-target="$(cd "$target" && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
 resolve_source_skills() {
   local candidate="$1"
-
-  if [ -z "$candidate" ] || [ ! -d "$candidate" ]; then
-    return 1
-  fi
-
-  if [ -f "$candidate/skills/SKILL.md" ]; then
-    cd "$candidate/skills" && pwd -P
-    return 0
-  fi
-
-  if [ -f "$candidate/SKILL.md" ] && [ -d "$candidate/subskills" ] && [ -d "$candidate/knowledge" ]; then
-    cd "$candidate" && pwd -P
-    return 0
-  fi
-
+  local package
+  [ -d "$candidate" ] || return 1
+  for package in "$candidate/skills" "$candidate" "$candidate/.agents/skills/pasp-helper"; do
+    if [ -f "$package/SKILL.md" ] && [ -d "$package/subskills" ] && [ -d "$package/knowledge" ]; then
+      (cd "$package" && pwd -P)
+      return 0
+    fi
+  done
   return 1
 }
 
@@ -108,177 +87,175 @@ source_skills=""
 if [ -n "$source_hint" ]; then
   source_skills="$(resolve_source_skills "$source_hint" || true)"
 else
-  if [ "$(basename "$script_dir")" = "scripts" ]; then
-    source_skills="$(resolve_source_skills "$script_dir/.." || true)"
-  fi
-  if [ -z "$source_skills" ] && [ "$script_dir" != "$target" ]; then
+  source_skills="$(resolve_source_skills "$script_dir/.." || true)"
+  if [ -z "$source_skills" ]; then
     source_skills="$(resolve_source_skills "$script_dir" || true)"
   fi
   if [ -z "$source_skills" ]; then
-    source_skills="$(resolve_source_skills "$default_source_root" || true)"
+    source_skills="$(resolve_source_skills . || true)"
   fi
 fi
-
-if [ -z "$source_skills" ] || [ ! -f "$source_skills/SKILL.md" ]; then
-  if [ -n "$source_hint" ]; then
-    printf 'Cannot find source PASP skills package from --source/PASP_SKILLS_SOURCE: %s\n' "$source_hint" >&2
-  else
-    printf 'Cannot find source PASP skills package.\n' >&2
-    printf 'Tried relative paths from this script and default source root: %s\n' "$default_source_root" >&2
-  fi
-  printf 'Provide the source repo with: %s --source /path/to/PASPskills\n' "$0" >&2
-  printf 'Cannot find source PASP skills package at: %s\n' "$source_skills" >&2
+if [ -z "$source_skills" ]; then
+  printf 'Cannot find source PASP skills package; use --source /path/to/PASPskills.\n' >&2
   exit 1
 fi
 
-target_skills="$target/skills"
+mkdir -p "$target"
+target="$(cd "$target" && pwd -P)"
+legacy_root="$target/skills"
 target_agent_skills="$target/.agents/skills"
 target_agent_pasp_helper="$target_agent_skills/pasp-helper"
 target_agent_pasp_verifier="$target_agent_skills/pasp-verifier"
-target_codex_skills="$target/.codex/skills"
-target_codex_agents="$target/.codex/agents"
-target_claude_agents="$target/.claude/agents"
-target_pasp_helper="$target_codex_skills/pasp-helper"
-target_pasp_verifier_skill="$target_codex_skills/pasp-verifier"
-target_pasp_verifier_agent="$target_codex_agents/pasp-verifier.toml"
-target_claude_verifier_agent="$target_claude_agents/pasp-verifier.md"
-target_claude_skills="$target/.claude/skills"
-target_claude_pasp_helper="$target_claude_skills/pasp-helper"
-legacy_claude_user_skills_dir="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
-legacy_claude_user_pasp_dev="$legacy_claude_user_skills_dir/pasp-dev"
-legacy_claude_user_paspskills="$legacy_claude_user_skills_dir/paspskills"
-legacy_claude_user_pasp_helper="$legacy_claude_user_skills_dir/pasp-helper"
-legacy_codex_pasp_dev="$target_codex_skills/pasp-dev"
-legacy_claude_pasp_dev="$target_claude_skills/pasp-dev"
-legacy_codex_paspskills="$target_codex_skills/paspskills"
-legacy_claude_paspskills="$target_claude_skills/paspskills"
-legacy_agent_pasp_dev="$target_agent_skills/pasp-dev"
-legacy_agent_paspskills="$target_agent_skills/paspskills"
+target_pasp_verifier_agent="$target/.codex/agents/pasp-verifier.toml"
+target_claude_verifier_agent="$target/.claude/agents/pasp-verifier.md"
+target_claude_pasp_helper="$target/.claude/skills/pasp-helper"
 
-# Removing a real target directory must never remove the selected source.
-# A target symlink pointing at the source is safe to replace during upgrades.
-if [ -d "$target_skills" ] && [ ! -L "$target_skills" ]; then
-  physical_target_skills="$(cd "$target_skills" && pwd -P)"
-  case "$source_skills/" in
-    "$physical_target_skills/"*)
-      printf 'Source skills are inside the destination: %s\n' "$target_skills" >&2
-      printf 'Choose a separate target project; the source was left unchanged.\n' >&2
+exists() { [ -e "$1" ] || [ -L "$1" ]; }
+
+# Managed parent directories must remain inside this target, rather than
+# redirecting installation or recursive replacement into another project.
+for parent in "$target/.agents" "$target_agent_skills" "$target/.codex" \
+  "$target/.codex/agents" "$target/.claude" "$target/.claude/agents" "$target/.claude/skills"; do
+  if [ -L "$parent" ]; then
+    printf 'Refusing symlinked installation parent: %s\n' "$parent" >&2
+    exit 1
+  fi
+done
+
+is_pasp_package() {
+  [ -f "$1/SKILL.md" ] && [ -d "$1/knowledge" ] && [ -d "$1/subskills" ] &&
+    grep -Eq '^name:[[:space:]]*pasp-helper[[:space:]]*$' "$1/SKILL.md"
+}
+
+points_to_legacy_root() {
+  [ -L "$1" ] || return 1
+  local link
+  link="$(readlink "$1")"
+  [ "$link" = ../../skills ] || [ "$link" = "$legacy_root" ]
+}
+
+# Copying a package into its own subtree would recursively embed previous
+# installations on the next upgrade. Installing into the authoring repository
+# remains safe because its source package is the sibling root skills/ folder.
+if [ "$target_agent_pasp_helper" != "$source_skills" ]; then
+  case "$target_agent_pasp_helper/" in
+    "$source_skills/"*)
+      printf 'Destination is inside the source package; choose a separate project.\n' >&2
       exit 1
       ;;
   esac
 fi
 
-require_overwrite_ok() {
-  local path="$1"
-  if { [ -e "$path" ] || [ -L "$path" ]; } && [ "$force" -ne 1 ]; then
-    printf 'Refusing to overwrite existing path: %s\n' "$path" >&2
-    printf 'Re-run with --force to replace it.\n' >&2
+legacy_install=0
+if is_pasp_package "$legacy_root"; then
+  for entry in "$target_agent_pasp_helper" "$target/.codex/skills/pasp-helper" "$target_claude_pasp_helper"; do
+    if points_to_legacy_root "$entry"; then
+      legacy_install=1
+    fi
+  done
+fi
+
+managed_paths=("$target_agent_pasp_helper" "$target_agent_pasp_verifier"
+  "$target_pasp_verifier_agent" "$target_claude_verifier_agent" "$target_claude_pasp_helper")
+for path in "${managed_paths[@]}"; do
+  if exists "$path" && [ "$force" -ne 1 ]; then
+    printf 'Refusing to overwrite existing path: %s\nRe-run with --force to replace it.\n' "$path" >&2
     exit 1
+  fi
+  # Replacing a symlink itself never removes its referent. Replacing a real
+  # directory must not remove the selected source package or any ancestor.
+  if [ -d "$path" ] && [ ! -L "$path" ]; then
+    physical_path="$(cd "$path" && pwd -P)"
+    case "$source_skills/" in
+      "$physical_path/"*)
+        printf 'Source skills are inside the destination: %s\nSource was left unchanged.\n' "$path" >&2
+        exit 1
+        ;;
+    esac
+  fi
+done
+if [ "$legacy_install" -eq 1 ] && [ "$force" -ne 1 ]; then
+  printf 'Recognized an old root skills/ installation; re-run with --force to migrate it.\n' >&2
+  exit 1
+fi
+
+# Prepare copies before replacing anything; a copy remains independent even
+# when --source names a symlink. This staging directory is outside discovery.
+staging="$(mktemp -d "${TMPDIR:-/tmp}/pasp-install.XXXXXX")"
+trap 'rm -rf "$staging"' EXIT
+if [ "$mode" = copy ]; then
+  cp -a "$source_skills" "$staging/package"
+fi
+
+backup=""
+ensure_backup() {
+  if [ -z "$backup" ]; then
+    if [ -L "$target/.agents/pasp-install-backups" ]; then
+      printf 'Refusing symlinked backup directory.\n' >&2
+      exit 1
+    fi
+    mkdir -p "$target/.agents/pasp-install-backups"
+    backup="$(mktemp -d "$target/.agents/pasp-install-backups/migration.XXXXXX")"
   fi
 }
 
-require_overwrite_ok "$target_skills"
-require_overwrite_ok "$target_agent_pasp_helper"
-require_overwrite_ok "$target_agent_pasp_verifier"
-require_overwrite_ok "$target_pasp_helper"
-require_overwrite_ok "$target_pasp_verifier_skill"
-require_overwrite_ok "$target_pasp_verifier_agent"
-require_overwrite_ok "$target_claude_verifier_agent"
-require_overwrite_ok "$target_claude_pasp_helper"
-
-mkdir -p "$target_agent_skills" "$target_codex_skills" "$target_codex_agents" "$target_claude_agents" "$target_claude_skills"
-
-if { [ -e "$target_skills" ] || [ -L "$target_skills" ]; } && [ "$force" -eq 1 ]; then
-  rm -rf "$target_skills"
+if [ "$legacy_install" -eq 1 ]; then
+  preserve_root=0
+  if [ -d "$legacy_root" ]; then
+    physical_legacy="$(cd "$legacy_root" && pwd -P)"
+    case "$source_skills/" in "$physical_legacy/"*) preserve_root=1 ;; esac
+  fi
+  if [ "$preserve_root" -eq 1 ] && [ ! -L "$legacy_root" ]; then
+    printf 'Preserved root skills/: it contains the selected source package.\n'
+  elif [ -L "$legacy_root" ]; then
+    rm "$legacy_root"
+  else
+    ensure_backup
+    mv "$legacy_root" "$backup/skills"
+  fi
 fi
 
-if [ "$copy" -eq 1 ]; then
-  cp -a "$source_skills" "$target_skills"
+# Only remove known old project aliases, never arbitrary folders or user-level
+# skills. Unrecognized real folders remain unchanged.
+for name in pasp-helper pasp-verifier; do
+  old="$target/.codex/skills/$name"
+  if [ -L "$target/.codex/skills" ]; then
+    break
+  fi
+  if [ -L "$old" ]; then
+    link="$(readlink "$old")"
+    case "$link" in
+      ../../skills|../../.agents/skills/pasp-helper|../../.agents/skills/pasp-verifier|"$legacy_root")
+        if [ "$force" -eq 1 ]; then rm "$old"; fi
+        ;;
+    esac
+  fi
+done
+
+mkdir -p "$target_agent_skills" "$target/.codex/agents" "$target/.claude/agents" "$target/.claude/skills"
+for path in "${managed_paths[@]}"; do
+  if exists "$path"; then rm -rf "$path"; fi
+done
+if [ "$mode" = copy ]; then
+  mv "$staging/package" "$target_agent_pasp_helper"
 else
-  ln -s "$source_skills" "$target_skills"
-fi
-
-if { [ -e "$target_agent_pasp_helper" ] || [ -L "$target_agent_pasp_helper" ]; } && [ "$force" -eq 1 ]; then
-  rm -rf "$target_agent_pasp_helper"
-fi
-ln -s "../../skills" "$target_agent_pasp_helper"
-
-if { [ -e "$target_agent_pasp_verifier" ] || [ -L "$target_agent_pasp_verifier" ]; } && [ "$force" -eq 1 ]; then
-  rm -rf "$target_agent_pasp_verifier"
+  ln -s "$source_skills" "$target_agent_pasp_helper"
 fi
 mkdir -p "$target_agent_pasp_verifier"
-
-if { [ -e "$target_pasp_helper" ] || [ -L "$target_pasp_helper" ]; } && [ "$force" -eq 1 ]; then
-  rm -rf "$target_pasp_helper"
-fi
-ln -s "../../skills" "$target_pasp_helper"
-
-if { [ -e "$target_pasp_verifier_skill" ] || [ -L "$target_pasp_verifier_skill" ]; } && [ "$force" -eq 1 ]; then
-  rm -rf "$target_pasp_verifier_skill"
-fi
-ln -s "../../.agents/skills/pasp-verifier" "$target_pasp_verifier_skill"
 cat > "$target_agent_pasp_verifier/SKILL.md" <<'EOF'
 ---
 name: pasp-verifier
 description: Use the local read-only PASP verifier contract for bounded fact collection tasks.
 ---
 
-Read and follow `skills/subskills/pasp-verifier/skill.md` in this target project.
+Read `.agents/skills/pasp-helper/subskills/pasp-verifier/skill.md` from the
+project root. If navigating from this wrapper's directory, the same contract
+is `../pasp-helper/subskills/pasp-verifier/skill.md`.
 
-This project-level skill is a thin Codex wrapper. The canonical verifier contract lives in the installed PASP package so it stays versioned with `skills/knowledge/`.
+The canonical contract stays inside the installed helper package; do not
+copy its workflow or reference rules into this wrapper.
 EOF
-
-if { [ -e "$target_claude_pasp_helper" ] || [ -L "$target_claude_pasp_helper" ]; } && [ "$force" -eq 1 ]; then
-  rm -rf "$target_claude_pasp_helper"
-fi
-ln -s "../../skills" "$target_claude_pasp_helper"
-
-if [ "$force" -eq 1 ]; then
-  if { [ -e "$legacy_codex_pasp_dev" ] || [ -L "$legacy_codex_pasp_dev" ]; }; then
-    rm -rf "$legacy_codex_pasp_dev"
-  fi
-  if { [ -e "$legacy_claude_pasp_dev" ] || [ -L "$legacy_claude_pasp_dev" ]; }; then
-    rm -rf "$legacy_claude_pasp_dev"
-  fi
-  if { [ -e "$legacy_codex_paspskills" ] || [ -L "$legacy_codex_paspskills" ]; }; then
-    rm -rf "$legacy_codex_paspskills"
-  fi
-  if { [ -e "$legacy_claude_paspskills" ] || [ -L "$legacy_claude_paspskills" ]; }; then
-    rm -rf "$legacy_claude_paspskills"
-  fi
-  if { [ -e "$legacy_agent_pasp_dev" ] || [ -L "$legacy_agent_pasp_dev" ]; }; then
-    rm -rf "$legacy_agent_pasp_dev"
-  fi
-  if { [ -e "$legacy_agent_paspskills" ] || [ -L "$legacy_agent_paspskills" ]; }; then
-    rm -rf "$legacy_agent_paspskills"
-  fi
-else
-  if { [ -e "$legacy_codex_pasp_dev" ] || [ -L "$legacy_codex_pasp_dev" ] || [ -e "$legacy_claude_pasp_dev" ] || [ -L "$legacy_claude_pasp_dev" ] || [ -e "$legacy_codex_paspskills" ] || [ -L "$legacy_codex_paspskills" ] || [ -e "$legacy_claude_paspskills" ] || [ -L "$legacy_claude_paspskills" ]; }; then
-    printf '%s\n' "Warning: legacy project skill entries named pasp-dev or paspskills were left unchanged."
-    printf '%s\n' "Re-run with --force to remove legacy entries from .codex/skills and .claude/skills."
-  fi
-  if { [ -e "$legacy_agent_pasp_dev" ] || [ -L "$legacy_agent_pasp_dev" ] || [ -e "$legacy_agent_paspskills" ] || [ -L "$legacy_agent_paspskills" ]; }; then
-    printf '%s\n' "Warning: legacy Codex skill entries under $target_agent_skills were left unchanged."
-    printf '%s\n' "Re-run with --force to remove legacy pasp-dev and paspskills entries from .agents/skills."
-  fi
-fi
-
-if [ "$force" -eq 1 ]; then
-  if { [ -e "$legacy_claude_user_pasp_dev" ] || [ -L "$legacy_claude_user_pasp_dev" ]; }; then
-    rm -rf "$legacy_claude_user_pasp_dev"
-  fi
-  if { [ -e "$legacy_claude_user_paspskills" ] || [ -L "$legacy_claude_user_paspskills" ]; }; then
-    rm -rf "$legacy_claude_user_paspskills"
-  fi
-  if { [ -e "$legacy_claude_user_pasp_helper" ] || [ -L "$legacy_claude_user_pasp_helper" ]; }; then
-    rm -rf "$legacy_claude_user_pasp_helper"
-  fi
-else
-  if { [ -e "$legacy_claude_user_pasp_dev" ] || [ -L "$legacy_claude_user_pasp_dev" ] || [ -e "$legacy_claude_user_paspskills" ] || [ -L "$legacy_claude_user_paspskills" ] || [ -e "$legacy_claude_user_pasp_helper" ] || [ -L "$legacy_claude_user_pasp_helper" ]; }; then
-    printf '%s\n' "Warning: legacy Claude user-scope PASP skill entry was left unchanged."
-    printf '%s\n' "Re-run with --force to remove the legacy user-scope PASP skill entry."
-  fi
-fi
+ln -s "../../.agents/skills/pasp-helper" "$target_claude_pasp_helper"
 
 cat > "$target_pasp_verifier_agent" <<'EOF'
 name = "pasp-verifier"
@@ -289,7 +266,7 @@ developer_instructions = """
 You are the read-only PASP verifier agent.
 
 Before doing any task, read and follow:
-- skills/subskills/pasp-verifier/skill.md
+- .agents/skills/pasp-helper/subskills/pasp-verifier/skill.md
 
 Your role is bounded fact collection only. You may inspect named repository knowledge files, reference files, user input files, output files, logs, scripts, and directories. You must not modify files, decide scientific parameters, choose the final workflow route, promote inputs, create run directories, prepare submission artifacts, submit jobs, or write the final user-facing answer.
 
@@ -327,7 +304,7 @@ tools: Read, Glob, Grep
 You are the read-only PASP verifier agent.
 
 Before doing any task, read and follow:
-- `skills/subskills/pasp-verifier/skill.md`
+- `.agents/skills/pasp-helper/subskills/pasp-verifier/skill.md`
 
 Your role is bounded fact collection only. You may inspect named repository knowledge files, reference files, user input files, output files, logs, scripts, and directories. You must not modify files, decide scientific parameters, choose the final workflow route, promote inputs, create run directories, prepare submission artifacts, submit jobs, or write the final user-facing answer.
 
@@ -356,15 +333,11 @@ Conclusion: pass | fail | blocked | not-applicable
 EOF
 
 printf '%s\n' "Installed PASP skills into: $target"
-printf '%s\n' "  skills package: $target_skills"
-if [ "$copy" -eq 1 ]; then
-  printf '%s\n' "  skills mode:    copy"
-else
-  printf '%s\n' "  skills mode:    symlink -> $source_skills"
-fi
+printf '%s\n' "  skills package: $target_agent_pasp_helper"
+printf '%s\n' "  skills mode:    $mode"
 printf '%s\n' "  Codex skill:    $target_agent_pasp_helper/SKILL.md"
 printf '%s\n' "  Verifier skill: $target_agent_pasp_verifier/SKILL.md"
-printf '%s\n' "  Legacy alias:   $target_pasp_helper/SKILL.md"
 printf '%s\n' "  Codex agent:    $target_pasp_verifier_agent"
 printf '%s\n' "  Claude agent:   $target_claude_verifier_agent"
 printf '%s\n' "  Claude skill:   $target_claude_pasp_helper/SKILL.md"
+if [ -n "$backup" ]; then printf '%s\n' "  Migration backup: $backup"; fi

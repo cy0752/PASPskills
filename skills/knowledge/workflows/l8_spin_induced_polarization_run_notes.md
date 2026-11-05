@@ -5,7 +5,7 @@
 Runtime agents must prioritize:
 - `l8_spin_induced_polarization_state_machine.md`
 - `l8_spin_induced_polarization.md`
-- `skills/knowledge/reference/`
+- `knowledge/reference/`
 
 Do not copy this file's spin configurations, GKNB tensors, local axes, Born charges, force constants, elastic constants, spin-strain derivatives, `fig.maxk`, `fig.mdist`, structures, helper scripts or output examples into a current task.
 

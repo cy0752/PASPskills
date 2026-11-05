@@ -30,13 +30,13 @@ MVP 聚焦 Cr2O3 spin-lattice relaxation branch：
 本文档不解决：
 - effective Hamiltonian 的 shared-basis 构建、样本生成、DFT 数据整理或拟合；这些属于 L3。
 - Monte Carlo / PTMC / CG sampling；这些属于 L4。
-- 单个字段的默认值、单位、格式、编号规则；这些属于 `skills/knowledge/reference/`。
+- 单个字段的默认值、单位、格式、编号规则；这些属于 `knowledge/reference/`。
 
 ## 来源边界
 本 workflow 是基于 Lecture-5 Cr2O3 / BaTiO3 examples、reference cards、example directory audit 和 source-output audit 整理出的稳定运行契约。运行时只依赖：
-- `skills/knowledge/workflows/`
-- `skills/knowledge/reference/`
-- `skills/subskills/pasp-verifier/skill.md`
+- `knowledge/workflows/`
+- `knowledge/reference/`
+- `subskills/pasp-verifier/skill.md`
 
 Lecture examples、run notes 和源码路径只能作为 authoring 证据；不得把其中的 `SuperCell`、target temperatures、damping constants、time steps、total time、mode count、Slurm 设置或 PASP executable path 当成当前用户任务的默认值。
 
@@ -140,7 +140,7 @@ Generic branch routing is not material-name driven. If the material is neither C
 | Stage 3 coupled SLD relaxation | `SLD.mode 3` | Evolve spin and lattice together from validated stage 2 final state | Validated stage 2 `amp_local_mode.out` required before preflight |
 | Output validation | Completed run with logs and outputs | Check whether outputs can be plotted or handed downstream | S6 output validation |
 
-`SLD.mode` values and exact semantics must be checked in `skills/knowledge/reference/params/SLD.mode.md` before writing or changing the field.
+`SLD.mode` values and exact semantics must be checked in `knowledge/reference/params/SLD.mode.md` before writing or changing the field.
 
 ## Stage input packages
 
@@ -162,7 +162,7 @@ Generic branch routing is not material-name driven. If the material is neither C
 
 For generic packages, preflight must answer whether the package is internally consistent for the stated branch. It does not prove the effective Hamiltonian is scientifically valid, that fitted parameters are good, or that production settings are adequate.
 
-For mode masses, exact writes route through `skills/knowledge/reference/params/atom_Heff.MASS_local_mode.md`: all masses should be written as one continuous list in the block, count equals the current local-mode count, and order follows `mode_def.input` / `def_local_modes.dat` / `local_mode-*.xsf` evidence.
+For mode masses, exact writes route through `knowledge/reference/params/atom_Heff.MASS_local_mode.md`: all masses should be written as one continuous list in the block, count equals the current local-mode count, and order follows `mode_def.input` / `def_local_modes.dat` / `local_mode-*.xsf` evidence.
 
 ### Common required files for Cr2O3 MVP candidate packages
 
@@ -180,7 +180,7 @@ For mode masses, exact writes route through `skills/knowledge/reference/params/a
 | 用户 / 上游 | `elastic.dat`、`spin_strain.dat` | 条件必需 | Needed only when current settings / reference establish strain / spin-strain dependency |
 | 环境 | `run.sh` / `sub_pasp` / scheduler helper | 提交时需要 | Environment helper, not a scientific model input; submit-ready still requires gates and user authorization |
 
-`mode_def.input` and `mode_mass.input` appear in the Cr2O3 historical example as split include files. Their file roles, include-graph checks, row-count / order checks, and verifier expectations are covered by `skills/knowledge/reference/files/mode_def.input.md` and `skills/knowledge/reference/files/mode_mass.input.md`; exact block syntax still routes to `local_mode.mode_definition` and `atom_Heff.MASS_local_mode` param reference before writing.
+`mode_def.input` and `mode_mass.input` appear in the Cr2O3 historical example as split include files. Their file roles, include-graph checks, row-count / order checks, and verifier expectations are covered by `knowledge/reference/files/mode_def.input.md` and `knowledge/reference/files/mode_mass.input.md`; exact block syntax still routes to `local_mode.mode_definition` and `atom_Heff.MASS_local_mode` param reference before writing.
 
 ### Stage-specific handoff
 
@@ -228,39 +228,39 @@ Also check that `MD.aft_step` leaves a nonempty sampled window inside the total 
 
 | 对象 | Reference |
 |---|---|
-| `PASP.input` include、structure route、`SuperCell`、`Z_values`、`Spin_values` | `skills/knowledge/reference/topics/PASP.input.md` |
-| MD / ASD / SLD 总览 | `skills/knowledge/reference/topics/MD.input.md` |
-| `atom_Heff.MD` | `skills/knowledge/reference/params/atom_Heff.MD.md` |
-| `MD.Delta_t` | `skills/knowledge/reference/params/MD.Delta_t.md` |
-| `atom_Heff.MD_time` | `skills/knowledge/reference/params/atom_Heff.MD_time.md` |
-| `SLD.mode` | `skills/knowledge/reference/params/SLD.mode.md` |
-| `LLG.method` | `skills/knowledge/reference/params/LLG.method.md` |
-| `LLG.damping` | `skills/knowledge/reference/params/LLG.damping.md` |
-| `MD.damping` | `skills/knowledge/reference/params/MD.damping.md` |
-| `MD.temperature` | `skills/knowledge/reference/params/MD.temperature.md` |
-| `MD.init_velocity_temp` | `skills/knowledge/reference/params/MD.init_velocity_temp.md` |
-| `MD.aft_step`、`MD.int_step` | `skills/knowledge/reference/params/MD.aft_step.md`, `skills/knowledge/reference/params/MD.int_step.md` |
-| `MD.output_amp_lm` | `skills/knowledge/reference/params/MD.output_amp_lm.md` |
-| `MD.E_type` | `skills/knowledge/reference/params/MD.E_type.md` |
-| `MD.E_x`、`MD.E_y`、`MD.E_z` | `skills/knowledge/reference/params/MD.E_x_MD.E_y_MD.E_z.md` |
-| `MD.E_omega` | `skills/knowledge/reference/params/MD.E_omega.md` |
-| `MD.E_phi` | `skills/knowledge/reference/params/MD.E_phi.md` |
-| `Field_for_Electrocaloric` | `skills/knowledge/reference/params/Field_for_Electrocaloric.md` |
-| `atom_Heff.getP` | `skills/knowledge/reference/params/atom_Heff.getP.md` |
-| `local_mode.MD_mode_range` | `skills/knowledge/reference/params/local_mode.MD_mode_range.md` |
-| `mode_def.input` file role | `skills/knowledge/reference/files/mode_def.input.md` |
-| `local_mode.mode_definition` | `skills/knowledge/reference/params/local_mode.mode_definition.md` |
-| `mode_mass.input` file role | `skills/knowledge/reference/files/mode_mass.input.md` |
-| `atom_Heff.MASS_local_mode` | `skills/knowledge/reference/params/atom_Heff.MASS_local_mode.md` |
-| `local_mode_PM.dat` | `skills/knowledge/reference/files/local_mode_PM.dat.md` |
-| `J_best.dat` | `skills/knowledge/reference/files/J_best.dat.md` |
-| L2 four-state J bridge into `J_best.dat` | `skills/knowledge/reference/topics/four_state_method.md`, `skills/knowledge/reference/files/OUTCAR.md` |
-| shared-basis controls consumed from L3 | `skills/knowledge/reference/params/fig.maxk.md`, `skills/knowledge/reference/params/fig.mdist.md`, `skills/knowledge/reference/params/Invariant.power.md` |
-| `def_local_modes.dat` | `skills/knowledge/reference/files/def_local_modes.dat.md` |
-| `amp_local_mode.in` | `skills/knowledge/reference/files/amp_local_mode.in.md` |
-| `cell.str`、`unit_cell.str` | `skills/knowledge/reference/files/cell.str.md`, `skills/knowledge/reference/files/unit_cell.str.md` |
-| `Zeff.dat`、`elastic.dat`、`spin_strain.dat` | `skills/knowledge/reference/files/Zeff.dat.md`, `skills/knowledge/reference/files/elastic.dat.md`, `skills/knowledge/reference/files/spin_strain.dat.md` |
-| `field.dat`、`P_abs.dat` | `skills/knowledge/reference/files/field.dat.md`, `skills/knowledge/reference/files/P_abs.dat.md` |
+| `PASP.input` include、structure route、`SuperCell`、`Z_values`、`Spin_values` | `knowledge/reference/topics/PASP.input.md` |
+| MD / ASD / SLD 总览 | `knowledge/reference/topics/MD.input.md` |
+| `atom_Heff.MD` | `knowledge/reference/params/atom_Heff.MD.md` |
+| `MD.Delta_t` | `knowledge/reference/params/MD.Delta_t.md` |
+| `atom_Heff.MD_time` | `knowledge/reference/params/atom_Heff.MD_time.md` |
+| `SLD.mode` | `knowledge/reference/params/SLD.mode.md` |
+| `LLG.method` | `knowledge/reference/params/LLG.method.md` |
+| `LLG.damping` | `knowledge/reference/params/LLG.damping.md` |
+| `MD.damping` | `knowledge/reference/params/MD.damping.md` |
+| `MD.temperature` | `knowledge/reference/params/MD.temperature.md` |
+| `MD.init_velocity_temp` | `knowledge/reference/params/MD.init_velocity_temp.md` |
+| `MD.aft_step`、`MD.int_step` | `knowledge/reference/params/MD.aft_step.md`, `knowledge/reference/params/MD.int_step.md` |
+| `MD.output_amp_lm` | `knowledge/reference/params/MD.output_amp_lm.md` |
+| `MD.E_type` | `knowledge/reference/params/MD.E_type.md` |
+| `MD.E_x`、`MD.E_y`、`MD.E_z` | `knowledge/reference/params/MD.E_x_MD.E_y_MD.E_z.md` |
+| `MD.E_omega` | `knowledge/reference/params/MD.E_omega.md` |
+| `MD.E_phi` | `knowledge/reference/params/MD.E_phi.md` |
+| `Field_for_Electrocaloric` | `knowledge/reference/params/Field_for_Electrocaloric.md` |
+| `atom_Heff.getP` | `knowledge/reference/params/atom_Heff.getP.md` |
+| `local_mode.MD_mode_range` | `knowledge/reference/params/local_mode.MD_mode_range.md` |
+| `mode_def.input` file role | `knowledge/reference/files/mode_def.input.md` |
+| `local_mode.mode_definition` | `knowledge/reference/params/local_mode.mode_definition.md` |
+| `mode_mass.input` file role | `knowledge/reference/files/mode_mass.input.md` |
+| `atom_Heff.MASS_local_mode` | `knowledge/reference/params/atom_Heff.MASS_local_mode.md` |
+| `local_mode_PM.dat` | `knowledge/reference/files/local_mode_PM.dat.md` |
+| `J_best.dat` | `knowledge/reference/files/J_best.dat.md` |
+| L2 four-state J bridge into `J_best.dat` | `knowledge/reference/topics/four_state_method.md`, `knowledge/reference/files/OUTCAR.md` |
+| shared-basis controls consumed from L3 | `knowledge/reference/params/fig.maxk.md`, `knowledge/reference/params/fig.mdist.md`, `knowledge/reference/params/Invariant.power.md` |
+| `def_local_modes.dat` | `knowledge/reference/files/def_local_modes.dat.md` |
+| `amp_local_mode.in` | `knowledge/reference/files/amp_local_mode.in.md` |
+| `cell.str`、`unit_cell.str` | `knowledge/reference/files/cell.str.md`, `knowledge/reference/files/unit_cell.str.md` |
+| `Zeff.dat`、`elastic.dat`、`spin_strain.dat` | `knowledge/reference/files/Zeff.dat.md`, `knowledge/reference/files/elastic.dat.md`, `knowledge/reference/files/spin_strain.dat.md` |
+| `field.dat`、`P_abs.dat` | `knowledge/reference/files/field.dat.md`, `knowledge/reference/files/P_abs.dat.md` |
 
 如果 reference 没覆盖某个写法，最多写 draft / candidate，并标注需要用户权威来源或 read-only verifier blocked 结论；不得进入 formal input 或 submission preparation。
 

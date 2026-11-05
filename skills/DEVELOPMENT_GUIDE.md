@@ -1,5 +1,13 @@
 # PASP Skills 开发原则说明
 
+> 路径约定：本文的 `knowledge/...`、`subskills/...` 以包含顶层
+> `SKILL.md` 的 skill 根目录为基准；源码仓库中是 `skills/`，安装后通常是
+> `.agents/skills/pasp-helper/`。Markdown 链接和显式 `../` 相对当前文档。
+> shell 示例中的 `PASP_SKILL_ROOT` 应绑定为该根目录的绝对路径；例如从目标
+> 项目根目录执行 `PASP_SKILL_ROOT="$(cd .agents/skills/pasp-helper && pwd -P)"`。
+> 用户的计算输入与输出路径仍相对其工作目录。
+
+
 这份文档不是面向最终使用者的 README，而是面向**后续继续建设 PASP skills 的开发者说明**。
 
 它的作用是：在 Lecture 4–8 以及未来新增 workflow 继续标准化时，约束整体架构、目录边界、workflow/reference 分工、模板与脚本纳入原则，以及 Claude / Codex 在修改输入文件时应遵守的行为规则。
@@ -18,7 +26,7 @@
 
 1. 后续 workflow 应按什么结构写
 2. 哪些内容放 workflow，哪些内容放 reference
-3. 哪些示例文件值得纳入 `skills/knowledge/templates/` 或 `skills/knowledge/scripts/`
+3. 哪些示例文件值得纳入 `knowledge/templates/` 或 `knowledge/scripts/`
 4. 当用户、Claude 或 Codex 正在某个 workflow 中修改输入时，skills 应如何判断“当前能改什么、哪些必须先查 reference”
 
 这份文档就是这套开发原则的统一约束。
@@ -76,7 +84,7 @@ workflow 里可以写：
 workflow 可以告诉你“该看哪项”，但不应取代 reference 成为精确定义源。
 
 ### 原则 5：workflow 主文档只写稳定契约，历史实跑观察单独放 run-notes
-`skills/knowledge/workflows/*.md` 的主文档应只保留稳定、可复用、运行时安全的 workflow 契约，例如：
+`knowledge/workflows/*.md` 的主文档应只保留稳定、可复用、运行时安全的 workflow 契约，例如：
 - 当前阶段输入文件
 - 当前阶段已知输出
 - 上下游依赖
@@ -91,7 +99,7 @@ workflow 可以告诉你“该看哪项”，但不应取代 reference 成为精
 - 某次脚本修正所对应的具体目录布局实例
 
 这些内容应放到单独的 `*_run_notes.md` 文件，例如：
-- `skills/knowledge/workflows/l3_effective_hamiltonian_run_notes.md`
+- `knowledge/workflows/l3_effective_hamiltonian_run_notes.md`
 
 主 workflow 文档可以链接到 run-notes，但必须明确：
 - run-notes 记录的是历史观察，不是当前用户 workspace 的实时状态
@@ -108,28 +116,28 @@ workflow 可以告诉你“该看哪项”，但不应取代 reference 成为精
 需要时可在该目录下用 `rg` 按参数名、warning 文本、输出文件名或子程序名查找实现逻辑。
 
 但这些源码只应作为**开发和校准素材**，不能成为部署后 skills 的运行依赖。用户真正使用这套 skills 时，默认只能看到：
-- `skills/knowledge/workflows/`
-- `skills/knowledge/reference/`
-- `skills/knowledge/templates/`
-- `skills/knowledge/scripts/`
+- `knowledge/workflows/`
+- `knowledge/reference/`
+- `knowledge/templates/`
+- `knowledge/scripts/`
 - 必要的用户工作目录文件和运行日志
 
 因此，从源码中学到的稳定规则必须整理回 workflow、reference、templates 或 scripts 的说明中；不能要求最终用户或运行时 agent 再去读取源码才能正确使用 skill。
 
 ### 原则 7：测试或续跑某个 workflow 时，默认只看当前目标目录
 当用户已经明确给出当前要处理的 workflow 目录或结果目录时，开发者和 agent 在测试“这个 workflow 能否继续走通”时，默认只能使用两类信息：
-- `skills/knowledge/` 中已经整理好的自包含知识
+- `knowledge/` 中已经整理好的自包含知识
 - 用户当前指定的目标目录及其直接产物
 
 在没有用户明确允许之前，不得为了补足判断而去翻看其他 sibling workflow、其他 example、其他历史样例目录，也不得把别的例子里的材料参数、目录组织或文件组合拿来当当前目标目录的内容依据。
 
 这里要刻意区分两种用途：
-- **authoring / 抽象沉淀**：可以从历史讲义、源码或 example 中提炼可复用规则，再整理回 `skills/knowledge/`
+- **authoring / 抽象沉淀**：可以从历史讲义、源码或 example 中提炼可复用规则，再整理回 `knowledge/`
 - **当前目录验证 / 续跑**：必须以当前目标目录为主证据，不能跨目录借例子
 
 如果当前目标目录本身无法支持某个结论，正确动作是：
 - 先明确这是当前目录内尚未建立的事实
-- 优先退回 `skills/knowledge/` 中已有的稳定契约
+- 优先退回 `knowledge/` 中已有的稳定契约
 - 如果还不够，就问用户，而不是自行去别的例子里找“最像的”目录来套
 
 只有在用户明确授权“可以参考别的例子”后，才允许做跨 example 对比；而且即使这样，其他例子也只能作为**格式或历史参考**，不能直接覆盖当前目标目录已经给出的事实。
@@ -171,8 +179,8 @@ skills/
 不要把大量 PASP 领域知识堆在入口层。
 
 语言约定：
-- `skills/SKILL.md` 与 `skills/subskills/*/skill.md` 这类路由 / 薄入口文件使用英文，便于稳定触发 intent routing、STOP gate 和 delegation 规则。
-- `skills/knowledge/workflows/` 与 `skills/knowledge/reference/` 中的长知识文档可以继续使用中文；路径、文件名、参数名保持英文。
+- `SKILL.md` 与 `subskills/*/skill.md` 这类路由 / 薄入口文件使用英文，便于稳定触发 intent routing、STOP gate 和 delegation 规则。
+- `knowledge/workflows/` 与 `knowledge/reference/` 中的长知识文档可以继续使用中文；路径、文件名、参数名保持英文。
 - 不要为了英文入口层而把长 workflow 细节复制进 subskill；入口层只负责路由、硬 gate 和查阅哪个知识文件。
 
 ### 3.2 `subskills/pasp-orchestrator/skill.md`
@@ -194,7 +202,7 @@ skills/
 ### 3.3 `subskills/pasp-reference/skill.md`
 职责：
 - 作为字段/文件/模块/主题查询层
-- 查询来源仅限 `skills/knowledge/reference/`
+- 查询来源仅限 `knowledge/reference/`
 
 ### 3.4 `subskills/pasp-verifier/skill.md`
 职责：
@@ -208,15 +216,17 @@ skills/
 - 它不能决定 workflow 路由、不能替用户选择物理参数、不能修改文件、不能提升正式 input、不能准备或提交任务、不能输出最终用户答复
 
 平台注册文件由安装脚本生成：
-- `<target>/.codex/skills/pasp-helper`：Codex 项目级入口 skill，安装时软链接到工作目录的 `skills/`
-- `<target>/.codex/skills/pasp-verifier/SKILL.md`：Codex verifier skill wrapper
-- `<target>/.codex/agents/pasp-verifier.toml`：Codex read-only verifier agent
-- `<target>/.claude/skills/pasp-helper`：Claude 项目级入口 skill，安装时软链接到工作目录的 `skills/`
-- `<target>/.claude/agents/pasp-verifier.md`：Claude read-only verifier agent，使用 `tools: Read, Glob, Grep`
+- `<target>/.agents/skills/pasp-helper/`：完整 runtime 包，默认复制安装。
+- `<target>/.agents/skills/pasp-verifier/SKILL.md`：Codex verifier skill wrapper。
+- `<target>/.codex/agents/pasp-verifier.toml`：Codex read-only agent 配置。
+- `<target>/.claude/skills/pasp-helper`：指向 `.agents` 完整包的相对软链接。
+- `<target>/.claude/agents/pasp-verifier.md`：Claude read-only agent，使用 `tools: Read, Glob, Grep`。
 
-旧版安装可能留下 `$HOME/.claude/skills/pasp-dev`、`$HOME/.claude/skills/paspskills` 或 `$HOME/.claude/skills/pasp-helper` 这类 Claude 用户级入口；当前安装脚本只把它们作为 legacy user-scope entry 检查、警告或在 `--force` 时移除，不把它们作为新安装目标。
-
-这些入口 / agent 文件应保持很薄，只负责暴露或导向 `skills/subskills/pasp-verifier/skill.md`。不要在平台 wrapper 中复制完整 PASP reference、workflow gate 或 verifier mode 细节；否则安装目标和 PASP 包内容会漂移。
+新项目不生成根目录 `skills/` 或旧 `.codex/skills/` 别名。源码仓库的 `skills/` 仍是维护目录。
+`--link` 可显式让 canonical `.agents` 入口直接链接源包；默认副本不依赖源码路径。
+旧版迁移只操作识别出的 PASP 安装，实际旧包先备份到扫描目录以外的
+`.agents/pasp-install-backups/`，不清理用户主目录。所有 wrapper 都引用完整包里的
+`subskills/pasp-verifier/skill.md`；不要复制完整知识或 verifier 规则。
 
 ### 3.5 `subskills/workflow-*/skill.md`
 职责：
@@ -560,7 +570,7 @@ stage preflight 是事实检查，不是参数决策。subagent 或主 agent 检
    则必须先看 reference
 
 ### 字段 / 文件写入前的 reference gate
-无论是在开发 skills，还是在运行时 agent 帮用户生成、修改或覆盖 PASP 输入，只要要把某个字段、block、文件或编号规则实际写进用户目录，就必须先查 `skills/knowledge/reference/` 中对应的权威说明。
+无论是在开发 skills，还是在运行时 agent 帮用户生成、修改或覆盖 PASP 输入，只要要把某个字段、block、文件或编号规则实际写进用户目录，就必须先查 `knowledge/reference/` 中对应的权威说明。
 
 这条规则优先级高于模板、历史样例和 agent 记忆：
 - workflow 文档只能告诉 agent 当前阶段“应该考虑哪些项”和“这些项控制什么”
@@ -592,7 +602,7 @@ stage preflight 是事实检查，不是参数决策。subagent 或主 agent 检
 
 PASP workflow 往往包含较长的 reference 查询、用户目录盘点、日志阅读、模板对比和源码校准。为了避免主 agent 的上下文被这些材料占满，skills 可以鼓励主 agent 把边界清楚的查证型任务委派给 subagent。
 
-本仓库统一使用 `skills/subskills/pasp-verifier/skill.md` 作为 read-only PASP verifier 契约。workflow / reference 文档需要委派事实检查时，应优先引用它的 mode，而不是在每个 workflow 中重新发明一套 subagent 输出格式。当前标准 mode 包括：
+本仓库统一使用 `subskills/pasp-verifier/skill.md` 作为 read-only PASP verifier 契约。workflow / reference 文档需要委派事实检查时，应优先引用它的 mode，而不是在每个 workflow 中重新发明一套 subagent 输出格式。当前标准 mode 包括：
 - `reference-check`
 - `input-preflight`
 - `directory-inventory`
@@ -605,10 +615,10 @@ PASP workflow 往往包含较长的 reference 查询、用户目录盘点、日�
 平台安装层必须和这份契约分开：
 - Codex agent 注册文件是 `.codex/agents/pasp-verifier.toml`，使用 TOML 格式和 `sandbox_mode = "read-only"`。
 - Claude agent 注册文件是 `.claude/agents/pasp-verifier.md`，使用 frontmatter，例如 `tools: Read, Glob, Grep`。
-- Codex 项目级 skills 放在 `.codex/skills/`，Claude 项目级 skill 入口放在 `.claude/skills/`；它们都是平台入口 wrapper，不是 PASP runtime 知识源。
-- `$HOME/.claude/skills/pasp-dev`、`$HOME/.claude/skills/paspskills` 和 `$HOME/.claude/skills/pasp-helper` 都只是旧版 Claude 用户级入口。当前安装脚本只检查、警告或在 `--force` 时移除它们，不把它们作为新安装目标。
+- Codex 完整包放在 `.agents/skills/pasp-helper/`，只读 wrapper 在相邻 `pasp-verifier/`；Claude 的 `.claude/skills/pasp-helper` 共享同一包。
+- 用户主目录下的旧 Claude 入口由用户管理；项目安装不修改它们。
 
-不要手工维护多份 verifier 规则。新增 mode、修改输出格式或改变禁止事项时，先改 `skills/subskills/pasp-verifier/skill.md`，再更新 `scripts/install-pasp-skills.sh` 生成的 Codex / Claude wrapper，让 wrapper 继续引用 canonical 契约。默认使用安装脚本部署，不建议单独复制某一个 `.codex` 或 `.claude` 文件。安装脚本必须支持从源仓库直接运行，也支持把脚本单独复制到目标目录后运行；后者不能依赖脚本相对路径反推源仓库，必要时应通过 `--source` 或 `PASP_SKILLS_SOURCE` 指定源 PASPskills 仓库。
+不要手工维护多份 verifier 规则。新增 mode、修改输出格式或改变禁止事项时，先改 `subskills/pasp-verifier/skill.md`，再更新 `scripts/install-pasp-skills.sh` 生成的 Codex / Claude wrapper，让 wrapper 继续引用 canonical 契约。默认使用安装脚本部署，不建议单独复制某一个 `.codex` 或 `.claude` 文件。安装脚本必须支持从源仓库直接运行，也支持把脚本单独复制到目标目录后运行；后者不能依赖脚本相对路径反推源仓库，必要时应通过 `--source` 或 `PASP_SKILLS_SOURCE` 指定源 PASPskills 仓库。
 
 ### 9.0 授权优先规则
 如果当前运行环境要求用户显式授权才能使用 subagent，workflow skill 不能写成“自动调用 subagent”。正确写法是：
@@ -631,15 +641,15 @@ subagent 不应替主 agent 决定最终 workflow 路由，也不应在没有主
 
 ### 9.2 适合委派给 subagent 的任务
 适合委派的是范围小、可验证、可压缩汇报的任务，例如：
-- 用 `pasp-verifier` `mode: reference-check` 在 `skills/knowledge/reference/` 中查询一个参数、文件、topic 或 module 的精确定义
+- 用 `pasp-verifier` `mode: reference-check` 在 `knowledge/reference/` 中查询一个参数、文件、topic 或 module 的精确定义
 - 用 `pasp-verifier` `mode: directory-inventory` 盘点用户运行目录，识别已有输入、可能的阶段线索、缺失文件和不确定项；它不能替代 input preflight
 - 用 `pasp-verifier` `mode: input-preflight` 对候选 `<stage>/input/` 或 `<stage>/runs/<run-id>/` 做只读 stage preflight，检查文件齐全性、上游来源、用户确认记录和 stage-specific checklist
 - 用 `pasp-verifier` `mode: output-validation` 对已完成 run 做只读 output validation，清点实际输出、日志、失败样本、下游 handoff 文件和输出数据链一致性
 - 用 `pasp-verifier` `mode: structure-analysis` 对 `POSCAR`、候选 `POSCAR_UC`、`cell.str`、`unit_cell.str`、`SuperCell` 做只读结构关系分析，汇报 primitive 判断、轴向、元素顺序、原子映射、体积比和不确定项
 - 用 `pasp-verifier` `mode: log-summary` 阅读 PASP 运行日志，提取首个关键错误、相关 warning、出错阶段和可能关联的输入文件
-- 用 `pasp-verifier` `mode: template-compare` 将用户输入文件与 `skills/knowledge/templates/` 中的模板做结构差异对比
+- 用 `pasp-verifier` `mode: template-compare` 将用户输入文件与 `knowledge/templates/` 中的模板做结构差异对比
 - 用 `pasp-verifier` `mode: source-audit` 在开发 skills 时检索 PASP / Latticemodel 源码，用于确认隐藏输出、warning 触发条件或文件生成逻辑
-- 按 workflow 规范审查某个 `skills/knowledge/workflows/*.md` 是否缺少输入、输出、上下游依赖、可调项或 reference handoff
+- 按 workflow 规范审查某个 `knowledge/workflows/*.md` 是否缺少输入、输出、上下游依赖、可调项或 reference handoff
 
 ### 9.3 不适合委派给 subagent 的任务
 不应委派给 subagent 独立完成：
@@ -703,7 +713,7 @@ subagent 只汇报事实和局部判断，不输出最终用户答复。主 agen
 Lecture 2 / Lecture 3 目前是最完整的可复用标准；Lecture 4–8 已有基础 workflow / subskill 覆盖，L4 已有 state machine 与 run-notes，但整体仍需要按同一标准继续补齐模板、脚本、调参护栏、preflight 细节，并为 L5–L8 评估是否需要补充 state machine / run-notes。后续几个 workflow 建议尽量延续：
 
 - workflow 文档不是只讲概念，而是要能指导实际执行
-- examples 中有复用价值的模板和脚本，应提炼到 `skills/knowledge/`
+- examples 中有复用价值的模板和脚本，应提炼到 `knowledge/`
 - workflow 文档中必须有“调参护栏”结构
 - reference 继续保持为字段定义和格式规则的权威来源
 - skill 路由保持“workflow-first, reference-on-demand”的混合模式

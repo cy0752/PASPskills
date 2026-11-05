@@ -92,7 +92,7 @@ If the chosen workflow still has plausible internal paths, structure-input route
 
 ## Mixed Questions and Subagent Rules
 - `mixed` is only a routing order. It is not "not reference".
-- If a mixed answer needs actual lookup in `skills/knowledge/reference/`, handle subagent authorization as a reference lookup.
+- If a mixed answer needs actual lookup in `knowledge/reference/`, handle subagent authorization as a reference lookup.
 - If the runtime requires explicit user authorization for subagents, ask whether reference lookup may be delegated before reading reference cards, file docs, topics, or modules.
 - Do not skip this just because the request first went through workflow routing.
 
@@ -239,7 +239,7 @@ Good delegated tasks:
 - `pasp-verifier` `mode: output-validation` for a named completed run or output directory
 - `pasp-verifier` `mode: structure-analysis` for named `POSCAR`, `POSCAR_UC`, `cell.str`, `unit_cell.str`, or `SuperCell` relationships
 - `pasp-verifier` `mode: log-summary` for long PASP, DFT, or helper-script logs
-- `pasp-verifier` `mode: template-compare` for user input files against `skills/knowledge/templates/`
+- `pasp-verifier` `mode: template-compare` for user input files against `knowledge/templates/`
 - `pasp-verifier` `mode: source-audit` during skill development, while runtime skills must not depend on source code
 
 Do not delegate:

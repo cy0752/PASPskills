@@ -15,13 +15,13 @@
 本文档不解决：
 - effective Hamiltonian 的 shared-basis 构建、样本生成、DFT 数据整理或拟合；这些属于 L3。
 - `spin_exchange.dat` + `Model Spin_lattice_interaction` 的磁基态 / magnon handoff；这些属于 L2。
-- 单个字段的默认值、单位、格式、编号规则；这些属于 `skills/knowledge/reference/`。
+- 单个字段的默认值、单位、格式、编号规则；这些属于 `knowledge/reference/`。
 
 ## 来源边界
 本 workflow 是基于 Lecture-4、L3/L2 workflow、reference cards、examples 和源码审计整理出的稳定运行契约。运行时只依赖：
-- `skills/knowledge/workflows/`
-- `skills/knowledge/reference/`
-- `skills/subskills/pasp-verifier/skill.md`
+- `knowledge/workflows/`
+- `knowledge/reference/`
+- `subskills/pasp-verifier/skill.md`
 
 Lecture examples、旧 run 和源码路径只能作为 authoring 证据；不得把其中的 `SuperCell`、`PT.M`、温度、步数、cutoff、`Spin_values`、`Z_values` 或输出文件全集当成当前用户任务的默认值。
 
@@ -50,7 +50,7 @@ Lecture examples、旧 run 和源码路径只能作为 authoring 证据；不得
 派生 run 目录时要避免把历史输出残留带入新 run。若 `input/` 或 candidate 是从旧 example / complete / previous run 复制来的，先清点文件角色；新 run 只复制当前需要的 `PASP.input`、`MC.input`、direct `%include` 文件、`local_mode_PM.dat`、`J_best.dat`、条件输入文件和运行 helper。旧 `PASP.used_info`、`log.out`、`T.dat`、`*_used.dat`、`T_*`、`final_*`、`lowest_ene.*`、`*_PTMC*` 等文件不得进入新 run。
 
 ## Preflight 硬门禁
-候选输入包在提升为正式 `input/`、覆盖正式 input、派生 `runs/<run-id>/`、创建或编辑提交 artifacts、准备外部任务配置或提交任务前，必须使用 `skills/subskills/pasp-verifier/skill.md`：
+候选输入包在提升为正式 `input/`、覆盖正式 input、派生 `runs/<run-id>/`、创建或编辑提交 artifacts、准备外部任务配置或提交任务前，必须使用 `subskills/pasp-verifier/skill.md`：
 
 ```text
 mode: input-preflight
@@ -155,26 +155,26 @@ preflight 是 read-only subagent 任务。主 agent 本地检查、目录盘点�
 
 | 对象 | Reference |
 |---|---|
-| `PASP.input` include、结构、`SuperCell`、`Z_values`、`Spin_values`、外场 | `skills/knowledge/reference/topics/PASP.input.md` |
-| MC / PTMC / CG 总览 | `skills/knowledge/reference/topics/MC.input.md` |
-| `local_mode_PM.dat` | `skills/knowledge/reference/files/local_mode_PM.dat.md` |
-| `J_best.dat` | `skills/knowledge/reference/files/J_best.dat.md` |
-| `amp_local_mode.in` | `skills/knowledge/reference/files/amp_local_mode.in.md` |
-| `Zeff.dat` | `skills/knowledge/reference/files/Zeff.dat.md` |
-| `seed.in` | `skills/knowledge/reference/files/seed.in.md` |
-| `PT.M`、`PT.low_temp`、`PT.high_temp`、`PT.Tmesh`、`PT.nblk_T`、`PT.niter` | `skills/knowledge/reference/params/` |
-| `nblk`、`nbeg_blk` | `skills/knowledge/reference/params/` |
-| `MC`、`Parallel_Tempering`、`Temperature`、`global.heat_bath` | `skills/knowledge/reference/params/` |
-| `Read_init_spin` | `skills/knowledge/reference/params/Read_init_spin.md` |
-| `MC.init_spin_unitcell` | `skills/knowledge/reference/params/MC.init_spin_unitcell.md` |
-| `local_mode.read_interaction` | `skills/knowledge/reference/params/local_mode.read_interaction.md` |
-| `local_mode.mode_definition` | `skills/knowledge/reference/params/local_mode.mode_definition.md` |
-| `local_mode.MC_mode_range` | `skills/knowledge/reference/params/local_mode.MC_mode_range.md` |
-| `atom_Heff.getP` | `skills/knowledge/reference/params/atom_Heff.getP.md` |
-| `atom_Heff.cal_mag` | `skills/knowledge/reference/params/atom_Heff.cal_mag.md` |
-| `atom_Heff.homogeneous_strain`、`atom_Heff.inhomogeneous_strain`、`atom_Heff.relax_str` | `skills/knowledge/reference/params/` |
-| `atom_Heff.auto_adjust_try_amp`、`atom_Heff.try_amp.change_rate` | `skills/knowledge/reference/params/` |
-| CG / relax controls such as `opt.NSW`、`opt.EDIFFG` | `skills/knowledge/reference/params/` |
+| `PASP.input` include、结构、`SuperCell`、`Z_values`、`Spin_values`、外场 | `knowledge/reference/topics/PASP.input.md` |
+| MC / PTMC / CG 总览 | `knowledge/reference/topics/MC.input.md` |
+| `local_mode_PM.dat` | `knowledge/reference/files/local_mode_PM.dat.md` |
+| `J_best.dat` | `knowledge/reference/files/J_best.dat.md` |
+| `amp_local_mode.in` | `knowledge/reference/files/amp_local_mode.in.md` |
+| `Zeff.dat` | `knowledge/reference/files/Zeff.dat.md` |
+| `seed.in` | `knowledge/reference/files/seed.in.md` |
+| `PT.M`、`PT.low_temp`、`PT.high_temp`、`PT.Tmesh`、`PT.nblk_T`、`PT.niter` | `knowledge/reference/params/` |
+| `nblk`、`nbeg_blk` | `knowledge/reference/params/` |
+| `MC`、`Parallel_Tempering`、`Temperature`、`global.heat_bath` | `knowledge/reference/params/` |
+| `Read_init_spin` | `knowledge/reference/params/Read_init_spin.md` |
+| `MC.init_spin_unitcell` | `knowledge/reference/params/MC.init_spin_unitcell.md` |
+| `local_mode.read_interaction` | `knowledge/reference/params/local_mode.read_interaction.md` |
+| `local_mode.mode_definition` | `knowledge/reference/params/local_mode.mode_definition.md` |
+| `local_mode.MC_mode_range` | `knowledge/reference/params/local_mode.MC_mode_range.md` |
+| `atom_Heff.getP` | `knowledge/reference/params/atom_Heff.getP.md` |
+| `atom_Heff.cal_mag` | `knowledge/reference/params/atom_Heff.cal_mag.md` |
+| `atom_Heff.homogeneous_strain`、`atom_Heff.inhomogeneous_strain`、`atom_Heff.relax_str` | `knowledge/reference/params/` |
+| `atom_Heff.auto_adjust_try_amp`、`atom_Heff.try_amp.change_rate` | `knowledge/reference/params/` |
+| CG / relax controls such as `opt.NSW`、`opt.EDIFFG` | `knowledge/reference/params/` |
 
 如果 reference 没覆盖某个写法，最多写 draft / candidate，并标注需要用户权威来源或 read-only verifier blocked 结论；不得进入 formal input 或 submission preparation。
 
@@ -328,7 +328,7 @@ Workflow / stage: L4 Monte Carlo / output validation
 - fail / blocked 只能进入 rerun、debug、补证据或用户风险确认，不能直接绘图或传给后续 workflow。
 
 ### 本阶段使用的脚本 / helpers
-- 优先使用 `skills/subskills/pasp-verifier/skill.md` 的 `mode: output-validation` 做只读事实检查。
+- 优先使用 `subskills/pasp-verifier/skill.md` 的 `mode: output-validation` 做只读事实检查。
 - 可使用用户提供的只读分析脚本辅助检查输出形状或列数，但脚本结果不能覆盖日志和 `PASP.used_info` 证据。
 
 ### 通用检查
@@ -406,4 +406,4 @@ handoff 必须在 output validation pass 后进行，并记录 provenance：
 - `J_best.dat`、`local_mode_PM.dat`、`amp_local_mode.in`、`Zeff.dat` 的完整格式。
 - 任何从 Lecture-4 examples 或旧 run 中继承的材料特定参数是否适合当前体系。
 
-这些问题应转到 `skills/knowledge/reference/` 或由用户提供当前任务的权威来源。
+这些问题应转到 `knowledge/reference/` 或由用户提供当前任务的权威来源。

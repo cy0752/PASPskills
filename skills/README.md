@@ -1,5 +1,13 @@
 # PASP Skills 包说明
 
+> 路径约定：本文的 `knowledge/...`、`subskills/...` 以包含顶层
+> `SKILL.md` 的 skill 根目录为基准；源码仓库中是 `skills/`，安装后通常是
+> `.agents/skills/pasp-helper/`。Markdown 链接和显式 `../` 相对当前文档。
+> shell 示例中的 `PASP_SKILL_ROOT` 应绑定为该根目录的绝对路径；例如从目标
+> 项目根目录执行 `PASP_SKILL_ROOT="$(cd .agents/skills/pasp-helper && pwd -P)"`。
+> 用户的计算输入与输出路径仍相对其工作目录。
+
+
 这是一个**可直接复制部署**的 PASP skills 包。
 
 它的目标是把 PASP 相关问答拆成两类：
@@ -370,10 +378,10 @@ reference 知识库。
 ## 6. 运行时依赖边界
 
 这套 skills 在运行时**只依赖以下目录**：
-- `skills/knowledge/workflows/`
-- `skills/knowledge/templates/`
-- `skills/knowledge/scripts/`
-- `skills/knowledge/reference/`
+- `knowledge/workflows/`
+- `knowledge/templates/`
+- `knowledge/scripts/`
+- `knowledge/reference/`
 
 也就是说：
 - 不依赖 `pasp_slides_md/`
@@ -386,64 +394,37 @@ reference 知识库。
 
 ## 7. 部署到服务器时的建议
 
-如果你要把这套 skills 拷到服务器：
-
-### 推荐做法
-进入目标项目目录后，使用安装脚本把 PASP skills 包、Codex 集成和 Claude 集成都装到当前目录。当前默认使用 symlink 指向本仓库的 `skills/`，方便开发期间同步更新：
+源码仓库的 `skills/` 是维护目录。用户项目默认安装一个独立副本到
+`.agents/skills/pasp-helper/`，无需根目录 `skills/` 或 `.codex/skills/` 别名。
 
 ```bash
-cd /path/to/target-project
-/path/to/PASPskills/scripts/install-pasp-skills.sh
+/path/to/PASPskills/scripts/install-pasp-skills.sh /path/to/target-project
 ```
 
-也可以把脚本复制到目标目录后直接运行：
+安装内容：
+- `.agents/skills/pasp-helper/`：完整 runtime 包，包含入口、子 skill 和知识。
+- `.agents/skills/pasp-verifier/SKILL.md`：引用同包契约的 Codex wrapper。
+- `.codex/agents/pasp-verifier.toml`：只读 Codex agent 配置。
+- `.claude/skills/pasp-helper`：指向 `.agents/skills/pasp-helper` 的相对软链接。
+- `.claude/agents/pasp-verifier.md`：只读 Claude agent 配置。
+
+更新源仓库后，用 `--force` 重新安装。`--copy` 兼容旧命令且等同默认模式；开发期间需要
+跟随外部源码更新时显式使用 `--link`，使 canonical 入口直接链接源包。
 
 ```bash
-cp /path/to/PASPskills/scripts/install-pasp-skills.sh /path/to/target-project/
-cd /path/to/target-project
-./install-pasp-skills.sh
+/path/to/PASPskills/scripts/install-pasp-skills.sh --force /path/to/target-project
+/path/to/PASPskills/scripts/install-pasp-skills.sh --force --link /path/to/target-project
 ```
 
-脚本会优先从自身相对路径识别源仓库；如果脚本是单独复制过去的，建议用 `--source /path/to/PASPskills` 或环境变量 `PASP_SKILLS_SOURCE=/path/to/PASPskills` 指定源仓库。最后的默认 fallback 是当前工作目录 `./`。
+旧版识别出的根目录实际 PASP 包先备份到 `.agents/pasp-install-backups/` 再迁移，识别出的
+旧链接只移除链接；无关目录及本次选定来源保留。用户主目录配置不由此项目安装清理。
+备份不放在 `.agents/skills/` 中，以免被重复扫描。安装前自行备份当前安装包里的自定义内容。
 
-它会安装：
-- `/path/to/target-project/skills/`：PASP runtime skills package
-- `/path/to/target-project/.codex/skills/pasp-helper`：Codex 项目级入口 skill，软链接到工作目录的 `skills/`
-- `/path/to/target-project/.codex/skills/pasp-verifier/SKILL.md`：Codex verifier skill 包装器
-- `/path/to/target-project/.codex/agents/pasp-verifier.toml`：read-only Codex verifier subagent 配置
-- `/path/to/target-project/.claude/agents/pasp-verifier.md`：read-only Claude verifier subagent 配置
-- `/path/to/target-project/.claude/skills/pasp-helper`：Claude 项目级入口 skill，软链接到工作目录的 `skills/`
+单独复制安装脚本时，使用 `--source /path/to/PASPskills` 或环境变量
+`PASP_SKILLS_SOURCE` 指定来源。详见源码仓库根目录 README 的安装与升级说明。
 
-如果目标目录已有旧版本，使用：
-
-```bash
-/path/to/PASPskills/scripts/install-pasp-skills.sh --force
-```
-
-如果希望安装一份独立副本，而不是 symlink，使用：
-
-```bash
-/path/to/PASPskills/scripts/install-pasp-skills.sh --copy
-```
-
-如果从目标目录里的脚本安装，但源仓库不在当前工作目录，使用：
-
-```bash
-./install-pasp-skills.sh --source /path/to/PASPskills
-```
-
-如果不使用 Codex / Claude 集成，也可以手动复制整个 `skills/` 目录，但这样不会自动安装 `.codex/skills/`、`.codex/agents/`、`.claude/agents/` 或 `.claude/skills/`。
-
-安装后的分层含义：
-- `skills/subskills/pasp-verifier/skill.md` 是 PASP 包内部的 canonical verifier 契约。
-- `.codex/skills/pasp-helper` 是 Codex 项目级入口，指向工作目录 `skills/`。
-- `.codex/skills/pasp-verifier/SKILL.md` 和 `.codex/agents/pasp-verifier.toml` 是 Codex 平台包装层。
-- `.claude/skills/pasp-helper` 是 Claude 项目级入口，指向工作目录 `skills/`。
-- `.claude/agents/pasp-verifier.md` 是 Claude 平台包装层。
-
-平台入口 / 包装层只负责暴露或导向 `skills/subskills/pasp-verifier/skill.md`，不要手工把 verifier 规则复制成多份长期维护。
-
-旧版安装可能留下 `$HOME/.claude/skills/pasp-dev`、`$HOME/.claude/skills/paspskills` 或 `$HOME/.claude/skills/pasp-helper` 这类 Claude 用户级入口；当前安装脚本只把它们作为 legacy user-scope entry 检查、警告，或在 `--force` 时移除。新的 Claude 入口安装到目标项目的 `.claude/skills/pasp-helper`。
+平台 wrapper 统一引用安装包内的 `subskills/pasp-verifier/skill.md`，不要维护多份完整契约。
+包内路径以加载的顶层 `SKILL.md` 所在目录为准，计算文件以用户工作目录为准。
 
 ### 注意事项
 1. **保留目录层级不变**
@@ -514,7 +495,7 @@ cd /path/to/target-project
 
 它约束了：
 - workflow / reference 的分工边界
-- 模板与脚本是否应该纳入 `skills/knowledge/`
+- 模板与脚本是否应该纳入 `knowledge/`
 - workflow 中“当前阶段可调整项 / 每项控制什么 / 何时先查 reference”的写法
 - Claude / Codex 在帮助修改输入文件时应遵守的调参护栏
 
@@ -542,6 +523,6 @@ cd /path/to/target-project
    - `toc/`
    - `QUERY_GUIDE.md`
    - `STRUCTURE.md`
-5. README 中写到的运行时依赖是否仍然只指向 `skills/knowledge/`
+5. README 中写到的运行时依赖是否仍然只指向 `knowledge/`
 
 如果这些条件都成立，说明 README 和当前目录结构仍然一致。

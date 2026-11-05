@@ -39,7 +39,7 @@
 
 ## Reference-before-write
 
-准备写入或修改任何 PASP 字段、block、文件格式、编号规则时，必须先读对应 `skills/knowledge/reference/` 卡片。
+准备写入或修改任何 PASP 字段、block、文件格式、编号规则时，必须先读对应 `knowledge/reference/` 卡片。
 
 高风险字段：
 - 结构与编号：`cell.str`、`unit_cell.str`、`SuperCell`、`Z_values`、`isaAB`、`Spin_values`
@@ -220,7 +220,7 @@ Stage 1 完整输入包。
 
 **任何不一致都会导致 magnon 静默给出错误结果**（不一定崩溃）。Pre-flight 2 必须确认。
 
-更多 collinear / spiral 差异见 `skills/knowledge/reference/topics/magnon_collinear_vs_spiral.md`。
+更多 collinear / spiral 差异见 `knowledge/reference/topics/magnon_collinear_vs_spiral.md`。
 
 ---
 
@@ -232,7 +232,7 @@ Stage 1 完整输入包。
 - **Params**: `Model` / `SuperCell` / `Z_values` / `isaAB` / `Spin_values` / `fig.maxk` / `fig.mdist` / `spin_lat.general_J` / `Read_init_spin` / `qpoints.magnon` / `number_of_qpoints` / `spin_noncollinear`
 - **Topics**: `magnon_collinear_vs_spiral`
 
-完整路径：均在 `skills/knowledge/reference/`。
+完整路径：均在 `knowledge/reference/`。
 
 ---
 

@@ -1,6 +1,6 @@
 # L2 find_J_path_sym Template
 
-> Minimal input package for `Model find_J_path_sym`. Used by `skills/knowledge/workflows/l2_find_J_path_sym.md` Stage 1 as the starting baseline.
+> Minimal input package for `Model find_J_path_sym`. Used by `knowledge/workflows/l2_find_J_path_sym.md` Stage 1 as the starting baseline.
 
 ---
 

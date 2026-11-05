@@ -9,7 +9,7 @@
 - Lecture-8 examples 和 run notes 是历史观察。它们的 `Spin_values`、`GKNB_inter_site` 张量、`GKNB.local_axis`、`fig.maxk`、`fig.mdist`、结构、Born charge、force constants、elastic constants 和提交脚本都不是当前材料默认值。
 - `继续`、`ok`、`按例子来`、`去提交` 不确认 L8 分支、坐标系、局域轴、GKNB 张量、spin3 行序、Born charge / force-constant provenance、应变/应力策略或提交授权。
 - `可以使用 subagent` only permits read-only fact collection when the runtime supports it. It does not confirm scientific parameters, promote files, create run directories, prepare submission artifacts, or submit jobs.
-- Read-only verifier tasks use `skills/subskills/pasp-verifier/skill.md`. The verifier cannot edit files, choose physical parameters, promote inputs, create runs, prepare submissions, submit jobs, or produce the final user answer.
+- Read-only verifier tasks use `subskills/pasp-verifier/skill.md`. The verifier cannot edit files, choose physical parameters, promote inputs, create runs, prepare submissions, submit jobs, or produce the final user answer.
 - Input preflight is not output validation. Preflight controls whether a candidate package can become formal input or a run; output validation controls whether completed outputs can be used.
 - `drafts/`, `notes/`, candidate package, formal `input/`, and `runs/<run-id>/` are separate states. Promotion requires explicit flags.
 - Do not copy stale outputs such as `PASP.used_info`, `spin3.xsf`, `Ppair.xsf`, `GKNB_data.*`, `1.xsf`, `2.xsf`, `3.xsf`, `*dJ.xsf`, old logs or scheduler outputs into a fresh input package.
@@ -115,7 +115,7 @@ Before formal input, run derivation, submission-preparation or submission, the u
 Candidate package promotion, formal input overwrite, run derivation, submit-ready helper editing, external task preparation and submission all require read-only input preflight first.
 
 执行方式：
-- Use `skills/subskills/pasp-verifier/skill.md`, `mode: input-preflight`.
+- Use `subskills/pasp-verifier/skill.md`, `mode: input-preflight`.
 - Inputs must name workflow `L8 spin-induced polarization`, target branch, exact candidate directory, user-confirmation record and reference inventory.
 - Preflight checks the actual candidate package, not sibling examples or run notes.
 
@@ -164,7 +164,7 @@ Submission remains separate. Even with S5 flags, actual job submission needs exp
 After a run completes and before reporting polarization components, visualizations, force/stress contributions or downstream handoff, run output validation.
 
 执行方式：
-- Prefer `skills/subskills/pasp-verifier/skill.md`, `mode: output-validation`.
+- Prefer `subskills/pasp-verifier/skill.md`, `mode: output-validation`.
 - Inputs must name exact run/output directory, expected output files, logs and branch.
 
 L8 validation minimum:

@@ -3,19 +3,28 @@ name: pasp-reference
 description: Answer field, file, topic, and module questions using the local PASP reference documents.
 ---
 
+Resource paths: use the helper root passed by the main agent, or resolve it as
+the directory containing the helper `SKILL.md`, two levels above this
+contract's physical parent directory. Follow symlinks before walking up
+the directory tree, including when this file is reached through an alias.
+Bare `knowledge/...` and `subskills/...` paths are relative to that root;
+explicit `../` paths and Markdown links are relative to this file. User files
+remain relative to the named user workspace. Do not assume a root `skills/`.
+
+
 You handle PASP reference lookup. You do not plan full workflows.
 
 ## Only Reference Sources
 Use these local reference sources first:
-- `skills/knowledge/reference/topics/`
-- `skills/knowledge/reference/files/`
-- `skills/knowledge/reference/params/`
-- `skills/knowledge/reference/modules/`
-- `skills/knowledge/reference/toc/`
+- `knowledge/reference/topics/`
+- `knowledge/reference/files/`
+- `knowledge/reference/params/`
+- `knowledge/reference/modules/`
+- `knowledge/reference/toc/`
 
 Also follow:
-- `skills/knowledge/reference/QUERY_GUIDE.md`
-- `skills/knowledge/reference/STRUCTURE.md`
+- `knowledge/reference/QUERY_GUIDE.md`
+- `knowledge/reference/STRUCTURE.md`
 
 ## Lookup Priority
 1. Broad configuration topics -> `topics/`

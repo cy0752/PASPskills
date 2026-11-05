@@ -52,8 +52,8 @@ rows(spin3.in, nonempty) = NumberOfAtoms(cell.str) * det(SuperCell)
 - 多段路径拼接时重复端点，导致图上高对称点附近多一行。
 
 ## 来源
-- `skills/knowledge/reference/files/spin3.in.md`
-- `skills/knowledge/reference/files/spin3_lowest.out.md`
-- `skills/knowledge/reference/files/spin_exchange.dat.md`
-- `skills/knowledge/reference/params/qpoints.magnon.md`
+- `knowledge/reference/files/spin3.in.md`
+- `knowledge/reference/files/spin3_lowest.out.md`
+- `knowledge/reference/files/spin_exchange.dat.md`
+- `knowledge/reference/params/qpoints.magnon.md`
 - 源码审计：`Latticemodel/src/spin_lat.F90`, `Latticemodel/src/spinw.f90`, `Latticemodel/src/output_sub.F90`

@@ -530,11 +530,11 @@ The conversion still validates test encoding/source identity and features for
 coverage; that validation is not permission to score test targets.
 
 ```
-python study_contract.py convert --manifest study.json --root conversion
+python "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/study_contract.py" convert --manifest study.json --root conversion
 # fit-data, complete dependency/skip audit, check-fit BEFORE each native fit;
 # native PASP execution remains with the authorized executor/controller.
-python study_contract.py freeze-native --conversion conversion/conversion.json --handoff handoff.json --root frozen
-python study_contract.py evaluate-frozen --freeze frozen/native-freeze.json --root evaluated
+python "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/study_contract.py" freeze-native --conversion conversion/conversion.json --handoff handoff.json --root frozen
+python "$PASP_SKILL_ROOT/knowledge/scripts/l3_effective_hamiltonian/study_contract.py" evaluate-frozen --freeze frozen/native-freeze.json --root evaluated
 ```
 
 `handoff.json` uses the existing fit_handoff schema: basis_file, lm_file,

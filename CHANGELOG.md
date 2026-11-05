@@ -9,6 +9,29 @@ This project uses semantic versioning while it is pre-1.0:
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-11-05
+
+### Changed
+
+- Install the complete runtime package directly into
+  `.agents/skills/pasp-helper/` by default, sharing it with Claude through a
+  project-local link. New installations no longer add a root `skills/`
+  directory or legacy `.codex/skills/` aliases.
+- Default to an independent copy; retain `--copy` and offer explicit `--link`
+  for development installations that follow an external source package.
+- Resolve knowledge and subskill resources from the loaded helper root,
+  including delegated verifier instructions and shell examples.
+- Update installation, upgrade and authoring documentation for this layout.
+
+### Fixed
+
+- Migrate recognized legacy root installations with `--force`, retaining a
+  backup of real old package files outside skill discovery directories.
+  Preserve unrelated root folders, selected source packages and user-home
+  configuration.
+
+The scientific helper implementations and parameter contracts are unchanged.
+
 ## [0.1.14] - 2026-11-02
 
 ### Added

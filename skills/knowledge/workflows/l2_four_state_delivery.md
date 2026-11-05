@@ -40,7 +40,7 @@ truncations, not measured zeros.
 Before native extraction, write a small JSON geometry fixture for the source
 cell, every quartet endpoint, supplied space-group operations (when known), and
 the proposed final primitive cell. From the workspace root run
-`python knowledge/scripts/geometry_mapping.py geometry.json > geometry_receipt.json`
+`python "$PASP_SKILL_ROOT/knowledge/scripts/geometry_mapping.py" geometry.json > geometry_receipt.json`
 and retain the receipt with the delivery evidence. The portable helper checks
 endpoint species/site identity, distinguishes equal-distance pairs by full orbit
 geometry, and maps endpoints in Cartesian space while retaining explicit integer
@@ -111,7 +111,7 @@ workspaces may retain their original supercells. Reduce the chemical structure
 with spglib and independently check both final structures at 1e-5, 1e-4 and
 1e-3 Angstrom for any remaining translation reduction. Preserve a source-to-final
 transformation, volumes, atom counts, site/species and periodic-image maps.
-For a VASP 5 POSCAR, `python knowledge/scripts/make_primitive_pair.py POSCAR
+For a VASP 5 POSCAR, `python "$PASP_SKILL_ROOT/knowledge/scripts/make_primitive_pair.py" POSCAR
 <new-output-dir> --symprec 1e-4` writes matched structure files and a JSON
 source-site/image map. Inspect the tolerance sensitivity and atom residuals.
 The generated report deliberately leaves `exchange_map` and `spin_map` empty;
@@ -177,7 +177,7 @@ and bond-vector residual separately. A source-mapping tolerance does not relax
 the final file's reconstruction precision.
 
 ```text
-python knowledge/scripts/check_four_state_native.py <delivery.json> --workspace <workspace> --source <original-input-root>
+python "$PASP_SKILL_ROOT/knowledge/scripts/check_four_state_native.py" <delivery.json> --workspace <workspace> --source <original-input-root>
 ```
 
 This receipt check verifies path bases, OSZICAR bytes, effective inputs, native
@@ -280,7 +280,7 @@ Check material-to-pair membership and raw energies separately: `expectedKeys`
 checks the configured arrays, not arbitrary joins or scientific arithmetic.
 
 ```text
-python knowledge/scripts/check_delivery.py <delivery.json> <contract.json> --root <workspace>
+python "$PASP_SKILL_ROOT/knowledge/scripts/check_delivery.py" <delivery.json> <contract.json> --root <workspace>
 ```
 
 After an actual run, preserve a SHA256 map `{ "relative/artifact/path": "sha256" }`
@@ -294,7 +294,7 @@ checkpoint establishes byte integrity, not physical accuracy or run success.
 For a container-only repair, preserve the rejected delivery first, then run:
 
 ```text
-python knowledge/scripts/check_delivery.py <delivery.json> <contract.json> --root <workspace> --hashes <checkpoint.json> --previous <before.json> --array-repair /<container>:<identity-field>
+python "$PASP_SKILL_ROOT/knowledge/scripts/check_delivery.py" <delivery.json> <contract.json> --root <workspace> --hashes <checkpoint.json> --previous <before.json> --array-repair /<container>:<identity-field>
 ```
 
 Only the named container is normalized to identity keys for comparison; every

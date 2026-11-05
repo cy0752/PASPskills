@@ -9,7 +9,7 @@
 在提升正式 `input/`、覆盖正式 input、派生 `runs/<run-id>/`、创建或编辑提交脚本 / 外部任务配置、或提交任务前，先运行本 skill 自带的确定性检查：
 
 ```text
-python knowledge/scripts/l2_validate_inputs.py <package-or-run-dir> --workflow magnon
+python "$PASP_SKILL_ROOT/knowledge/scripts/l2_validate_inputs.py" <package-or-run-dir> --workflow magnon
 ```
 
 它一次性检查有效 FDF/include、字段和 block 形状、物种与 `isaAB` 数量、cell/SuperCell、`spin3.in` 行号、q 端点、有限数值、exchange 五段计数、矩阵 J 宽度、原胞晶格依赖和 magnon 四阶项约束。记录 JSON 结果并修复全部 error，再进入只读科学检查；不要在每个格式性修补后重复相同的人工检查。

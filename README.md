@@ -4,7 +4,7 @@
 
 这套 skills 帮助 Codex 和 Claude 理解 PASP 计算流程、查询参数与文件格式，并检查输入、输出和日志。
 
-当前版本为 **0.1.15**。安装后的完整内容位于项目的
+当前版本为 **0.1.16**。安装后的完整内容位于项目的
 `.agents/skills/pasp-helper/`，Claude 共用这份内容。新安装不会在项目根目录创建
 `skills/`，也不会创建旧的 `.codex/skills/` 入口。
 
@@ -116,6 +116,9 @@ scripts/install-pasp-skills.sh [--force] [--copy | --link]
 ```bash
 python3 -m pip install numpy spglib
 ```
+
+L8 的 `fit_l8_polarization.py` 需要 NumPy，可从固定结构的 VASP 输出生成 PASP GKNB 张量块。
+用法见 [L8 参数化指南](skills/knowledge/workflows/l8_polarization_parameterization.md#command-line-helper)。
 
 安装脚本不会自动安装 Python 包、PASP、VASP、MPI 或集群调度环境。根据具体 workflow
 分别准备计算工具。

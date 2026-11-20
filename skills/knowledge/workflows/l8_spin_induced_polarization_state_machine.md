@@ -4,7 +4,7 @@
 
 ## 核心原则
 
-- L8 当前覆盖两条实用分支：`Model KNB` 的 pure electronic KNB / gKNB 极化，以及 `Model Spin_lattice_interaction` 的 ion / lattice / strain contribution。
+- L8 覆盖 `Model KNB` 电子极化、`Model Spin_lattice_interaction` 诱导的离子／晶格／应变极化，以及两条分支的上游 DFT 参数提取。缺参数、已有 DFT 样本或已有目标几何时，先读 [L8 参数化指南](l8_polarization_parameterization.md)。
 - `Model Spin_lattice_interaction` 在 L2 中也用于 PTMC / CG 找磁基态；L8 只处理已经给定或读入自旋构型后，由 spin force / stress / Born charge / force constants 等计算极化贡献的分支。不要把 L2 找基态流程自动改判成 L8。
 - Lecture-8 examples 和 run notes 是历史观察。它们的 `Spin_values`、`GKNB_inter_site` 张量、`GKNB.local_axis`、`fig.maxk`、`fig.mdist`、结构、Born charge、force constants、elastic constants 和提交脚本都不是当前材料默认值。
 - `继续`、`ok`、`按例子来`、`去提交` 不确认 L8 分支、坐标系、局域轴、GKNB 张量、spin3 行序、Born charge / force-constant provenance、应变/应力策略或提交授权。
@@ -39,6 +39,7 @@ Without these records, do not describe a directory as submit-ready, formal input
 L8 classifiers:
 - `PASP.input`, `lattice_model.fdf`, `PASP.used_info`, or user goal contains `Model KNB`, KNB, gKNB, unified polarization model, spin-induced polarization, spiral magnetic-order polarization, `GKNB_inter_site`, `GKNB_single_site`, `GKNB.local_axis`, `Ppair.xsf`, `GKNB_data.*`.
 - `Model Spin_lattice_interaction` plus L8-specific polarization clues such as `spin_lat.spin_force`, `spin_lat.spin_int_stress`, `spin_lat.Lspin_int_only`, `spin_strain.dat`, `Zeff.dat`, `elastic.dat`, `FORCE_CONSTANTS`, `SPOSCAR`, `Total P_{ion+lattice}`, `P due to spin force`, or `P due to spin stress`.
+- Berry-phase four-state DFT for `Pij`, sign-paired fits for `Pi`, and DFT response data intended for spin-induced polarization. At S0/S1 identify the intended observable and inventory existing DFT samples or coefficient provenance, including the geometry, magnetic background, and atom mapping. With supplied structures, identify whether the target is evaluation of their known deformations.
 
 禁止：
 - Write or overwrite PASP inputs.
@@ -82,6 +83,7 @@ Candidate package should include or explicitly mark missing:
 Agent-derivable artifacts are limited to:
 - README / PROGRESS, file inventory, reference inventory notes and candidate labels.
 - Draft settings tables for user confirmation.
+- DFT state plans, read-only inspection of completed DFT data, and extraction reports or candidate tensor blocks derived from validated current-material data. Use the [L8 parameterization guide](l8_polarization_parameterization.md) for DFT and fit checks. These artifacts can feed S3/S4 when a native PASP run is needed.
 - Clearly labeled smoke-test candidates when the user accepts smoke-test intent and exact writes are reference-backed.
 
 禁止：
@@ -125,6 +127,7 @@ L8 checklist minimum:
 - `spin3.in` exists when required and has current-structure row-order provenance.
 - Common controls such as `SuperCell`, `Z_values`, `isaAB`, `Spin_values`, `fig.maxk`, `fig.mdist`, and `SYMPREC` align with user-confirmed current-material facts when present.
 - KNB branch dependencies and GKNB controls are present or marked blocked.
+- For newly extracted tensors, check that the evidence matches the intended observable, structure, Berry branch, ordered sites / bonds, row layout, local axes, units and spin normalization. Inspect completeness and the fit or four-state check in the parameterization guide.
 - Spin-lattice ion-strain branch dependencies are present or marked blocked.
 - Every explicit keyword, block, include target, file format and numbering rule has reference/user-authoritative coverage.
 - No stale L8 outputs are mixed into fresh candidate / formal input.
@@ -190,7 +193,7 @@ Allowed only when:
 Allowed actions:
 - Summarize validated pure electronic polarization contributions with source run id.
 - Summarize validated ion / lattice / strain polarization contributions with source run id.
-- Compare KNB and spin-lattice contribution runs only when both outputs have validation evidence and the structure / spin configuration relationship is recorded.
+- Combine validated electronic and structural contributions only with compatible structures, spin states, references and units. For known-geometry evaluation, retain evidence of the supplied geometry, internal-displacement and strain convention, as well as the native KNB run IDs. Identify which geometry was supplied or predicted when reporting results.
 - Report visualization files only from validated same-run output.
 
 禁止：

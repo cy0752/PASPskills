@@ -9,6 +9,22 @@ This project uses semantic versioning while it is pre-1.0:
 
 ## [Unreleased]
 
+## [0.1.16] - 2026-11-20
+
+### Added
+
+- Document the L8 workflow from four-state VASP Berry-phase dipoles and
+  opposite-spin single-site fits to PASP electronic-polarization calculations.
+- Add `fit_l8_polarization.py` to extract intersite Pij and fit single-site Pi,
+  with Berry-branch tracking, candidate GKNB blocks, and a JSON fit report.
+
+### Changed
+
+- Route polarization tensor fitting through L8 and check provenance, geometry,
+  axes, and spin normalization before evaluating the tensors in `Model KNB`.
+- Document the PASP spin-lattice response route and how to evaluate Born and
+  piezoelectric contributions for supplied structures.
+
 ## [0.1.15] - 2026-11-05
 
 ### Changed

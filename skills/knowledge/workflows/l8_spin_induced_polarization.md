@@ -4,9 +4,9 @@
 
 ## 目标
 
-基于给定自旋构型、自旋-晶格耦合、Born 电荷 / 力常数 / 弹性响应和 KNB / gKNB 统一极化模型，计算或分析自旋序诱导极化与相关磁电耦合现象。
+基于给定自旋构型和材料参数，由 PASP 计算自旋序诱导极化与相关磁电耦合现象。缺参数或已拿到 DFT 输出时，先用 [L8 参数化指南](l8_polarization_parameterization.md) 设计或提取四态格点间张量、正反态单格点张量和所需的结构响应，再按以下分支准备候选输入。
 
-当前 MVP 覆盖两条分支：
+PASP 原生计算有两条分支：
 - B1：`Model KNB` 的 pure electronic KNB / gKNB 极化贡献。
 - B2：`Model Spin_lattice_interaction` 的 ion / lattice / strain contribution through spin-lattice coupling。
 
@@ -15,6 +15,8 @@
 - 我想根据自旋构型计算自旋诱导极化。
 - 我想做 KNB / gKNB / unified polarization model。
 - 我想分析螺旋磁序诱导极化。
+- 我想从固定结构的 Berry 相 DFT 输出提取 `Pi` / `Pij`，然后用 PASP 算极化。
+- 我已有两套结构和自旋，想计算电子自旋、内部位移和应变的极化贡献。使用参数化指南的已给定几何路线。
 - 我想把纯电子贡献和离子 / 晶格 / 应变贡献分开算。
 - 我已经有 `spin3.in`、GKNB 参数、`Zeff.dat`、`FORCE_CONSTANTS`、`elastic.dat` 或 `spin_strain.dat`，想检查下一步。
 
@@ -56,6 +58,7 @@ Important checks:
 - `Model KNB` is explicit.
 - `spin3.in` row order and magnetic/nonmagnetic rows correspond to the current calculation cell.
 - GKNB tensor and local-axis provenance are current-material facts or user-confirmed; do not copy example tensors.
+- For DFT-derived tensors, retain the quartet or direction-pair evidence, Berry branch, units, spin convention, and representative site / directed-pair mapping. Verify the actual symmetry-expanded model in native PASP before applying it to a new spin set.
 - Local axes, tensor components, spin vector convention and reported polarization frame are all treated as high-risk. Exact syntax and row order must come from reference or user-authoritative files before writing.
 - If `GKNB.spiral T` is active, `qvec` and `spiral_plane_vec` must be confirmed together; do not infer a spiral plane from material name or example.
 

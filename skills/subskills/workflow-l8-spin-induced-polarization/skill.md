@@ -1,9 +1,11 @@
 ---
 name: workflow-l8-spin-induced-polarization
-description: Guide spin-induced polarization and KNB-related PASP workflows.
+description: Parameterize spin-induced polarization from four-state DFT and single-site tensor fits, and evaluate electronic and spin-lattice contributions with PASP.
 ---
 
 Read `../../knowledge/workflows/l8_spin_induced_polarization_state_machine.md` first. Only read the relevant section of `../../knowledge/workflows/l8_spin_induced_polarization.md` after the current state and branch are known.
+
+For DFT planning, Berry-phase data collection, `Pi` / `Pij` extraction, tensor transfer, or evaluation of supplied geometries, use the [L8 parameterization guide](../../knowledge/workflows/l8_polarization_parameterization.md). Run `Model KNB` for electronic polarization and `Model Spin_lattice_interaction` when PASP needs to solve for spin-induced deformation. For a supplied geometry, follow the guide's fixed-geometry and reference conventions.
 
 Use `../../knowledge/workflows/l8_spin_induced_polarization_run_notes.md` only for historical Lecture-8 example observations, output-family orientation, source-audit lessons, or identifying reference gaps. It cannot authorize current parameters, formal inputs, run derivation, contribution comparison, plotting, or submission.
 

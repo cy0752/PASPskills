@@ -70,6 +70,8 @@ PASP 的 TB 功能包括自定义 hopping 和 Slater-Koster 参数化两类。�
 
 用于从自旋结构计算极化，可包含格点间项、单格点项、局域坐标系、螺旋自旋结构，以及自旋-晶格耦合修正。
 
+从 DFT 生成格点间和单格点张量、提取晶格响应参数并交给 PASP 的步骤，见 [L8 参数化指南](../../workflows/l8_polarization_parameterization.md)。
+
 查询入口：
 - `modules/knb.md`
 - `params/GKNB_inter_site.md`

@@ -73,6 +73,7 @@ skills/
     │   ├── l7_tight_binding.md
     │   ├── l7_tight_binding_state_machine.md
     │   ├── l7_tight_binding_run_notes.md
+    │   ├── l8_polarization_parameterization.md
     │   ├── l8_spin_induced_polarization.md
     │   ├── l8_spin_induced_polarization_state_machine.md
     │   └── l8_spin_induced_polarization_run_notes.md
@@ -218,6 +219,7 @@ workflow 知识文档。
 - `l3_effective_hamiltonian/get_ene.sh`
 - `l3_effective_hamiltonian/convert_data.py`
 - `l3_effective_hamiltonian/prepare_path_b_inputs.py`
+- `fit_l8_polarization.py` extracts fixed-geometry VASP `Pij` and `Pi` tensors and writes candidate PASP GKNB blocks. See the [L8 parameterization guide](knowledge/workflows/l8_polarization_parameterization.md#command-line-helper).
 
 这些脚本主要用于衔接 PASP 与外部 DFT 数据整理流程，通常需要按用户自己的目录结构和集群环境修改。
 
@@ -267,6 +269,7 @@ reference 知识库。
 - `knowledge/workflows/l7_tight_binding_state_machine.md`：custom TB / SKTB / additional-H / GSDTB / CLS 运行门禁与 STOP 状态机，必须先于长 workflow 使用
 - `knowledge/workflows/l7_tight_binding_run_notes.md`：tight-binding examples、historical output 和 source-audit 观察，不是当前目录事实
 - `knowledge/workflows/l8_spin_induced_polarization.md`
+- `knowledge/workflows/l8_polarization_parameterization.md` 提供 Berry 相四态 DFT、单格点张量拟合、结构响应参数和 PASP 交接方法。
 - `knowledge/workflows/l8_spin_induced_polarization_state_machine.md`：pure electronic KNB / gKNB 与 spin-lattice ion-strain contribution 运行门禁与 STOP 状态机，必须先于长 workflow 使用
 - `knowledge/workflows/l8_spin_induced_polarization_run_notes.md`：spin-induced polarization examples、historical output 和 source-audit 观察，不是当前目录事实
 

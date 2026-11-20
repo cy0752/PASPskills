@@ -24,10 +24,14 @@ Route the request into one of these types:
 - The user, Claude, or Codex is modifying workflow inputs and asks which settings are adjustable or what they control.
 - Identify the workflow first, then add only the reference detail needed for that step.
 
+## Early routing for four-state DFT
+
+- When the observable is Berry-phase electronic dipole or the deliverable is `Pi`, `Pij`, GKNB tensors, or a spin-induced polarization decomposition, use [L8](../workflow-l8-spin-induced-polarization/skill.md). Four-state force and stress data also belong to the L8 route when preparing response inputs for polarization. Use L2 for exchange-only fitting, magnetic ground states, or magnon deliverables.
+
 ## L3 early route
 For effective-Hamiltonian construction/fitting, read
 `../workflow-l3-effective-hamiltonian/skill.md` now and follow its state machine.
-Completed four-state DFT data that is intended to produce `spin_exchange.dat` or a
+Completed four-state DFT data that is intended to produce an exchange model or a
 magnon belongs to the L2 spin-model route below; do not send it to the unrelated L3
 local-mode workflow merely because the data came from DFT. The L3 helper is distinct
 from the read-only verifier.
@@ -174,6 +178,7 @@ Route here when the user mentions:
 - spin-induced polarization
 - magnetoelectric coupling
 - spiral magnetic-order polarization
+- four-state DFT for Berry-phase dipoles, single-site polarization fitting, or preparation of response tensors for a polarization calculation
 
 Next file to read and follow: `../workflow-l8-spin-induced-polarization/skill.md`
 
